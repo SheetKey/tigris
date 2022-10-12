@@ -11,6 +11,13 @@ import Apecs
 import Tigris.ECS.Components
 
 
-makeWorld "World" [ ''Position
+makeWorld "World" [ ''Player
+                  , ''Position
+                  , ''Rotation
+                  , ''Destination
+                  , ''Camera
                   , ''Velocity
+                  , ''Health
+                  , ''Image
+                  , ''SpriteSheet
                   ]
