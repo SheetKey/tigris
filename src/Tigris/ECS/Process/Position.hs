@@ -15,7 +15,7 @@ import FRP.Rhine
 import Apecs
 
   
-_setPosition :: MonadIO m => CInt -> SystemT World m ()
+_setPosition :: MonadIO m => CInt -> SystemT' m ()
 _setPosition dT = cmap $ \(Position p, Velocity v) -> Position (modPntV v p)
 
 setPosition :: (MonadIO m, RealFrac (Diff (Time cl))) => ClSFS m cl () ()
