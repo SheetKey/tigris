@@ -3,6 +3,7 @@ module Tigris.Graphics
   , SDL.CInt (..)
   , SDL.CDouble (..)
   , SDL.Rectangle (..)
+  , SDL.Point (..)
   , SDL.V2 (..)
   , SDL.Texture
   ) where

@@ -22,3 +22,11 @@ modSize w h rect = modRect 0 0 w h rect
 
 modPntV :: SDL.V2 SDL.CInt -> SDL.Rectangle SDL.CInt -> SDL.Rectangle SDL.CInt
 modPntV (SDL.V2 x y) rect = modPnt x y rect
+
+intersectRects :: SDL.Rectangle SDL.CInt -> SDL.Rectangle SDL.CInt -> Bool
+intersectRects (SDL.Rectangle (SDL.P (SDL.V2 x1 y1)) (SDL.V2 w1 h1))
+  (SDL.Rectangle (SDL.P (SDL.V2 x2 y2)) (SDL.V2 w2 h2))
+  = x1 + w1 >= x2 &&
+    x2 + w2 >= x1 &&
+    y1 + h1 >= y2 &&
+    y2 + h2 >= y1
