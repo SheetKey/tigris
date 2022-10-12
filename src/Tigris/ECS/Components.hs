@@ -17,6 +17,7 @@ type All = ( Player
            , Health
            , Image
            , ( SpriteSheet
+             , RToMouse
              )
            )
 
@@ -31,13 +32,16 @@ instance Component Position where
   type Storage Position = Map Position
 
 data Rotation = Rotation
-  { towardsMouse :: Bool
-  , angle :: CDouble
-  , rotPntFrac :: (CInt, CInt) -- uses `div` on destination rect
+  { angle :: CDouble
+  , rotPntFrac :: (CInt, CInt) -- `(2, 2)` centers rotation.
   , flipXY :: V2 Bool
   }
 instance Component Rotation where
   type Storage Rotation = Map Rotation
+
+data RToMouse = RToMouse
+instance Component RToMouse where
+  type Storage RToMouse = Map RToMouse
 
 -- Destination rect relative to camera.
 newtype Destination = Destination (Rectangle CInt)
