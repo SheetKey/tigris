@@ -8,15 +8,21 @@ import Tigris.Graphics
 -- apecs
 import Apecs
 
-type All = ( Position
+type All = ( Player
+           , Position
            , Rotation
            , Destination
            , Camera
            , Velocity
            , Health
            , Image
-           , SpriteSheet
+           , ( SpriteSheet
+             )
            )
+
+data Player = Player
+instance Component Player where
+  type Storage Player = Unique Player
 
 -- This is the real position (destination rect).
 -- The source rect is created from the sprite sheet.
@@ -39,6 +45,10 @@ instance Component Destination where
   type Storage Destination = Map Destination
 
 newtype Camera = Camera (Rectangle CInt)
+instance Semigroup Camera where
+  (<>) = error "Should not be used."
+instance Monoid Camera where
+  mempty = Camera $ mkRect 0 0 0 0
 instance Component Camera where
   type Storage Camera = Global Camera
 
