@@ -11,7 +11,7 @@ import Apecs
 type All = ( Position
            , Rotation
            , Destination
-           , Camer
+           , Camera
            , Velocity
            , Health
            , Image
@@ -34,12 +34,13 @@ instance Component Rotation where
   type Storage Rotation = Map Rotation
 
 -- Destination rect relative to camera.
-newtype Destination = Destination (Rectable CInt)
+newtype Destination = Destination (Rectangle CInt)
 instance Component Destination where
   type Storage Destination = Map Destination
 
-newtype Camera = Camera (Rectangel CInt)
-instance Component Camera = Global Camera
+newtype Camera = Camera (Rectangle CInt)
+instance Component Camera where
+  type Storage Camera = Global Camera
 
 newtype Velocity = Velocity (V2 CInt) 
 instance Component Velocity where

@@ -25,15 +25,15 @@ extra-source-files:
     README.org
 
 library
-    exposed-modules:          Tigris.SDL
-                            , Tigris.SDL.Rectangle
-                              Tigris
-                            , Tigris.Apecs
-                            , Tigris.Apecs.World
-                            , Tigris.Apecs.System
-                            , Tigris.Apecs.Components
-                            , Tigris.Apecs.Process
-                            , Tigris.Apecs.Process.Position
+    exposed-modules:          Tigris
+                            , Tigris.Graphics
+                            , Tigris.Graphics.Rectangle
+                            , Tigris.ECS
+                            , Tigris.ECS.World
+                            , Tigris.ECS.System
+                            , Tigris.ECS.Components
+                            , Tigris.ECS.Process
+                            , Tigris.ECS.Process.Position
                       
     build-depends:    base ^>=4.15.1.0
                     , rhine

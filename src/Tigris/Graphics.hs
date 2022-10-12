@@ -1,6 +1,7 @@
 module Tigris.Graphics
   ( module X
   , SDL.CInt (..)
+  , SDL.CDouble (..)
   , SDL.Rectangle (..)
   , SDL.V2 (..)
   , SDL.Texture
