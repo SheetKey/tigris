@@ -20,4 +20,5 @@ makeWorld "World" [ ''Player
                   , ''Health
                   , ''Image
                   , ''SpriteSheet
+                  , ''RToMouse
                   ]
