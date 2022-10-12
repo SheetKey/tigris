@@ -26,14 +26,22 @@ extra-source-files:
 
 library
     exposed-modules:          Tigris
+
                             , Tigris.Graphics
                             , Tigris.Graphics.Rectangle
+
+                            , Tigris.FRP
+                            , Tigris.FRP.Util
+
                             , Tigris.ECS
                             , Tigris.ECS.World
                             , Tigris.ECS.System
                             , Tigris.ECS.Components
                             , Tigris.ECS.Process
                             , Tigris.ECS.Process.Position
+                            , Tigris.ECS.Process.Destination
+                            , Tigris.ECS.Process.Camera
+                            , Tigris.ECS.Process.Rotation
                       
     build-depends:    base ^>=4.15.1.0
                     , rhine
