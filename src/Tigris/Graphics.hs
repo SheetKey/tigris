@@ -6,6 +6,8 @@ module Tigris.Graphics
   , SDL.Point (..)
   , SDL.V2 (..)
   , SDL.Texture
+
+  , SDL.getAbsoluteMouseLocation
   ) where
 
 -- SDL exports
