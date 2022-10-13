@@ -13,6 +13,15 @@ module Tigris.Graphics
   , SDL.Renderer
   , SDL.get
   , SDL.windowSize
+
+  , SDL.Event (..)
+  , SDL.EventPayload (..)
+  , SDL.pollEvents
+  , SDL.pollEvent
+  , SDL.KeyboardEventData (..)
+  , SDL.keysymKeycode
+  , SDL.Keycode (..)
+  , SDL.windowSizeChangedEventSize
   ) where
 
 -- SDL exports

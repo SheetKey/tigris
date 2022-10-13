@@ -24,4 +24,5 @@ makeWorld "World" [ ''Player
                   , ''BackgroundSize
                   , ''SDLWindow
                   , ''SDLRenderer
+                  , ''WindowResized
                   ]
