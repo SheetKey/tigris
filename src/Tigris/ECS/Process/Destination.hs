@@ -4,7 +4,7 @@ module Tigris.ECS.Process.Destination where
 import Tigris.ECS.System
 import Tigris.ECS.World
 import Tigris.ECS.Components
-import Tigris.Graphics
+import Tigris.Graphics hiding (get)
 
 -- rhine
 import FRP.Rhine hiding (get)
