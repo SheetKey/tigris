@@ -20,6 +20,9 @@ modPnt x y rect = modRect x y 0 0 rect
 modSize :: SDL.CInt -> SDL.CInt -> SDL.Rectangle SDL.CInt -> SDL.Rectangle SDL.CInt
 modSize w h rect = modRect 0 0 w h rect
 
+modSizeV :: SDL.V2 SDL.CInt -> SDL.Rectangle SDL.CInt -> SDL.Rectangle SDL.CInt
+modSizeV (SDL.V2 w h) rect = modSize w h rect
+
 modPntV :: SDL.V2 SDL.CInt -> SDL.Rectangle SDL.CInt -> SDL.Rectangle SDL.CInt
 modPntV (SDL.V2 x y) rect = modPnt x y rect
 
