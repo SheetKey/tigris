@@ -29,6 +29,7 @@ library
 
                             , Tigris.Graphics
                             , Tigris.Graphics.Rectangle
+                            , Tigris.Graphics.Window
 
                             , Tigris.FRP
                             , Tigris.FRP.Util
