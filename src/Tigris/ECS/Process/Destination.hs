@@ -26,4 +26,5 @@ _updateDestination = cmapM_ $ \(Position pos, Destination _, ety) ->
       else do
       return ()
       
-  
+updateDestination :: MonadIO m => ClSFS m cl () ()
+updateDestination = constMCl _updateDestination
