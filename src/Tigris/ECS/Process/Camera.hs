@@ -24,3 +24,23 @@ _updateCamera = cmapM_ $ \(Player, Position pos) ->
 
 updateCamera :: MonadIO m => ClSFS m cl () ()
 updateCamera = constMCl _updateCamera
+
+bound :: Rectangle CInt -> V2 CInt -> Rectangle CInt
+bound (Rectangle (P (V2 x y)) wh@(V2 w h)) (V2 gw gh)
+  = Rectangle (P (V2 nx ny)) wh
+  where nx | x < 0 = 0
+           | x > gw - w = gw - w
+        ny | y < 0 = 0
+           | y > gh - h = gh - h
+
+_cameraBounding :: MonadIO m => SystemT' m ()
+_cameraBounding = cmapM_ $ \(BackgroundSize s) ->
+  do
+    modify global $ \(Camera c) -> Camera $ bound c s
+
+cameraBounding :: MonadIO m => ClSFS m cl () ()
+cameraBounding = constMCl _cameraBounding
+
+_cameraSizeOnWindowResize :: MonadIO m => V2 CInt -> SystemT' m ()
+_cameraSizeOnWindowResize wh = modify global $ \(Camera c) -> Camera $ modSizeV wh c
+
