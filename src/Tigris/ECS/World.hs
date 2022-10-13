@@ -21,4 +21,7 @@ makeWorld "World" [ ''Player
                   , ''Image
                   , ''SpriteSheet
                   , ''RToMouse
+                  , ''BackgroundSize
+                  , ''SDLWindow
+                  , ''SDLRenderer
                   ]

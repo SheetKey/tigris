@@ -7,6 +7,7 @@ import Tigris.Graphics
 
 -- apecs
 import Apecs
+import Apecs.Stores
 
 type All = ( Player
            , Position
@@ -18,6 +19,9 @@ type All = ( Player
            , Image
            , ( SpriteSheet
              , RToMouse
+             , BackgroundSize
+             , SDLWindow
+             , SDLRenderer
              )
            )
 
@@ -78,3 +82,14 @@ data SpriteSheet = Sprite
 instance Component SpriteSheet where
   type Storage SpriteSheet = Map SpriteSheet
 
+newtype BackgroundSize = BackgroundSize (V2 CInt)
+instance Component BackgroundSize where
+  type Storage BackgroundSize = ReadOnly (Unique BackgroundSize)
+
+newtype SDLWindow = SDLWindow Window
+instance Component SDLWindow where
+  type Storage SDLWindow = ReadOnly (Unique SDLWindow)
+
+newtype SDLRenderer = SDLRenderer Renderer
+instance Component SDLRenderer where
+  type Storage SDLRenderer = ReadOnly (Unique SDLRenderer)
