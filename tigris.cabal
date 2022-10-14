@@ -37,6 +37,8 @@ library
                             , Tigris.ECS
                             , Tigris.ECS.World
                             , Tigris.ECS.System
+                            , Tigris.ECS.Stores
+                            , Tigris.ECS.Stores.TMGlobal
                             , Tigris.ECS.Clock
                             , Tigris.ECS.Clock.WindowResize
                             , Tigris.ECS.Components
@@ -53,5 +55,6 @@ library
                     , sdl2
                     , time
                     , containers
+                    , stm
     hs-source-dirs:   src
     default-language: Haskell2010
