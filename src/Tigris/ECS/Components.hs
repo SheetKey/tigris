@@ -20,7 +20,7 @@ type All = ( Player
            , Camera
            , Velocity
            , Health
-           , Image
+           , TextureC
            , ( SpriteSheet
              , RToMouse
              , BackgroundSize
@@ -78,16 +78,18 @@ newtype Health = Health Integer
 instance Component Health where
   type Storage Health = Map Health
   
-newtype Image = Image (IO Texture)
-instance Component Image where
-  type Storage Image = Map Image
+newtype TextureC = TextureC Texture
+instance Component TextureC where
+  type Storage TextureC = Map TextureC
 
-data SpriteSheet = Sprite
-  { index :: CInt
-  , maxFrameIndex :: CInt
-  , frameIndex :: CInt
-  , width :: CInt
-  , height :: CInt
+data SpriteSheet = SpriteSheet
+  { rowIndex :: CInt
+  , colIndex :: CInt
+  , maxColIndex :: CInt
+  , frameWidth :: CInt
+  , frameHeight :: CInt
+  , waitTime :: Double
+  , accTime :: Double
   }
 instance Component SpriteSheet where
   type Storage SpriteSheet = Map SpriteSheet

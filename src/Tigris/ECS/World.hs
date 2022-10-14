@@ -18,7 +18,7 @@ makeWorld "World" [ ''Player
                   , ''Camera
                   , ''Velocity
                   , ''Health
-                  , ''Image
+                  , ''TextureC
                   , ''SpriteSheet
                   , ''RToMouse
                   , ''BackgroundSize
