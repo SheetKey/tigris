@@ -4,6 +4,7 @@ module Tigris.ECS.Components where
 
 -- mylib
 import Tigris.Graphics
+import Tigris.ECS.Stores
 
 -- base
 import Data.Int
@@ -23,8 +24,8 @@ type All = ( Player
            , ( SpriteSheet
              , RToMouse
              , BackgroundSize
-             , SDLWindow
-             , SDLRenderer
+             --, SDLWindow
+             --, SDLRenderer
              , WindowResized
              )
            )
@@ -90,20 +91,22 @@ newtype BackgroundSize = BackgroundSize (V2 CInt)
 instance Component BackgroundSize where
   type Storage BackgroundSize = ReadOnly (Unique BackgroundSize)
 
--- probably delete
-newtype SDLWindow = SDLWindow Window
-instance Component SDLWindow where
-  type Storage SDLWindow = ReadOnly (Unique SDLWindow)
+---- probably delete
+--newtype SDLWindow = SDLWindow Window
+--instance Component SDLWindow where
+--  type Storage SDLWindow = ReadOnly (Unique SDLWindow)
+--
+---- probably delete
+--newtype SDLRenderer = SDLRenderer Renderer
+--instance Component SDLRenderer where
+--  type Storage SDLRenderer = ReadOnly (Unique SDLRenderer)
 
--- probably delete
-newtype SDLRenderer = SDLRenderer Renderer
-instance Component SDLRenderer where
-  type Storage SDLRenderer = ReadOnly (Unique SDLRenderer)
-
-newtype WindowResized = WindowResized (Maybe (V2 Int32))
-instance Semigroup WindowResized where
-  (<>) = error "Should not be used."
-instance Monoid WindowResized where
-  mempty = WindowResized Nothing
+newtype WindowResized = WindowResized (V2 Int32)
+--instance Semigroup WindowResized where
+--  (<>) = error "Should not be used."
+--instance Monoid WindowResized where
+--  mempty = WindowResized Nothing
+--instance Component WindowResized where
+--  type Storage WindowResized = Global WindowResized
 instance Component WindowResized where
-  type Storage WindowResized = Global WindowResized
+  type Storage WindowResized = TMGlobal WindowResized

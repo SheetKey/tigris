@@ -35,12 +35,23 @@ instance MonadIO m => Clock (SystemT World m) WindowResizeClock where
   initClock _ = do
     initialTime <- liftIO getCurrentTime
     return
-      ( filterS $ constM $ do
-          WindowResized mSize <- get global
+      ( constM $ do
+          WindowResized size <- get global
           time <- liftIO getCurrentTime
-          return $ (time, ) . (fmap fromIntegral) <$> mSize
+          return (time, fromIntegral <$> size)
       , initialTime
       )
+
+  -- NOTE: This version used Global store for event, not TMGlobal
+  --initClock _ = do
+  --  initialTime <- liftIO getCurrentTime
+  --  return
+  --    ( filterS $ constM $ do
+  --        WindowResized mSize <- get global
+  --        time <- liftIO getCurrentTime
+  --        return $ (time, ) . (fmap fromIntegral) <$> mSize
+  --    , initialTime
+  --    )
 
   -- NOTE: Old version of `initClock` required `get` from SDL not Apecs
   --initClock _ = do

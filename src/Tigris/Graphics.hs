@@ -1,3 +1,5 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 module Tigris.Graphics
   ( module X
   , SDL.CInt (..)
@@ -19,8 +21,14 @@ module Tigris.Graphics
   , SDL.pollEvents
   , SDL.pollEvent
   , SDL.KeyboardEventData (..)
-  , SDL.keysymKeycode
+  , SDL.InputMotion (..)
+  , SDL.Keysym (..)
   , SDL.Keycode (..)
+  , pattern SDL.KeycodeW
+  , pattern SDL.KeycodeA
+  , pattern SDL.KeycodeS
+  , pattern SDL.KeycodeD
+    
   , SDL.windowSizeChangedEventSize
   ) where
 

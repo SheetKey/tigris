@@ -33,3 +33,15 @@ intersectRects (SDL.Rectangle (SDL.P (SDL.V2 x1 y1)) (SDL.V2 w1 h1))
     x2 + w2 >= x1 &&
     y1 + h1 >= y2 &&
     y2 + h2 >= y1
+
+setXV2 :: SDL.CInt -> SDL.V2 SDL.CInt -> SDL.V2 SDL.CInt
+setXV2 x (SDL.V2 _ y) = SDL.V2 x y
+
+setYV2 :: SDL.CInt -> SDL.V2 SDL.CInt -> SDL.V2 SDL.CInt
+setYV2 y (SDL.V2 x _) = SDL.V2 x y
+
+getXV2 :: SDL.V2 SDL.CInt -> SDL.CInt
+getXV2 (SDL.V2 x _) = x
+
+getYV2 :: SDL.V2 SDL.CInt -> SDL.CInt
+getYV2 (SDL.V2 _ y) = y

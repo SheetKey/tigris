@@ -22,7 +22,7 @@ makeWorld "World" [ ''Player
                   , ''SpriteSheet
                   , ''RToMouse
                   , ''BackgroundSize
-                  , ''SDLWindow
-                  , ''SDLRenderer
+                  --, ''SDLWindow
+                  --, ''SDLRenderer
                   , ''WindowResized
                   ]
