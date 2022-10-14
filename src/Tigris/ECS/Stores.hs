@@ -3,5 +3,5 @@ module Tigris.ECS.Stores
   ) where
 
 -- mylib
-import Tigris.ECS.Stores.TMGlobal as X
-import Tigris.ECS.Stores.BTMGlobal as X
+import Tigris.ECS.Stores.TMVGlobal as X
+import Tigris.ECS.Stores.BTMVGlobal as X

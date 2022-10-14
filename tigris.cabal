@@ -38,8 +38,8 @@ library
                             , Tigris.ECS.World
                             , Tigris.ECS.System
                             , Tigris.ECS.Stores
-                            , Tigris.ECS.Stores.TMGlobal
-                            , Tigris.ECS.Stores.BTMGlobal
+                            , Tigris.ECS.Stores.TMVGlobal
+                            , Tigris.ECS.Stores.BTMVGlobal
                             , Tigris.ECS.Clock
                             , Tigris.ECS.Clock.WindowResize
                             , Tigris.ECS.Components

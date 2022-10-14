@@ -101,12 +101,12 @@ instance Component BackgroundSize where
 
 newtype SDLWindow = SDLWindow Window
 instance Component SDLWindow where
-  type Storage SDLWindow = ReadOnly (TMGlobal SDLWindow)
+  type Storage SDLWindow = ReadOnly (TMVGlobal SDLWindow)
 
 newtype SDLRenderer = SDLRenderer Renderer
 instance Component SDLRenderer where
-  type Storage SDLRenderer = ReadOnly (TMGlobal SDLRenderer)
+  type Storage SDLRenderer = ReadOnly (TMVGlobal SDLRenderer)
 
 newtype WindowResized = WindowResized (V2 Int32)
 instance Component WindowResized where
-  type Storage WindowResized = BTMGlobal WindowResized
+  type Storage WindowResized = BTMVGlobal WindowResized
