@@ -7,11 +7,11 @@ module Tigris.ECS.Process.Camera where
 import Tigris.ECS.System
 import Tigris.ECS.World
 import Tigris.ECS.Components
-import Tigris.Graphics
+import Tigris.Graphics hiding (get)
 import Tigris.ECS.Clock
 
 -- rhine
-import FRP.Rhine
+import FRP.Rhine hiding (get)
 
 -- apecs
 import Apecs
@@ -38,9 +38,9 @@ bound (Rectangle (P (V2 x y)) wh@(V2 w h)) (V2 gw gh)
            | y > gh - h = gh - h
 
 _cameraBounding :: MonadIO m => SystemT' m ()
-_cameraBounding = cmapM_ $ \(BackgroundSize s) ->
-  do
-    modify global $ \(Camera c) -> Camera $ bound c s
+_cameraBounding = do
+  WindowSize s <- get global
+  modify global $ \(Camera c) -> Camera $ bound c s
 
 cameraBounding :: MonadIO m => ClSFS m cl () ()
 cameraBounding = constMCl _cameraBounding

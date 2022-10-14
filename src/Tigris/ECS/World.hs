@@ -21,7 +21,7 @@ makeWorld "World" [ ''Player
                   , ''TextureC
                   , ''SpriteSheet
                   , ''RToMouse
-                  , ''BackgroundSize
+                  , ''WindowSize
                   , ''SDLWindow
                   , ''SDLRenderer
                   , ''WindowResized

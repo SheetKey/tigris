@@ -23,7 +23,7 @@ type All = ( Player
            , TextureC
            , ( SpriteSheet
              , RToMouse
-             , BackgroundSize
+             , WindowSize
              , SDLWindow
              , SDLRenderer
              , WindowResized
@@ -59,12 +59,8 @@ instance Component Destination where
   type Storage Destination = Map Destination
 
 newtype Camera = Camera (Rectangle CInt)
-instance Semigroup Camera where
-  (<>) = error "Should not be used."
-instance Monoid Camera where
-  mempty = Camera $ mkRect 0 0 0 0
 instance Component Camera where
-  type Storage Camera = Global Camera
+  type Storage Camera = TMVGlobal Camera
 
 newtype Velocity = Velocity (V2 CInt) 
 instance Component Velocity where
@@ -95,9 +91,9 @@ instance Component SpriteSheet where
   type Storage SpriteSheet = Map SpriteSheet
 
 -- rename to `WindowSize` and change storage type?
-newtype BackgroundSize = BackgroundSize (V2 CInt)
-instance Component BackgroundSize where
-  type Storage BackgroundSize = ReadOnly (Unique BackgroundSize)
+newtype WindowSize = WindowSize (V2 CInt)
+instance Component WindowSize where
+  type Storage WindowSize = ReadOnly (TMVGlobal WindowSize)
 
 newtype SDLWindow = SDLWindow Window
 instance Component SDLWindow where
