@@ -27,6 +27,7 @@ type All = ( Player
              --, SDLWindow
              --, SDLRenderer
              , WindowResized
+             , NormVelocity
              )
            )
 
@@ -68,6 +69,10 @@ instance Component Camera where
 newtype Velocity = Velocity (V2 CInt) 
 instance Component Velocity where
   type Storage Velocity = Map Velocity
+
+newtype NormVelocity = NormVelocity (V2 Double)
+instance Component NormVelocity where
+  type Storage NormVelocity = Map NormVelocity
 
 newtype Health = Health Integer 
 instance Component Health where

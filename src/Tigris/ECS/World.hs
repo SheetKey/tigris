@@ -25,4 +25,5 @@ makeWorld "World" [ ''Player
                   --, ''SDLWindow
                   --, ''SDLRenderer
                   , ''WindowResized
+                  , ''NormVelocity
                   ]

@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module Tigris.ECS.Process.Position where
@@ -15,8 +16,8 @@ import FRP.Rhine
 import Apecs
 
   
-_setPosition :: MonadIO m => CInt -> SystemT' m ()
-_setPosition dT = cmap $ \(Position p, Velocity v) -> Position (modPntV v p)
+_setPosition :: MonadIO m => Double -> SystemT' m ()
+_setPosition dT = cmap $ \(Position p, NormVelocity v) -> Position (modPntV (floor . (*dT) <$> v) p)
 
-setPosition :: (MonadIO m, RealFrac (Diff (Time cl))) => ClSFS m cl () ()
-setPosition = sinceLastS >>> arr (* 1000) >>> arr floor >>> arrMCl _setPosition
+setPosition :: (MonadIO m, (Diff (Time cl)) ~ Double) => ClSFS m cl () ()
+setPosition = sinceLastS >>> arrMCl _setPosition
