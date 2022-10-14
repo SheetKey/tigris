@@ -51,6 +51,7 @@ library
                             , Tigris.ECS.Process.Events
                             , Tigris.ECS.Process.Velocity
                             , Tigris.ECS.Process.SpriteSheet
+                            , Tigris.ECS.Process.Copy
                       
     build-depends:    base ^>=4.15.1.0
                     , rhine

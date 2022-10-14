@@ -24,8 +24,8 @@ type All = ( Player
            , ( SpriteSheet
              , RToMouse
              , BackgroundSize
-             --, SDLWindow
-             --, SDLRenderer
+             , SDLWindow
+             , SDLRenderer
              , WindowResized
              , NormVelocity
              )

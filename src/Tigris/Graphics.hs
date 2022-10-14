@@ -31,6 +31,9 @@ module Tigris.Graphics
   , pattern SDL.KeycodeD
     
   , SDL.windowSizeChangedEventSize
+
+  , SDL.copyEx
+  , SDL.copy
   ) where
 
 -- SDL exports
