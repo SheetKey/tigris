@@ -94,26 +94,19 @@ data SpriteSheet = SpriteSheet
 instance Component SpriteSheet where
   type Storage SpriteSheet = Map SpriteSheet
 
+-- rename to `WindowSize` and change storage type?
 newtype BackgroundSize = BackgroundSize (V2 CInt)
 instance Component BackgroundSize where
   type Storage BackgroundSize = ReadOnly (Unique BackgroundSize)
 
----- probably delete
---newtype SDLWindow = SDLWindow Window
---instance Component SDLWindow where
---  type Storage SDLWindow = ReadOnly (Unique SDLWindow)
---
----- probably delete
---newtype SDLRenderer = SDLRenderer Renderer
---instance Component SDLRenderer where
---  type Storage SDLRenderer = ReadOnly (Unique SDLRenderer)
+newtype SDLWindow = SDLWindow Window
+instance Component SDLWindow where
+  type Storage SDLWindow = ReadOnly (TMGlobal SDLWindow)
+
+newtype SDLRenderer = SDLRenderer Renderer
+instance Component SDLRenderer where
+  type Storage SDLRenderer = ReadOnly (TMGlobal SDLRenderer)
 
 newtype WindowResized = WindowResized (V2 Int32)
---instance Semigroup WindowResized where
---  (<>) = error "Should not be used."
---instance Monoid WindowResized where
---  mempty = WindowResized Nothing
---instance Component WindowResized where
---  type Storage WindowResized = Global WindowResized
 instance Component WindowResized where
-  type Storage WindowResized = TMGlobal WindowResized
+  type Storage WindowResized = BTMGlobal WindowResized

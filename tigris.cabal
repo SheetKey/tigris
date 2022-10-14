@@ -39,6 +39,7 @@ library
                             , Tigris.ECS.System
                             , Tigris.ECS.Stores
                             , Tigris.ECS.Stores.TMGlobal
+                            , Tigris.ECS.Stores.BTMGlobal
                             , Tigris.ECS.Clock
                             , Tigris.ECS.Clock.WindowResize
                             , Tigris.ECS.Components

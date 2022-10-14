@@ -4,3 +4,4 @@ module Tigris.ECS.Stores
 
 -- mylib
 import Tigris.ECS.Stores.TMGlobal as X
+import Tigris.ECS.Stores.BTMGlobal as X

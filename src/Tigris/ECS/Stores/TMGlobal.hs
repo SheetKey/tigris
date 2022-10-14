@@ -25,7 +25,7 @@ instance MonadIO m => ExplInit m (TMGlobal c) where
 
 instance MonadIO m => ExplGet m (TMGlobal c) where
   {-# INLINE explGet #-}
-  explGet (TMGlobal tmvar) _ = liftIO $ atomically $ takeTMVar tmvar
+  explGet (TMGlobal tmvar) _ = liftIO $ atomically $ readTMVar tmvar
   {-# INLINE explExists #-}
   explExists (TMGlobal tmvar) _ = liftIO $ atomically $ not <$> isEmptyTMVar tmvar
 
