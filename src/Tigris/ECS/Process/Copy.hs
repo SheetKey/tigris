@@ -86,3 +86,6 @@ _copy = cmapM_ $ \(TextureC texture) -> do
          texture
          Nothing
          (Just p)
+
+copyAll :: MonadIO m => ClSFS m cl () ()
+copyAll = constMCl _copy
