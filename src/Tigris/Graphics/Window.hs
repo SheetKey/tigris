@@ -1,7 +1,12 @@
+{- |
+Things related to `Window` for `SDL`.
+-}
+
 module Tigris.Graphics.Window where
 
 import qualified SDL
 
+-- | Default window configuration. 
 windowConfig :: SDL.WindowConfig
 windowConfig = SDL.WindowConfig
   { SDL.windowBorder          = True

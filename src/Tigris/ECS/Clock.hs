@@ -1,3 +1,7 @@
+{- |
+Type level clock additions used for signal functions.
+-}
+
 module Tigris.ECS.Clock
   ( module X
   ) where

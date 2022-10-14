@@ -1,3 +1,7 @@
+{- |
+Type synonyms for `SystemT`.
+-}
+
 module Tigris.ECS.System where
 
 -- rhine

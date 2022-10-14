@@ -1,3 +1,8 @@
+{- |
+Template haskell to create certain necessary
+typeclass instances and initialize stores.
+-}
+
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -11,6 +16,8 @@ import Apecs
 import Tigris.ECS.Components
 
 
+-- | Creates all things that are
+--   necessary.
 makeWorld "World" [ ''Player
                   , ''Position
                   , ''Rotation
@@ -21,7 +28,7 @@ makeWorld "World" [ ''Player
                   , ''TextureC
                   , ''SpriteSheet
                   , ''RToMouse
-                  , ''WindowSize
+                  , ''TileMapSize
                   , ''SDLWindow
                   , ''SDLRenderer
                   , ''WindowResized

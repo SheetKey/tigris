@@ -1,3 +1,13 @@
+{- |
+A version of `TMVGlobal` that blocks
+when getting values. This is meant to
+be used for creating clocks. A clock
+will tick on `Apecs.get`, which will block
+if there is no value. A signal function
+can provide a value with `Apecs.set`.
+`Apecs.set` writes over any currently held value.
+-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -16,7 +26,8 @@ import Apecs.Core
 -- base
 import Control.Monad.IO.Class
 
-
+-- | A global component store using `TMVar` that blocks
+--   on `Apecs.get`.
 newtype BTMVGlobal c = BTMVGlobal (TMVar c)
 type instance Elem (BTMVGlobal c) = c
 instance MonadIO m => ExplInit m (BTMVGlobal c) where

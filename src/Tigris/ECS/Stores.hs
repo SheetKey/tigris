@@ -1,3 +1,7 @@
+{- |
+Extra stores for components.
+-}
+
 module Tigris.ECS.Stores
   ( module X
   ) where

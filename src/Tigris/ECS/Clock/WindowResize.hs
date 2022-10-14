@@ -1,3 +1,8 @@
+{- |
+A clock that ticks when the `Window` has
+been resized.
+-}
+
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -25,8 +30,10 @@ import Tigris.ECS.System
 import Tigris.ECS.World
 import Tigris.ECS.Components
 
-
+-- | This clock will tick when the `Window` has
+--   been resized.
 data WindowResizeClock = WindowResizeClock
+
 
 instance MonadIO m => Clock (SystemT World m) WindowResizeClock where
   type Time WindowResizeClock = UTCTime

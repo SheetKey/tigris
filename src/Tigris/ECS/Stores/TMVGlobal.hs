@@ -1,3 +1,11 @@
+{- |
+A global component store using `STM` and `TMVar`.
+`Apecs.get` will read the value and
+not empty the `TMVar`, so `Apecs.get` will
+not block. `Apecs.set` writes over
+any currently held value.
+-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -16,7 +24,7 @@ import Apecs.Core
 -- base
 import Control.Monad.IO.Class
 
-
+-- | A global component store using `TMVar`.
 newtype TMVGlobal c = TMVGlobal (TMVar c)
 type instance Elem (TMVGlobal c) = c
 instance MonadIO m => ExplInit m (TMVGlobal c) where

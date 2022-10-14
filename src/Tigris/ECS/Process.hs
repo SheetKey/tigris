@@ -1,3 +1,8 @@
+{- |
+Process act upon various components, updating then
+and producing side effects.
+-}
+
 module Tigris.ECS.Process
   ( module X
   ) where
