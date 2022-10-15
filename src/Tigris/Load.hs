@@ -12,7 +12,7 @@ import qualified SDL.Font as SDLF
 -- apecs
 import Apecs
 
-player ::
+player :: SystemT' m ()
 player = do
   Renderer ren <- get global 
   texture <- SDLI.loadTexture ren "sprites/Sprite-0001.png:

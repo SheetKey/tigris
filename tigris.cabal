@@ -28,6 +28,7 @@ library
     exposed-modules:          Tigris
 
                             , Tigris.Init
+                            , Tigris.Load
 
                             , Tigris.Graphics
                             , Tigris.Graphics.Rectangle
