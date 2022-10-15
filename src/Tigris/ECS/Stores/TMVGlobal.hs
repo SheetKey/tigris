@@ -10,6 +10,7 @@ any currently held value.
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Tigris.ECS.Stores.TMVGlobal where
 
@@ -33,7 +34,7 @@ instance MonadIO m => ExplInit m (TMVGlobal c) where
 
 instance MonadIO m => ExplGet m (TMVGlobal c) where
   {-# INLINE explGet #-}
-  explGet (TMVGlobal tmvar) _ = liftIO $ atomically $ readTMVar tmvar
+  explGet (TMVGlobal tmvar) _ = (\case {Just a -> a; Nothing -> error "'TMVarGlobal' is empty for some component. Thread blocked indefinitely in STM transaction."}) <$> (liftIO $ atomically $ tryReadTMVar tmvar)
   {-# INLINE explExists #-}
   explExists (TMVGlobal tmvar) _ = liftIO $ atomically $ not <$> isEmptyTMVar tmvar
 
