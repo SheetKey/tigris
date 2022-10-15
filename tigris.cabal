@@ -44,7 +44,6 @@ library
                             , Tigris.ECS.Stores.BTMVGlobal
                             , Tigris.ECS.Clock
                             , Tigris.ECS.Clock.WindowResize
-                            , Tigris.ECS.Clock.Lifted
                             , Tigris.ECS.Components
                             , Tigris.ECS.Process
                             , Tigris.ECS.Process.Position
