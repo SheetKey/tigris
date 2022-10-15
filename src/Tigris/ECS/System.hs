@@ -2,7 +2,10 @@
 Type synonyms for `SystemT`.
 -}
 
-module Tigris.ECS.System where
+module Tigris.ECS.System
+  ( module Tigris.ECS.System
+  , SystemT (..)
+  ) where
 
 -- rhine
 import FRP.Rhine
