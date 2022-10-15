@@ -21,7 +21,7 @@ import qualified SDL
 
 
 mousePosition :: MonadIO m => ClSFS m cl () (Point V2 CInt)
-mousePosition = constMCl SDL.getAbsoluteMouseLocation
+mousePosition = constMCl SDL.getAbsoluteMouseLocation >>> traceWith (liftIO . putStrLn) "Mouse position: "
 
 calcAngle :: Point V2 CInt -> Rectangle CInt -> (CInt, CInt) -> CDouble
 calcAngle (P (V2 tx ty)) (Rectangle (P (V2 x y)) (V2 w h)) (xFrac, yFrac)
@@ -38,5 +38,4 @@ _rotateTowardsDest pnt = cmap $
 -- add a component to determine flipping rules
 
 rotateTowardsMouse :: MonadIO m => ClSFS m cl () ()
-rotateTowardsMouse = mousePosition
-                     >>> arrMCl _rotateTowardsDest
+rotateTowardsMouse = mousePosition >>> arrMCl _rotateTowardsDest
