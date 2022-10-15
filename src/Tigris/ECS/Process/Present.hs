@@ -19,4 +19,4 @@ _present = do
   SDL.clear ren
 
 present :: MonadIO m => ClSFS m cl () ()
-present = arrMCl _present
+present = constMCl _present
