@@ -27,6 +27,8 @@ extra-source-files:
 library
     exposed-modules:          Tigris
 
+                            , Tigris.Init
+
                             , Tigris.Graphics
                             , Tigris.Graphics.Rectangle
                             , Tigris.Graphics.Window
@@ -60,5 +62,6 @@ library
                     , time
                     , containers
                     , stm
+                    , text
     hs-source-dirs:   src
     default-language: Haskell2010
