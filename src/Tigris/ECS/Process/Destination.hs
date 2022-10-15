@@ -17,7 +17,7 @@ updateDestPos (Rectangle (P (V2 x y)) wh) (Rectangle (P (V2 cx cy)) _)
   = Rectangle (P (V2 (x - cx) (y - cy))) wh
 
 _updateDestination :: MonadIO m => SystemT' m ()
-_updateDestination = cmapM_ $ \(Position pos, Destination _, ety) ->
+_updateDestination = cmapM_ $ \(Position pos, ety) ->
   do
     Camera cam <- get global
     if intersectRects pos cam
