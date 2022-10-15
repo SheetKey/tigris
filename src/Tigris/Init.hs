@@ -17,6 +17,7 @@ import Apecs.Stores
 
 -- base
 import Control.Monad.IO.Class
+import Control.Concurrent
 
 -- text
 import Data.Text
@@ -29,6 +30,7 @@ initAndRun winName gameLoop = do
   win <- SDL.createWindow winName windowConfig
   ren <- SDL.createRenderer win (-1) SDL.defaultRenderer
   world <- initWorld
+  threadDelay 1000
   runWith world $ do
     setReadOnly global $ Window win
     setReadOnly global $ Renderer ren
