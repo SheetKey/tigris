@@ -30,21 +30,13 @@ calcAngle (P (V2 tx ty)) (Rectangle (P (V2 x y)) (V2 w h)) (xFrac, yFrac)
         angle = ((atan2 dy dx) * 180 / 3.14) - 90
     in angle
 
-_rotateTowardsWDest :: MonadIO m => Point V2 CInt -> SystemT' m ()
-_rotateTowardsWDest pnt = cmap $
+_rotateTowardsDest :: MonadIO m => Point V2 CInt -> SystemT' m ()
+_rotateTowardsDest pnt = cmap $
   \(RToMouse, Rotation {..}, Destination dest) ->
     Rotation { angle = calcAngle pnt dest rotPntFrac, .. }
-  
-
-_rotateTowardsWODest :: MonadIO m => Point V2 CInt -> SystemT' m ()
-_rotateTowardsWODest pnt = cmap $
-  \(RToMouse, Rotation {..}, Position pos, Not :: Not Destination) ->
-    Rotation { angle = calcAngle pnt pos rotPntFrac, .. }
   
 -- add a component to determine flipping rules
 
 rotateTowardsMouse :: MonadIO m => ClSFS m cl () ()
 rotateTowardsMouse = mousePosition
-                     >>> splitInput
-                     >>> (arrMCl _rotateTowardsWDest) *** (arrMCl _rotateTowardsWODest)
-                     >>> joinOutput
+                     >>> arrMCl _rotateTowardsDest
