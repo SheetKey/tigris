@@ -10,6 +10,9 @@ import qualified SDL
 import Tigris.ECS.System
 import Tigris.ECS.Components
 
+-- apecs
+import Apecs
+
 
 _present :: MonadIO m => SystemT' m ()
 _present = do
