@@ -8,6 +8,8 @@ import Tigris.ECS
 
 -- sdl
 import qualified SDL
+import qualified SDL.Image as SDLI
+import qualified SDL.Font as SDLF
 
 -- apecs
 import Apecs
@@ -22,6 +24,8 @@ import Data.Text
 initAndRun :: Text -> SystemT' IO () -> IO ()
 initAndRun winName gameLoop = do
   SDL.initialize [ SDL.InitVideo, SDL.InitEvents ]
+  SDLI.initialize [ SDLI.InitPNG ]
+  SDLF.initialize
   win <- SDL.createWindow winName windowConfig
   ren <- SDL.createRenderer win (-1) SDL.defaultRenderer
   world <- initWorld
