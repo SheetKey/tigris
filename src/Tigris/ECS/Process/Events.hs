@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -15,6 +16,7 @@ import Data.Sequence
 
 -- mylib
 import Tigris.ECS.System
+import Tigris.ECS.World
 import Tigris.ECS.Components
 import Tigris.Graphics
 
@@ -35,7 +37,7 @@ import SDL ( Event (..)
            )
   
 
-getEvents :: MonadIO m => ClSF m Busy () [Event]
+getEvents :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) Busy) () [Event]
 getEvents = constM pollEvents
 
 -- TODO: test performace of
@@ -82,3 +84,18 @@ _handleEventPayload _ = return ()
 _handleMEvent :: MonadIO m => Maybe Event -> SystemT' m ()
 _handleMEvent Nothing      = return ()
 _handleMEvent (Just event) = _handleEventPayload $ eventPayload event
+
+handleMEvent :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) Busy) (Maybe Event) ()
+handleMEvent = arrMCl _handleMEvent
+
+handleEvent :: ( MonadIO m
+               , Clock IO (HoistClock IO (SystemT World m) Busy)
+               )
+            => RhineS m (SeqClockS m
+                          (HoistClock IO (SystemT World m) Busy)
+                          (HoistClock IO (SystemT World m) Busy)
+                        )
+            () ()
+handleEvent = (getEvents @@ (HoistClock Busy liftIO))
+              >-- eventBuffer -@- (hoistSchedule liftIO concurrently)
+              --> (handleMEvent @@ (HoistClock Busy liftIO))
