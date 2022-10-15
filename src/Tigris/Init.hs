@@ -23,11 +23,12 @@ import Data.Text
 
 initAndRun :: Text -> SystemT' IO () -> IO ()
 initAndRun winName gameLoop = do
-  SDL.initialize [ SDL.InitVideo, SDL.InitEvents ]
+  SDL.initializeAll
   SDLI.initialize [ SDLI.InitPNG ]
   SDLF.initialize
   win <- SDL.createWindow winName windowConfig
   ren <- SDL.createRenderer win (-1) SDL.defaultRenderer
+  SDL.delay 5000
   world <- initWorld
   runWith world $ do
     setReadOnly global $ Window win
