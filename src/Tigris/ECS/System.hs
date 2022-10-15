@@ -24,4 +24,4 @@ type SystemT' m a = SystemT World m a
 
 type ParClockS m clL clR = ParallelClock (SystemT World m) clL clR
 
-type SeqClockS m cl1 cl2 = ParallelClock (SystemT World m) cl1 cl2
+type SeqClockS m cl1 cl2 = SequentialClock (SystemT World m) cl1 cl2

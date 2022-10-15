@@ -7,3 +7,4 @@ module Tigris.ECS.Clock
   ) where
 
 import Tigris.ECS.Clock.WindowResize as X
+import Tigris.ECS.Clock.Lifted as X
