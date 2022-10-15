@@ -38,4 +38,4 @@ _rotateTowardsDest pnt = cmap $
 -- add a component to determine flipping rules
 
 rotateTowardsMouse :: MonadIO m => ClSFS m cl () ()
-rotateTowardsMouse = mousePosition >>> arrMCl _rotateTowardsDest
+rotateTowardsMouse = mousePosition >>> arrMCl _rotateTowardsDest >>> constMCl SDL.getMouseLocationMode >>> arrMCl (liftIO . putStrLn . show)
