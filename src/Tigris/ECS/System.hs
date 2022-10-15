@@ -4,7 +4,7 @@ Type synonyms for `SystemT`.
 
 module Tigris.ECS.System
   ( module Tigris.ECS.System
-  , SystemT (..)
+  , Apecs.SystemT (..)
   ) where
 
 -- rhine
