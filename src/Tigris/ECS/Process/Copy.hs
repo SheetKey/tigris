@@ -7,7 +7,7 @@ module Tigris.ECS.Process.Copy where
 import Tigris.ECS.System
 import Tigris.ECS.World
 import Tigris.ECS.Components
-import Tigris.Graphics hiding (get)
+import Tigris.Graphics
 import Tigris.ECS.Clock
 
 -- rhine
@@ -16,11 +16,13 @@ import FRP.Rhine hiding (get)
 -- apecs
 import Apecs
 
+import SDL (copy, copyEx)
+
 
 _copy :: MonadIO m => SystemT' m ()
-_copy = cmapM_ $ \(TextureC texture) -> do
+_copy = cmapM_ $ \(Texture texture) -> do
   cmapM_ $ \(Destination dest, SpriteSheet {..}, Rotation {..}) -> do
-    SDLRenderer ren <- get global
+    Renderer ren <- get global
     copyEx ren
            texture
            (Just (mkRect (colIndex * frameWidth) (rowIndex * frameHeight) frameWidth frameHeight))
@@ -30,14 +32,14 @@ _copy = cmapM_ $ \(TextureC texture) -> do
            flipXY
 
   cmapM_ $ \(Destination dest, SpriteSheet {..}, Not :: Not Rotation) -> do
-    SDLRenderer ren <- get global
+    Renderer ren <- get global
     copy ren
          texture
          (Just (mkRect (colIndex * frameWidth) (rowIndex * frameHeight) frameWidth frameHeight))
          (Just dest)
 
   cmapM_ $ \(Destination dest, Not :: Not SpriteSheet, Rotation {..}) -> do
-    SDLRenderer ren <- get global
+    Renderer ren <- get global
     copyEx ren
            texture
            Nothing
@@ -47,14 +49,14 @@ _copy = cmapM_ $ \(TextureC texture) -> do
            flipXY
 
   cmapM_ $ \(Destination dest, Not :: Not SpriteSheet, Not :: Not Rotation) -> do
-    SDLRenderer ren <- get global
+    Renderer ren <- get global
     copy ren
          texture
          Nothing
          (Just dest)
 
   cmapM_ $ \(Position p, Not ::Not Destination, SpriteSheet {..}, Rotation {..}) -> do
-    SDLRenderer ren <- get global
+    Renderer ren <- get global
     copyEx ren
            texture
            (Just (mkRect (colIndex * frameWidth) (rowIndex * frameHeight) frameWidth frameHeight))
@@ -64,14 +66,14 @@ _copy = cmapM_ $ \(TextureC texture) -> do
            flipXY
 
   cmapM_ $ \(Position p, Not ::Not Destination, SpriteSheet {..}, Not :: Not Rotation) -> do
-    SDLRenderer ren <- get global
+    Renderer ren <- get global
     copy ren
          texture
          (Just (mkRect (colIndex * frameWidth) (rowIndex * frameHeight) frameWidth frameHeight))
          (Just p)
 
   cmapM_ $ \(Position p, Not ::Not Destination, Not :: Not SpriteSheet, Rotation {..}) -> do
-    SDLRenderer ren <- get global
+    Renderer ren <- get global
     copyEx ren
            texture
            Nothing
@@ -81,7 +83,7 @@ _copy = cmapM_ $ \(TextureC texture) -> do
            flipXY
 
   cmapM_ $ \(Position p, Not ::Not Destination, Not :: Not SpriteSheet, Not :: Not Rotation) -> do
-    SDLRenderer ren <- get global
+    Renderer ren <- get global
     copy ren
          texture
          Nothing

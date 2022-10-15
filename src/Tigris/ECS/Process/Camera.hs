@@ -39,7 +39,7 @@ bound (Rectangle (P (V2 x y)) wh@(V2 w h)) (V2 gw gh)
 
 _cameraBounding :: MonadIO m => SystemT' m ()
 _cameraBounding = do
-  WindowSize s <- get global
+  TileMapSize s <- get global
   modify global $ \(Camera c) -> Camera $ bound c s
 
 cameraBounding :: MonadIO m => ClSFS m cl () ()

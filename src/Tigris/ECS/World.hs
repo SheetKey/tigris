@@ -25,12 +25,12 @@ makeWorld "World" [ ''Player
                   , ''Camera
                   , ''Velocity
                   , ''Health
-                  , ''TextureC
+                  , ''Texture
                   , ''SpriteSheet
                   , ''RToMouse
                   , ''TileMapSize
-                  , ''SDLWindow
-                  , ''SDLRenderer
+                  , ''Window
+                  , ''Renderer
                   , ''WindowResized
                   , ''NormVelocity
                   ]

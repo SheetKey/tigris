@@ -16,9 +16,12 @@ import FRP.Rhine
 -- apecs
 import Apecs
 
+-- sdl
+import qualified SDL
+
 
 mousePosition :: MonadIO m => ClSFS m cl () (Point V2 CInt)
-mousePosition = constMCl getAbsoluteMouseLocation
+mousePosition = constMCl SDL.getAbsoluteMouseLocation
 
 calcAngle :: Point V2 CInt -> Rectangle CInt -> (CInt, CInt) -> CDouble
 calcAngle (P (V2 tx ty)) (Rectangle (P (V2 x y)) (V2 w h)) (xFrac, yFrac)

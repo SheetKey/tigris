@@ -17,6 +17,9 @@ import Data.Int
 import Apecs
 import Apecs.Stores
 
+-- sdl
+import qualified SDL
+
 -- | A collection of all components used as convenience
 --   for deleting all of an entities components.
 type All = ( Player
@@ -26,12 +29,12 @@ type All = ( Player
            , Camera
            , Velocity
            , Health
-           , TextureC
+           , Texture
            , ( SpriteSheet
              , RToMouse
              , TileMapSize
-             , SDLWindow
-             , SDLRenderer
+             , Window
+             , Renderer
              , WindowResized
              , NormVelocity
              )
@@ -97,9 +100,9 @@ instance Component Health where
   type Storage Health = Map Health
 
 -- | The SDL `Texture` of an entity.
-newtype TextureC = TextureC Texture
-instance Component TextureC where
-  type Storage TextureC = Map TextureC
+newtype Texture = Texture SDL.Texture
+instance Component Texture where
+  type Storage Texture = Map Texture
 
 -- | Determines what portion of the
 --   `Texture` will be rendered.
@@ -118,17 +121,17 @@ instance Component SpriteSheet where
 -- | The size of the tilemap. Used for bounding the `Camera`.
 newtype TileMapSize = TileMapSize (V2 CInt)
 instance Component TileMapSize where
-  type Storage TileMapSize = ReadOnly (TMVGlobal TimeMapSize)
+  type Storage TileMapSize = ReadOnly (TMVGlobal TileMapSize)
 
 -- | The SDL `Window`.
-newtype SDLWindow = SDLWindow Window
-instance Component SDLWindow where
-  type Storage SDLWindow = ReadOnly (TMVGlobal SDLWindow)
+newtype Window = Window SDL.Window
+instance Component Window where
+  type Storage Window = ReadOnly (TMVGlobal Window)
 
 -- | The SDL `Renderer`.
-newtype SDLRenderer = SDLRenderer Renderer
-instance Component SDLRenderer where
-  type Storage SDLRenderer = ReadOnly (TMVGlobal SDLRenderer)
+newtype Renderer = Renderer SDL.Renderer
+instance Component Renderer where
+  type Storage Renderer = ReadOnly (TMVGlobal Renderer)
 
 -- | Used for the `WindowResizedClock`. 
 newtype WindowResized = WindowResized (V2 Int32)

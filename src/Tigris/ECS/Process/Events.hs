@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Tigris.ECS.Process.Events where
@@ -16,6 +17,23 @@ import Data.Sequence
 import Tigris.ECS.System
 import Tigris.ECS.Components
 import Tigris.Graphics
+
+-- sdl
+import SDL ( Event (..)
+           , EventPayload (..)
+           , KeyboardEventData (..)
+           , Keycode (..)
+           , Keysym (..)
+           , InputMotion (..)
+           , pattern KeycodeW
+           , pattern KeycodeA
+           , pattern KeycodeS
+           , pattern KeycodeD
+           , WindowSizeChangedEventData (..)
+           , pollEvents
+           , pollEvent
+           )
+  
 
 getEvents :: MonadIO m => ClSF m Busy () [Event]
 getEvents = constM pollEvents
