@@ -6,6 +6,10 @@ import FRP.Rhine
 -- sdl
 import qualified SDL
 
+-- mylib
+import Tigris.ECS.System
+import Tigris.ECS.Components
+
 
 _present :: MonadIO m => SystemT' m ()
 _present = do
