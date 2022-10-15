@@ -1,7 +1,7 @@
 module Tigris.ECS.Process.Present where
 
 -- rhine
-import FRP.Rhine
+import FRP.Rhine hiding (get)
 
 -- sdl
 import qualified SDL
