@@ -23,7 +23,7 @@ import Data.Text
 
 initAndRun :: Text -> SystemT' IO () -> IO ()
 initAndRun winName gameLoop = do
-  SDL.initialize [ SDL.Video, SDL.Events ]
+  SDL.initialize [ SDL.InitVideo, SDL.InitEvents ]
   SDLI.initialize [ SDLI.InitPNG ]
   SDLF.initialize
   win <- SDL.createWindow winName windowConfig
