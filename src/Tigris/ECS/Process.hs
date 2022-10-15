@@ -15,3 +15,4 @@ import Tigris.ECS.Process.Events as X
 import Tigris.ECS.Process.Velocity as X
 import Tigris.ECS.Process.SpriteSheet as X
 import Tigris.ECS.Process.Copy as X
+import Tigris.ECS.Process.Present as X
