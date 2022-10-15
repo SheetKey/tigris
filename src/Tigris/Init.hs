@@ -41,7 +41,7 @@ initAndRun winName gameLoop = do
 testInit :: IO ()
 testInit = do
   SDL.initializeAll
-  win <- SDL.createWindow "test" windowConfig
+  win <- SDL.createWindow "test" SDL.defaultWindow
   ren <- SDL.createRenderer win (-1) SDL.defaultRenderer
   SDL.delay 2000
   p <- SDL.getAbsoluteMouseLocation
