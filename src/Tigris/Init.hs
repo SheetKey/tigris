@@ -30,7 +30,7 @@ initAndRun winName gameLoop = do
   win <- SDL.createWindow winName windowConfig
   ren <- SDL.createRenderer win (-1) SDL.defaultRenderer
   world <- initWorld
-  threadDelay 1000
+  threadDelay 10000
   runWith world $ do
     setReadOnly global $ Window win
     setReadOnly global $ Renderer ren
