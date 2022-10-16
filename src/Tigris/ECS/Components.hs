@@ -37,6 +37,8 @@ type All = ( Player
              , Renderer
              , WindowResized
              , NormVelocity
+             , ( Speed
+               )
              )
            )
 
@@ -93,6 +95,11 @@ instance Component Velocity where
 newtype NormVelocity = NormVelocity (V2 Double)
 instance Component NormVelocity where
   type Storage NormVelocity = Map NormVelocity
+
+-- | The speed of movement, multiplies the `NormVelocity`.
+newtype Speed = Speed Double
+instance Component Speed where
+  type Storage Speed = Map Speed
 
 -- | The health of an entity.
 newtype Health = Health Integer 

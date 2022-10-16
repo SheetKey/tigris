@@ -33,4 +33,5 @@ makeWorld "World" [ ''Player
                   , ''Renderer
                   , ''WindowResized
                   , ''NormVelocity
+                  , ''Speed
                   ]
