@@ -22,7 +22,7 @@ import Control.Monad.IO.Class
 -- text
 import Data.Text
 
-initAndRun :: Text -> SystemT' IO () -> IO ()
+initAndRun :: Text -> (World -> SystemT' IO ()) -> IO ()
 initAndRun winName gameLoop = do
   --SDL.initialize [ SDL.InitVideo, SDL.InitEvents, SDL.InitGameController ]
   SDL.initializeAll
@@ -36,4 +36,4 @@ initAndRun winName gameLoop = do
   runWith world $ do
     setReadOnly global $ Window win
     setReadOnly global $ Renderer ren
-    gameLoop
+    gameLoop world
