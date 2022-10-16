@@ -37,12 +37,3 @@ initAndRun winName gameLoop = do
     setReadOnly global $ Window win
     setReadOnly global $ Renderer ren
     gameLoop
-
-testInit :: IO ()
-testInit = do
-  SDL.initializeAll
-  win <- SDL.createWindow "test" SDL.defaultWindow
-  ren <- SDL.createRenderer win (-1) SDL.defaultRenderer
-  SDL.delay 2000
-  p <- SDL.getAbsoluteMouseLocation
-  liftIO $ print p
