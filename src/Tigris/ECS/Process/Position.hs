@@ -17,7 +17,8 @@ import Apecs
 
   
 _setPosition :: MonadIO m => Double -> SystemT' m ()
-_setPosition dT = cmap $ \(Position p, NormVelocity v) -> Position (modPntV (floor . (*dT) <$> v) p)
+_setPosition dT = cmap $ \(Position p, NormVelocity v) ->
+  Position (modPntV (truncate . (*dT) <$> v) p)
 
 setPosition :: (MonadIO m, (Diff (Time cl)) ~ Double) => ClSFS m cl () ()
 setPosition = sinceLastS >>> arrMCl _setPosition
