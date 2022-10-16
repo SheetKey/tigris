@@ -25,6 +25,6 @@ player = do
              , RToMouse
              , Texture texture
              , Velocity (V2 0 0)
-             , SpriteSheet 0 0 4 32 32 100 0
+             , SpriteSheet 0 0 4 32 32 5 0
              , Speed 100
              )
