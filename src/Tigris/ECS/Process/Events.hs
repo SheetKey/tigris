@@ -19,6 +19,7 @@ import Tigris.ECS.System
 import Tigris.ECS.World
 import Tigris.ECS.Components
 import Tigris.Graphics
+import Tigris.FRP
 
 -- sdl
 import SDL ( Event (..)
@@ -88,14 +89,12 @@ _handleMEvent (Just event) = _handleEventPayload $ eventPayload event
 handleMEvent :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) Busy) (Maybe Event) ()
 handleMEvent = arrMCl _handleMEvent
 
-handleEvent :: ( MonadIO m
-               , Clock IO (HoistClock IO (SystemT World m) Busy)
-               )
-            => RhineS m (SeqClockS m
-                          (HoistClock IO (SystemT World m) Busy)
-                          (HoistClock IO (SystemT World m) Busy)
+handleEvent :: World
+            -> RhineS IO (SeqClockS IO
+                          (HoistClock IO (SystemT World IO) Busy)
+                          (HoistClock IO (SystemT World IO) Busy)
                         )
             () ()
-handleEvent = (getEvents @@ (HoistClock Busy liftIO))
-              >-- eventBuffer -@- (hoistSchedule liftIO concurrently)
+handleEvent world = (getEvents @@ (HoistClock Busy liftIO))
+              >-- eventBuffer -@- (concurrentlySystem world)
               --> (handleMEvent @@ (HoistClock Busy liftIO))
