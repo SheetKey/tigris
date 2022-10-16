@@ -3,3 +3,4 @@ module Tigris.FRP
   ) where
 
 import Tigris.FRP.Util as X
+import Tigris.FRP.Schedule as X
