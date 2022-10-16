@@ -30,7 +30,6 @@ initAndRun winName gameLoop = do
   SDLF.initialize
   win <- SDL.createWindow winName windowConfig
   ren <- SDL.createRenderer win (-1) SDL.defaultRenderer
-  liftIO $ print p
   world <- initWorld
   runWith world $ do
     setReadOnly global $ Window win
