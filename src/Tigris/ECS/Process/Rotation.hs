@@ -22,7 +22,6 @@ import qualified SDL
 _mousePosition :: MonadIO m => m (V2 CInt)
 _mousePosition = do
   P v <- SDL.getAbsoluteMouseLocation
-  liftIO $ print v
   return v
 
 mousePosition :: MonadIO m => ClSFS m cl () (V2 CInt)
