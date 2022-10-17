@@ -25,8 +25,6 @@ _updateCamera :: MonadIO m => SystemT' m ()
 _updateCamera = cmapM_ $ \(Player, Position pos) ->
   do
     modify global $ \(Camera c) -> Camera $ moveCamera c pos
-    Camera c <- get global
-    liftIO $ print $ moveCamera c pos
 
 updateCamera :: MonadIO m => ClSFS m cl () ()
 updateCamera = constMCl _updateCamera
@@ -64,4 +62,9 @@ cameraProcess
      , Time cl ~ Time (Out cl)
      )
   => SNS m (ParClockS m WindowResizeClock cl) () ()
-cameraProcess = Parallel (Synchronous cameraSizeOnWindowResize) (Synchronous $ updateCamera >>> cameraBounding)
+cameraProcess = Parallel
+  (Synchronous cameraSizeOnWindowResize)
+  (Synchronous $ updateCamera >>> ctrace "before bound: " >>> cameraBounding >>> ctrace "after bound: ")
+
+ctrace :: MonadIO m => String -> ClSFS m cl () ()
+ctrace str = constMCl (do Camera c <- get global; return c) >>> traceWith (liftIO . print) str >>> arr (const ())
