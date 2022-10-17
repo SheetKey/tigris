@@ -5,7 +5,6 @@ module Tigris.ECS.Process.Camera where
 
 -- mylib
 import Tigris.ECS.System
-import Tigris.ECS.World
 import Tigris.ECS.Components
 import Tigris.Graphics
 import Tigris.ECS.Clock
@@ -53,16 +52,5 @@ _cameraSizeOnWindowResize wh = modify global $ \(Camera c) -> Camera $ updateSiz
 cameraSizeOnWindowResize :: MonadIO m => ClSFS m WindowResizeClock () ()
 cameraSizeOnWindowResize = tagS >>> arrMCl _cameraSizeOnWindowResize
 
-cameraProcess
-  :: ( MonadIO m
-     , Clock (SystemT World m) cl
-     , GetClockProxy cl
-     , cl ~ In cl, cl ~ Out cl
-     , Time cl ~ Time WindowResizeClock
-     , Time cl ~ Time (Out cl)
-     )
-  => SNS m (ParClockS m WindowResizeClock cl) () ()
-cameraProcess = Parallel
-  (Synchronous cameraSizeOnWindowResize)
-  (Synchronous $ updateCamera >>> cameraBounding)
-
+cameraProcess :: MonadIO m => ClSFS m cl () ()
+cameraProcess = updateCamera >>> cameraBounding
