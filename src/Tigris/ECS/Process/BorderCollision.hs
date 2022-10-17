@@ -3,6 +3,8 @@ Entities that can move should not be allowed beyond
 the bounds of the tilemap.
 -}
 
+{-# LANGUAGE TypeFamilies #-}
+
 module Tigris.ECS.Process.BorderCollision where
 
 -- mylib
@@ -22,6 +24,9 @@ import Apecs
 -- | Detect the collision of a movable entity.
 --   collision based on next predicted position in order to
 --   avoid strange behavior, i.e., getting stuck or clipping.
+--   As such, `normVelocity` should likely be called before and
+--   after this process is called, all of which happend before
+--   `setPosition`.
 _borderCollision :: MonadIO m => Double -> SystemT' m ()
 _borderCollision dT = do
   TileMapSize (V2 tmw tmh) <- get global
@@ -37,3 +42,6 @@ _borderCollision dT = do
       (_   , True, _   , _   ) -> Velocity $ V2 vx 0 
       (_   , _   , _   , True) -> Velocity $ V2 vx 0
       _                        -> Velocity $ V2 vx vy
+
+borderCollision :: (MonadIO m, Diff (Time cl) ~ Double) => ClSFS m cl () ()
+borderCollision = sinceLastS >>> arrMCl _borderCollision
