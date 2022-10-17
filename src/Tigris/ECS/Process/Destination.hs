@@ -18,11 +18,16 @@ updateDestPos :: Rectangle CInt -> Rectangle CInt -> Rectangle CInt
 updateDestPos (Rectangle (P (V2 x y)) wh) (Rectangle (P (V2 cx cy)) _)
   = Rectangle (P (V2 (x - cx) (y - cy))) wh
 
+-- | Update the destination rectangle for entities with a position.
+--   If the position does not intersect the camera, delete the entities
+--   destination component. This ensures that an entity that will not
+--   be visible on screen is not rendered by the `copyAll` process.
 _updateDestination :: MonadIO m => SystemT' m ()
 _updateDestination = do
   Camera cam <- get global
-  cmapIf (\(Position pos) -> intersectRects pos cam)
-    $ \(Position pos) -> Destination $ updateDestPos pos cam
+  cmap $ \(Position pos) -> if intersectRects pos cam
+                            then Just $ Destination $ updateDestPos pos cam
+                            else Nothing :: Maybe Destination
       
 updateDestination :: MonadIO m => ClSFS m cl () ()
 updateDestination = constMCl _updateDestination
