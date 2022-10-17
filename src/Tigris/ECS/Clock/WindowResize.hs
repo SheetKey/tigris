@@ -19,14 +19,9 @@ import Data.Time.Clock
 
 -- apecs
 import Apecs
-import Apecs.Core
-
--- base
-import Control.Concurrent
 
 -- mylib
-import Tigris.Graphics hiding (get)
-import Tigris.ECS.System
+import Tigris.Graphics 
 import Tigris.ECS.World
 import Tigris.ECS.Components
 

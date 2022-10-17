@@ -10,14 +10,10 @@ import FRP.Rhine
 import Apecs
 
 -- mylib
-import Tigris.ECS.System
 import Tigris.ECS.World
 
 --base
 import Control.Concurrent
-
--- transformers
-import Control.Monad.Trans.Class
 
 
 concurrentlySystem
@@ -36,7 +32,7 @@ concurrentlySystem world = Schedule $ \cl1 cl2 -> do
   _        <- lift $ takeMVar iMVar
   return (constM $ lift $ takeMVar mvar, initTime)
   where
-    launchSubthread cl leftright iMVar mvar world = lift $ forkIO $ do
-      (runningClock, initTime) <- runWith world $ initClock cl
+    launchSubthread cl leftright iMVar mvar world' = lift $ forkIO $ do
+      (runningClock, initTime) <- runWith world' $ initClock cl
       putMVar iMVar (initTime)
-      runWith world $ reactimate $ runningClock >>> second (arr leftright) >>> arrM (lift . putMVar mvar)
+      runWith world' $ reactimate $ runningClock >>> second (arr leftright) >>> arrM (lift . putMVar mvar)

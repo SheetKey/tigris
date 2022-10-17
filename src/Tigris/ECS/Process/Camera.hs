@@ -18,7 +18,7 @@ import Apecs
 
 
 moveCamera :: Rectangle CInt -> Rectangle CInt -> Rectangle CInt
-moveCamera c@(Rectangle _ (V2 w h)) (Rectangle (P (V2 x y)) _)
+moveCamera (Rectangle _ (V2 w h)) (Rectangle (P (V2 x y)) _)
   = mkRect (x - (w `div` 2)) (y - (h `div` 2)) w h
 
 _updateCamera :: MonadIO m => SystemT' m ()
@@ -32,10 +32,12 @@ updateCamera = constMCl _updateCamera
 bound :: Rectangle CInt -> V2 CInt -> Rectangle CInt
 bound (Rectangle (P (V2 x y)) wh@(V2 w h)) (V2 gw gh)
   = Rectangle (P (V2 nx ny)) wh
-  where nx | x < 0 = 0
+  where nx | x < 0      = 0
            | x > gw - w = gw - w
-        ny | y < 0 = 0
+           | otherwise  = x
+        ny | y < 0      = 0
            | y > gh - h = gh - h
+           | otherwise  = y
 
 _cameraBounding :: MonadIO m => SystemT' m ()
 _cameraBounding = do
@@ -58,7 +60,6 @@ cameraProcess
      , cl ~ In cl, cl ~ Out cl
      , Time cl ~ Time WindowResizeClock
      , Time cl ~ Time (Out cl)
-     , Time cl ~ Time (In  cl)
      )
   => SNS m (ParClockS m WindowResizeClock cl) () ()
 cameraProcess = Parallel (Synchronous cameraSizeOnWindowResize) (Synchronous $ updateCamera >>> cameraBounding)

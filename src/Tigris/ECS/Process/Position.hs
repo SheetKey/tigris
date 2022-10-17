@@ -5,7 +5,6 @@ module Tigris.ECS.Process.Position where
 
 -- mylib
 import Tigris.ECS.System
-import Tigris.ECS.World
 import Tigris.ECS.Components
 import Tigris.Graphics
 

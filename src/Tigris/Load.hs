@@ -5,9 +5,7 @@ import Tigris.ECS
 import Tigris.Graphics
 
 -- sdl
-import qualified SDL
 import qualified SDL.Image as SDLI
-import qualified SDL.Font as SDLF
 
 -- apecs
 import Apecs
@@ -26,5 +24,5 @@ player = do
              , Texture texture
              , Velocity (V2 0 0)
              , SpriteSheet 0 0 4 32 32 5 0
-             , Speed 100
+             , Speed 150
              )

@@ -16,9 +16,6 @@ import qualified SDL.Font as SDLF
 import Apecs
 import Apecs.Stores
 
--- base
-import Control.Monad.IO.Class
-
 -- text
 import Data.Text
 

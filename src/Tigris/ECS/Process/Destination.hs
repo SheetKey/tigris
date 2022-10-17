@@ -2,7 +2,6 @@ module Tigris.ECS.Process.Destination where
 
 -- mylib
 import Tigris.ECS.System
-import Tigris.ECS.World
 import Tigris.ECS.Components
 import Tigris.Graphics 
 
@@ -11,7 +10,6 @@ import FRP.Rhine hiding (get)
 
 -- apecs
 import Apecs
-import Apecs.System
 
 
 updateDestPos :: Rectangle CInt -> Rectangle CInt -> Rectangle CInt

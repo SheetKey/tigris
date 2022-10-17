@@ -5,10 +5,8 @@ module Tigris.ECS.Process.Copy where
 
 -- mylib
 import Tigris.ECS.System
-import Tigris.ECS.World
 import Tigris.ECS.Components
 import Tigris.Graphics
-import Tigris.ECS.Clock
 
 -- rhine
 import FRP.Rhine hiding (get)

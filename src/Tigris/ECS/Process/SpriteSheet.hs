@@ -5,16 +5,13 @@ module Tigris.ECS.Process.SpriteSheet where
 
 -- mylib
 import Tigris.ECS.System
-import Tigris.ECS.World
 import Tigris.ECS.Components
-import Tigris.Graphics
 
 -- rhine
 import FRP.Rhine
 
 -- apecs
 import Apecs
-import Apecs.System
 
 
 _incFrame :: MonadIO m => Double -> SystemT' m ()
