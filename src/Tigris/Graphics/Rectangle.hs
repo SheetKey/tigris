@@ -15,6 +15,10 @@ import Foreign.C.Types as SDL
 mkRect :: SDL.CInt -> SDL.CInt -> SDL.CInt -> SDL.CInt -> SDL.Rectangle SDL.CInt
 mkRect x y w h = SDL.Rectangle (SDL.P (SDL.V2 x y)) (SDL.V2 w h)
 
+-- | Utility to constuct a rectangle.
+mkRectPnts :: SDL.V2 CInt -> SDL.V2 SDL.CInt -> SDL.Rectangle SDL.CInt
+mkRectPnts xy wh = SDL.Rectangle (SDL.P xy) wh
+
 -- | Utility to modify a rectangle.
 modRect :: SDL.CInt -> SDL.CInt -> SDL.CInt -> SDL.CInt -> SDL.Rectangle SDL.CInt -> SDL.Rectangle SDL.CInt
 modRect x y w h (SDL.Rectangle (SDL.P (SDL.V2 x1 y1)) (SDL.V2 w1 h1)) = 
