@@ -15,10 +15,11 @@ import FRP.Rhine
 -- apecs
 import Apecs
 
+nextPosition :: Rectangle CInt -> V2 Double -> Double -> Double -> Rectangle CInt
+nextPosition p v s dT = modPntV (truncate . (*s) . (*dT) <$> v) p
   
 _setPosition :: MonadIO m => Double -> SystemT' m ()
-_setPosition dT = cmap $ \(Position p, NormVelocity v, Speed s) ->
-  Position (modPntV (truncate . (*s) . (*dT) <$> v) p)
+_setPosition dT = cmap $ \(Position p, NormVelocity v, Speed s) -> Position $ nextPosition p v s dT
 
 setPosition :: (MonadIO m, (Diff (Time cl)) ~ Double) => ClSFS m cl () ()
 setPosition = sinceLastS >>> arrMCl _setPosition
