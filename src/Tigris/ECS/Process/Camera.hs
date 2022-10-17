@@ -64,7 +64,5 @@ cameraProcess
   => SNS m (ParClockS m WindowResizeClock cl) () ()
 cameraProcess = Parallel
   (Synchronous cameraSizeOnWindowResize)
-  (Synchronous $ updateCamera >>> ctrace "before bound: " >>> cameraBounding >>> ctrace "after bound: ")
+  (Synchronous $ updateCamera >>> cameraBounding)
 
-ctrace :: MonadIO m => String -> ClSFS m cl () ()
-ctrace str = constMCl (do Camera c <- get global; return c) >>> traceWith (liftIO . print) str >>> arr (const ())
