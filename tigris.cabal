@@ -57,6 +57,7 @@ library
                             , Tigris.ECS.Process.SpriteSheet
                             , Tigris.ECS.Process.Copy
                             , Tigris.ECS.Process.Present
+                            , Tigris.ECS.Process.BorderCollision
                       
     build-depends:    base ^>=4.15.1.0
                     , rhine
