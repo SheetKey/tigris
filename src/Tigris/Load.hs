@@ -24,5 +24,5 @@ player = do
              , Texture texture
              , Velocity (V2 0 0)
              , SpriteSheet 0 0 4 32 32 5 0
-             , Speed 150
+             , Speed 250
              )

@@ -25,6 +25,8 @@ _updateCamera :: MonadIO m => SystemT' m ()
 _updateCamera = cmapM_ $ \(Player, Position pos) ->
   do
     modify global $ \(Camera c) -> Camera $ moveCamera c pos
+    Camera c <- get global
+    liftIO $ print $ moveCamera c pos
 
 updateCamera :: MonadIO m => ClSFS m cl () ()
 updateCamera = constMCl _updateCamera
