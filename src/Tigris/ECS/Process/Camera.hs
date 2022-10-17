@@ -7,7 +7,7 @@ module Tigris.ECS.Process.Camera where
 import Tigris.ECS.System
 import Tigris.ECS.World
 import Tigris.ECS.Components
-import Tigris.Graphics hiding (get)
+import Tigris.Graphics
 import Tigris.ECS.Clock
 
 -- rhine
