@@ -48,7 +48,7 @@ cameraBounding :: MonadIO m => ClSFS m cl () ()
 cameraBounding = constMCl _cameraBounding
 
 _cameraSizeOnWindowResize :: MonadIO m => V2 CInt -> SystemT' m ()
-_cameraSizeOnWindowResize wh = modify global $ \(Camera c) -> Camera $ modSizeV wh c
+_cameraSizeOnWindowResize wh = modify global $ \(Camera c) -> Camera $ updateSizeV wh c
 
 cameraSizeOnWindowResize :: MonadIO m => ClSFS m WindowResizeClock () ()
 cameraSizeOnWindowResize = tagS >>> arrMCl _cameraSizeOnWindowResize

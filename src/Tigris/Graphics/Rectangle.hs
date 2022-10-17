@@ -40,6 +40,10 @@ modSizeV (SDL.V2 w h) rect = modSize w h rect
 modPntV :: SDL.V2 SDL.CInt -> SDL.Rectangle SDL.CInt -> SDL.Rectangle SDL.CInt
 modPntV (SDL.V2 x y) rect = modPnt x y rect
 
+-- | Utility to update a rectangle.
+updateSizeV :: SDL.V2 SDL.CInt -> SDL.Rectangle SDL.CInt -> SDL.Rectangle SDL.CInt
+updateSizeV wh (SDL.Rectangle xy _) = SDL.Rectangle xy wh
+
 -- | Determine if two rectangles intersect.
 intersectRects :: SDL.Rectangle SDL.CInt -> SDL.Rectangle SDL.CInt -> Bool
 intersectRects (SDL.Rectangle (SDL.P (SDL.V2 x1 y1)) (SDL.V2 w1 h1))
