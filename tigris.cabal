@@ -30,6 +30,9 @@ library
                             , Tigris.Init
                             , Tigris.Load
 
+                            , Tigris.Collision
+                            , Tigris.Collision.KDTreeMap
+
                             , Tigris.Graphics
                             , Tigris.Graphics.Rectangle
                             , Tigris.Graphics.Window

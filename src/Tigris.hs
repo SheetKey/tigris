@@ -7,3 +7,4 @@ import Tigris.ECS as X
 import Tigris.FRP as X
 import Tigris.Init as X
 import Tigris.Load as X
+import Tigris.Collision as X
