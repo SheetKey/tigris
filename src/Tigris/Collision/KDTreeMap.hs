@@ -26,9 +26,10 @@ singleton (k, v) = Bin k v Tip Tip
 
 quickselect :: IsPoint k n => Int -> [k n] -> k n
 quickselect _ [] = error "'quickselect' not allowed with `[]`"
+quickselect _ (k : []) = k
 quickselect i (k : ks) | i < l = quickselect i ys
-                            | i > l = quickselect (i - l - 1) zs
-                            | otherwise = k
+                       | i > l = quickselect (i - l - 1) zs
+                       | otherwise = k
   where (ys, zs) = partition ((<= (getX k)) . getX) ks
         l = length ys
 
