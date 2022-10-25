@@ -113,6 +113,34 @@ fromList kvs = fromListInternal (zip (fst <$> kvs) kvs)
           (k, v) = fromJust mMedian
       in Bin k v (fromListInternal lt) (fromListInternal rt)
 
+fromList2 :: IsPoint k n => [(k n, v)] -> KDTreeMap (k n) v
+fromList2 [] = Tip
+fromList2 kvS = go kvS 0
+  where
+    go []  _   = Tip
+    go kvs idx = 
+      let n = length kvs
+          median = quickselect (n `div` 2) (fst <$> kvs)
+          (lt, mMedian, gt) = foldr (quicksort2 median idx) ([], Nothing, []) kvs
+          (k, v) = fromJust mMedian
+      in if idx == 0
+         then Bin k v (go lt 1) (go gt 1)
+         else Bin k v (go lt 0) (go gt 0)
+
+
+fromList :: IsPoint k n => [(k n, v)] -> KDTreeMap (k n) v
+fromList [] = Tip
+fromList kvs = fromListInternal (zip (fst <$> kvs) kvs)
+  where
+    fromListInternal :: IsPoint k n => [(k n, (k n, v))] -> KDTreeMap (k n) v
+    fromListInternal [] = Tip
+    fromListInternal keysKVS = 
+      let keys = fst <$> keysKVS
+          n = length keys
+          median = quickselect (n `div` 2) keys
+          (lt, mMedian, rt) = foldr (quicksort median) ([], Nothing, []) keysKVS
+          (k, v) = fromJust mMedian
+      in Bin k v (fromListInternal lt) (fromListInternal rt)
 
 inRadius :: IsPoint k n => n -> k n -> KDTreeMap (k n) v -> [(k n, v)]
 inRadius radius point tree = go 0 radius point tree []
