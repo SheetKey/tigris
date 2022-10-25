@@ -121,7 +121,7 @@ fromList2r kvS = go kvS 0
     go kvs idx = 
       let n = length kvs
           median = quickselect (n `div` 2) (fst <$> kvs)
-          (lt, mMedian, gt) = foldr (quicksort2 median idx) ([], Nothing, []) kvs
+          (lt, mMedian, gt) = foldr (flip $ quicksort2 median idx) ([], Nothing, []) kvs
           (k, v) = fromJust mMedian
       in if idx == 0
          then Bin k v (go lt 1) (go gt 1)
@@ -138,7 +138,7 @@ fromListr kvs = fromListInternal (zip (fst <$> kvs) kvs)
       let keys = fst <$> keysKVS
           n = length keys
           median = quickselect (n `div` 2) keys
-          (lt, mMedian, rt) = foldr (quicksort median) ([], Nothing, []) keysKVS
+          (lt, mMedian, rt) = foldr (flip $ quicksort median) ([], Nothing, []) keysKVS
           (k, v) = fromJust mMedian
       in Bin k v (fromListInternal lt) (fromListInternal rt)
 
