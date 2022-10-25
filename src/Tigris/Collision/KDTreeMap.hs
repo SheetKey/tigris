@@ -80,6 +80,7 @@ fromList2 :: IsPoint k n => [(k n, v)] -> KDTreeMap (k n) v
 fromList2 [] = Tip
 fromList2 kvS = go kvS 0
   where
+    go []  _   = Tip
     go kvs idx = 
       let n = length kvs
           median = quickselect (n `div` 2) (fst <$> kvs)
