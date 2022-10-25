@@ -113,9 +113,9 @@ fromList kvs = fromListInternal (zip (fst <$> kvs) kvs)
           (k, v) = fromJust mMedian
       in Bin k v (fromListInternal lt) (fromListInternal rt)
 
-fromList2 :: IsPoint k n => [(k n, v)] -> KDTreeMap (k n) v
-fromList2 [] = Tip
-fromList2 kvS = go kvS 0
+fromList2r :: IsPoint k n => [(k n, v)] -> KDTreeMap (k n) v
+fromList2r [] = Tip
+fromList2r kvS = go kvS 0
   where
     go []  _   = Tip
     go kvs idx = 
@@ -128,9 +128,9 @@ fromList2 kvS = go kvS 0
          else Bin k v (go lt 0) (go gt 0)
 
 
-fromList :: IsPoint k n => [(k n, v)] -> KDTreeMap (k n) v
-fromList [] = Tip
-fromList kvs = fromListInternal (zip (fst <$> kvs) kvs)
+fromListr :: IsPoint k n => [(k n, v)] -> KDTreeMap (k n) v
+fromListr [] = Tip
+fromListr kvs = fromListInternal (zip (fst <$> kvs) kvs)
   where
     fromListInternal :: IsPoint k n => [(k n, (k n, v))] -> KDTreeMap (k n) v
     fromListInternal [] = Tip
