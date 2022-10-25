@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -7,10 +8,17 @@ module Tigris.Collision.KDTreeMap where
 -- base
 import Data.List (partition, foldl')
 import Data.Maybe (fromJust)
+import GHC.Generics
+
+-- deepseq
+import Control.DeepSeq
 
 
 data KDTreeMap k v = Bin !k v !(KDTreeMap k v) !(KDTreeMap k v)
                    | Tip
+                   deriving Generic
+
+instance (NFData k, NFData v) => NFData (KDTreeMap k v)
 
 class (Ord n, Num n) => IsPoint p n where
   getX :: p n -> n
