@@ -38,6 +38,8 @@ type All = ( Player
              , WindowResized
              , NormVelocity
              , ( Speed
+               , ColliderCell
+               , GridSize
                )
              )
            )
@@ -144,3 +146,13 @@ instance Component Renderer where
 newtype WindowResized = WindowResized (V2 Int32)
 instance Component WindowResized where
   type Storage WindowResized = BTMVGlobal WindowResized
+
+-- | Use for bitwise comparison to determine if two entities might collide.
+newtype ColliderCell = ColliderCell CInt
+instance Component ColliderCell where
+  type Storage ColliderCell = Map ColliderCell
+
+-- | The number of rows and columns in the tilemap grid.
+newtype GridSize = GridSize (V2 CInt)
+instance Component GridSize where
+  type Storage GridSize = ReadOnly (TMVGlobal GridSize)

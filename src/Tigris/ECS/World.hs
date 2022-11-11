@@ -34,4 +34,6 @@ makeWorld "World" [ ''Player
                   , ''WindowResized
                   , ''NormVelocity
                   , ''Speed
+                  , ''ColliderCell
+                  , ''GridSize
                   ]

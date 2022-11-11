@@ -61,10 +61,12 @@ library
                             , Tigris.ECS.Process.Copy
                             , Tigris.ECS.Process.Present
                             , Tigris.ECS.Process.BorderCollision
+                            , Tigris.ECS.Process.ColliderCell
                       
     build-depends:            base ^>=4.15.1.0
                             , rhine
                             , apecs
+                            , vector
                             , sdl2
                             , sdl2-image
                             , sdl2-ttf
