@@ -54,12 +54,13 @@ _colliderCell dT = do
     in ColliderCell $ nw .|. ne .|. se .|. sw
 
 
+-- | Collider all movable entities with a collider cell.
 _collide :: MonadIO m => SystemT' m [(Int, Int)]
 _collide = do
   store :: Storage (NormVelocity, ColliderCell) <- getStore
   storel <- lift $ explMembers store
   let
-    -- call with acc:= empty
+    -- Check whether an entity collides with the remaining entities.
     check s (ety1, sl) acc = do
       let ety2 = U.head sl
           slTail = U.tail sl
@@ -74,9 +75,11 @@ _collide = do
         (False, True) -> return acc
         -- Does not collide and more entities to check.
         (False, False) -> check s (ety1, slTail) acc
-    -- create a vector of head and tails
+    -- create a vector of head and tails decreasing in length; prevents redundant collision calculations.
+    -- TODO: Check whether just doing things redundantly is actually more efficient than all of this mess.
     headAndTails v acc = case U.uncons v of
                            Just ht@(_, t) -> headAndTails t $ ht : acc
                            Nothing        -> acc
+    -- Check all collisions
     go s sl = forM (headAndTails sl []) (flip (check s) U.empty)
   U.toList <$> U.concat <$> go store storel
