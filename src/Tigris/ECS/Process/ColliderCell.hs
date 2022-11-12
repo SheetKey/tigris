@@ -53,6 +53,10 @@ _colliderCell dT = do
         sw = 2 ^ (x       `div` cellWH + nCols * ((y + h) `div` cellWH))
     in ColliderCell $ nw .|. ne .|. se .|. sw
 
+colliderCell :: (MonadIO m, (Diff (Time cl)) ~ Double) => ClSFS m cl () ()
+colliderCell = sinceLastS >>> arrMCl _colliderCell
+
+
 
 -- | Collider all movable entities with a collider cell.
 _collide :: MonadIO m => SystemT' m [(Int, Int)]
@@ -83,3 +87,13 @@ _collide = do
     -- Check all collisions
     go s sl = forM (headAndTails sl []) (flip (check s) U.empty)
   U.toList <$> U.concat <$> go store storel
+
+_handleCollision :: MonadIO m => [(Int, Int)] -> SystemT' m ()
+_handleCollision [] = return ()
+_handleCollision ((ety1, ety2):_) = do
+  s :: Storage Position <- getStore
+  lift $ explSet s ety1 $ Position $ mkRect 0 0 64 64
+  lift $ explSet s ety2 $ Position $ mkRect 10 10 64 64
+  
+collide :: MonadIO m => ClSFS m cl () ()
+collide = constMCl _collide >>> arrMCl _handleCollision
