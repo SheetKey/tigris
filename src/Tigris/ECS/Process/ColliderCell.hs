@@ -109,7 +109,7 @@ _handleCollision [] = return ()
 _handleCollision ((ety1, ety2):_) = do
   s :: Storage Position <- getStore
   lift $ explSet s ety1 $ Position $ mkRect 0 0 64 64
-  lift $ explSet s ety2 $ Position $ mkRect 10 10 64 64
+  lift $ explSet s ety2 $ Position $ mkRect 100 100 64 64
   
 collide :: MonadIO m => ClSFS m cl () ()
 collide = constMCl _collide >>> arrMCl _handleCollision

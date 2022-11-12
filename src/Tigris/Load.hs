@@ -31,7 +31,7 @@ enemy :: MonadIO m => SystemT' m ()
 enemy = do
   Renderer ren <- get global 
   texture <- SDLI.loadTexture ren "sprites/Sprite-0001.png"
-  newEntity_ ( Position $ mkRect 30 30 64 64
+  newEntity_ ( Position $ mkRect 100 100 64 64
              , Texture texture
              , Velocity (V2 0 0)
              , SpriteSheet 0 0 4 32 32 5 0
