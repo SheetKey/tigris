@@ -35,5 +35,4 @@ makeWorld "World" [ ''Player
                   , ''NormVelocity
                   , ''Speed
                   , ''ColliderCell
-                  , ''GridSize
                   ]

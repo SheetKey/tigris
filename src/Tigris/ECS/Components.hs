@@ -39,7 +39,6 @@ type All = ( Player
              , NormVelocity
              , ( Speed
                , ColliderCell
-               , GridSize
                )
              )
            )
@@ -127,7 +126,7 @@ data SpriteSheet = SpriteSheet
 instance Component SpriteSheet where
   type Storage SpriteSheet = Map SpriteSheet
 
--- | The size of the tilemap. Used for bounding the `Camera`.
+-- | The size of the tilemap in pixels. Used for bounding the `Camera`.
 newtype TileMapSize = TileMapSize (V2 CInt)
 instance Component TileMapSize where
   type Storage TileMapSize = ReadOnly (TMVGlobal TileMapSize)
@@ -151,8 +150,3 @@ instance Component WindowResized where
 newtype ColliderCell = ColliderCell CInt
 instance Component ColliderCell where
   type Storage ColliderCell = Map ColliderCell
-
--- | The number of rows and columns in the tilemap grid.
-newtype GridSize = GridSize (V2 CInt)
-instance Component GridSize where
-  type Storage GridSize = ReadOnly (TMVGlobal GridSize)

@@ -27,13 +27,18 @@ import FRP.Rhine hiding (get)
 cellWH :: CInt
 cellWH = 128
 
+nColsM :: MonadIO m => SystemT' m CInt
+nColsM = do
+  TileMapSize (V2 x _) <- get global
+  return $ x `div` cellWH
+
 -- | Initiallizes the collider cell for all entities that have a position.
 --   This show likely be deleted later since stationary entities will
 --   be part of a KDTree.
 --   Alternatively, this should ensure entities have a speed component.
 _initColliderCell :: MonadIO m => SystemT' m ()
 _initColliderCell = do
-  GridSize (V2 nCols _) <- get global
+  nCols <- nColsM
   cmap $ \(Position (Rectangle (P (V2 x y)) (V2 w h))) ->
     let nw = 2 ^ (x       `div` cellWH + nCols * (y       `div` cellWH))
         ne = 2 ^ ((x + w) `div` cellWH + nCols * (y       `div` cellWH))
@@ -44,7 +49,7 @@ _initColliderCell = do
 -- | Calculates a movable entities next collision cell.
 _colliderCell :: MonadIO m => Double -> SystemT' m ()
 _colliderCell dT = do
-  GridSize (V2 nCols _) <- get global
+  nCols <- nColsM
   cmap $ \(Position p, NormVelocity v, Speed s) -> 
     let (Rectangle (P (V2 x y)) (V2 w h)) = nextPosition p v s dT
         nw = 2 ^ (x       `div` cellWH + nCols * (y       `div` cellWH))
