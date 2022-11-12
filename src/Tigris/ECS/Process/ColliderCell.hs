@@ -71,19 +71,28 @@ _collide = do
   let
     -- Check whether an entity collides with the remaining entities.
     check s (ety1, sl) acc = do
-      let ety2 = U.head sl
-          slTail = U.tail sl
-      (_, ColliderCell cell1) <- lift $ explGet s ety1
-      (_, ColliderCell cell2) <- lift $ explGet s ety2
-      case (cell1 .&. cell2 /= 0, U.null slTail) of 
-        -- Collide and no more entities left to check.
-        (True, True) -> return $ U.cons (ety1, ety2) acc
-        -- Collide and more entities to check.
-        (True, False) -> check s (ety1, slTail) (U.cons (ety1, ety2) acc)
-        -- Does not collide and no more entities to check.
-        (False, True) -> return acc
-        -- Does not collide and more entities to check.
-        (False, False) -> check s (ety1, slTail) acc
+      if U.null sl
+        then return acc
+        else let ety2 = U.head sl
+                 slTail = U.tail sl
+             in if cell1 .&. cell2 /= 0
+                then check s (ety1, slTail) (U.cons (ety1, ety2) acc)
+                else check s (ety1, slTail) acc
+        
+      --let ety2 = U.head sl
+      --    slTail = U.tail sl
+      --(_, ColliderCell cell1) <- lift $ explGet s ety1
+      --(_, ColliderCell cell2) <- lift $ explGet s ety2
+      --case (cell1 .&. cell2 /= 0, U.null slTail) of 
+      --  -- Collide and no more entities left to check.
+      --  (True, True) -> return $ U.cons (ety1, ety2) acc
+      --  -- Collide and more entities to check.
+      --  (True, False) -> check s (ety1, slTail) (U.cons (ety1, ety2) acc)
+      --  -- Does not collide and no more entities to check.
+      --  (False, True) -> return acc
+      --  -- Does not collide and more entities to check.
+      --  (False, False) -> check s (ety1, slTail) acc
+
     -- create a vector of head and tails decreasing in length; prevents redundant collision calculations.
     -- TODO: Check whether just doing things redundantly is actually more efficient than all of this mess.
     headAndTails v acc = case U.uncons v of
