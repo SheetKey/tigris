@@ -108,8 +108,8 @@ _handleCollision :: MonadIO m => [(Int, Int)] -> SystemT' m ()
 _handleCollision [] = return ()
 _handleCollision ((ety1, ety2):_) = do
   s :: Storage Position <- getStore
-  p1 <- lift $explGet s ety1
-  p2 <- lift $explGet s ety2
+  p1 <- lift $ explGet s ety1
+  p2 <- lift $ explGet s ety2
   if intersectRects p1 p2
     then do lift $ explSet s ety1 $ Position $ mkRect 0 0 64 64
             lift $ explSet s ety2 $ Position $ mkRect 100 100 64 64
