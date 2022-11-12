@@ -75,9 +75,11 @@ _collide = do
         then return acc
         else let ety2 = U.head sl
                  slTail = U.tail sl
-             in if cell1 .&. cell2 /= 0
-                then check s (ety1, slTail) (U.cons (ety1, ety2) acc)
-                else check s (ety1, slTail) acc
+             in do (_, ColliderCell cell1) <- lift $ explGet s ety1
+                   (_, ColliderCell cell2) <- lift $ explGet s ety2
+                   if cell1 .&. cell2 /= 0
+                     then check s (ety1, slTail) (U.cons (ety1, ety2) acc)
+                     else check s (ety1, slTail) acc
         
       --let ety2 = U.head sl
       --    slTail = U.tail sl
