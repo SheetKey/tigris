@@ -47,6 +47,7 @@ library
                             , Tigris.ECS.Stores
                             , Tigris.ECS.Stores.TMVGlobal
                             , Tigris.ECS.Stores.BTMVGlobal
+                            , Tigris.ECS.Stores.BTQGlobal
                             , Tigris.ECS.Clock
                             , Tigris.ECS.Clock.WindowResize
                             , Tigris.ECS.Components
