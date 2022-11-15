@@ -50,6 +50,7 @@ library
                             , Tigris.ECS.Stores.BTQGlobal
                             , Tigris.ECS.Clock
                             , Tigris.ECS.Clock.WindowResize
+                            , Tigris.ECS.Clock.Collision
                             , Tigris.ECS.Components
                             , Tigris.ECS.Process
                             , Tigris.ECS.Process.Position

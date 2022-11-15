@@ -39,6 +39,7 @@ type All = ( Player
              , NormVelocity
              , ( Speed
                , ColliderCell
+               , Collisions
                )
              )
            )
@@ -150,3 +151,14 @@ instance Component WindowResized where
 newtype ColliderCell = ColliderCell CInt
 instance Component ColliderCell where
   type Storage ColliderCell = Map ColliderCell
+
+-- TODO: potetntially have each entity store their own collisions;
+-- the issue with that might be that the collision component should
+-- get deleted after collisions are processed, so that only
+-- entities with a collision are mapped overn with cmap.
+-- If this is done concurrently, then the componenet might be deleted
+-- while it is being written else where.
+-- | Holds the current collisions.
+newtype Collisions = Collisions (Int, Int)
+instance Component Collisions where
+  type Storage Collisions = BTQGlobal Collisions
