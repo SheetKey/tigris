@@ -80,20 +80,6 @@ _collide = do
                    if cell1 .&. cell2 /= 0
                      then check s (ety1, slTail) (U.cons (ety1, ety2) acc)
                      else check s (ety1, slTail) acc
-        
-      --let ety2 = U.head sl
-      --    slTail = U.tail sl
-      --(_, ColliderCell cell1) <- lift $ explGet s ety1
-      --(_, ColliderCell cell2) <- lift $ explGet s ety2
-      --case (cell1 .&. cell2 /= 0, U.null slTail) of 
-      --  -- Collide and no more entities left to check.
-      --  (True, True) -> return $ U.cons (ety1, ety2) acc
-      --  -- Collide and more entities to check.
-      --  (True, False) -> check s (ety1, slTail) (U.cons (ety1, ety2) acc)
-      --  -- Does not collide and no more entities to check.
-      --  (False, True) -> return acc
-      --  -- Does not collide and more entities to check.
-      --  (False, False) -> check s (ety1, slTail) acc
 
     -- create a vector of head and tails decreasing in length; prevents redundant collision calculations.
     -- TODO: Check whether just doing things redundantly is actually more efficient than all of this mess.
@@ -104,16 +90,12 @@ _collide = do
     go s sl = forM (headAndTails sl []) (flip (check s) U.empty)
   U.toList <$> U.concat <$> go store storel
 
+
 _handleCollision :: MonadIO m => [(Int, Int)] -> SystemT' m ()
 _handleCollision [] = return ()
-_handleCollision ((ety1, ety2):_) = do
-  s :: Storage Position <- getStore
-  Position p1 <- lift $ explGet s ety1
-  Position p2 <- lift $ explGet s ety2
-  if intersectRects p1 p2
-    then do lift $ explSet s ety1 $ Position $ mkRect 0 0 64 64
-            lift $ explSet s ety2 $ Position $ mkRect 100 100 64 64
-    else return ()
+_handleCollision (x:xs) = do
+  set global $ Collisions x
+  _handleCollision xs
   
 collide :: MonadIO m => ClSFS m cl () ()
 collide = constMCl _collide >>> arrMCl _handleCollision
