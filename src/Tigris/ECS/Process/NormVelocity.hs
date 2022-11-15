@@ -1,4 +1,4 @@
-module Tigris.ECS.Process.Velocity where
+module Tigris.ECS.Process.NormVelocity where
 
 -- mylib
 import Tigris.ECS.System
