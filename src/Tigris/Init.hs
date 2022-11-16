@@ -19,6 +19,9 @@ import Apecs.Stores
 -- text
 import Data.Text
 
+-- base
+import Control.Monad.IO.Class
+
 initAndRun :: Text -> (World -> SystemT' IO ()) -> IO ()
 initAndRun winName gameLoop = do
   --SDL.initialize [ SDL.InitVideo, SDL.InitEvents, SDL.InitGameController ]
@@ -35,3 +38,9 @@ initAndRun winName gameLoop = do
 
 initPosition :: CInt -> CInt -> CInt -> CInt -> Position
 initPosition x y w h = let rect = mkRect x y w h in Position $ V4 rect rect rect rect
+
+initTexture :: MonadIO m => String -> SystemT' m Texture
+initTexture path = do
+  Renderer ren <- get global
+  texture <- SDLI.loadTexture ren path
+  return $ Texture texture
