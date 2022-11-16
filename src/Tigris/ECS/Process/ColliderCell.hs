@@ -18,7 +18,6 @@ import qualified Data.Vector.Unboxed as U
 -- mylib
 import Tigris.ECS.Components
 import Tigris.ECS.System
-import Tigris.ECS.Process.Position
 import Tigris.Graphics
 
 -- rhine
@@ -39,7 +38,7 @@ nColsM = do
 _initColliderCell :: MonadIO m => SystemT' m ()
 _initColliderCell = do
   nCols <- nColsM
-  cmap $ \(Position (Rectangle (P (V2 x y)) (V2 w h))) ->
+  cmap $ \(Position (V4 _ (Rectangle (P (V2 x y)) (V2 w h)) _ _)) ->
     let nw = 2 ^ (x       `div` cellWH + nCols * (y       `div` cellWH))
         ne = 2 ^ ((x + w) `div` cellWH + nCols * (y       `div` cellWH))
         se = 2 ^ ((x + w) `div` cellWH + nCols * ((y + h) `div` cellWH))
@@ -47,26 +46,25 @@ _initColliderCell = do
     in ColliderCell $ nw .|. ne .|. se .|. sw
 
 -- | Calculates a movable entities next collision cell.
-_colliderCell :: MonadIO m => Double -> SystemT' m ()
-_colliderCell dT = do
+_colliderCell :: MonadIO m => SystemT' m ()
+_colliderCell = do
   nCols <- nColsM
-  cmap $ \(Position p, NormVelocity v, Speed s) -> 
-    let (Rectangle (P (V2 x y)) (V2 w h)) = nextPosition p v s dT
-        nw = 2 ^ (x       `div` cellWH + nCols * (y       `div` cellWH))
+  cmap $ \(Position (V4 _ (Rectangle (P (V2 x y)) (V2 w h)) _ _)) -> 
+    let nw = 2 ^ (x       `div` cellWH + nCols * (y       `div` cellWH))
         ne = 2 ^ ((x + w) `div` cellWH + nCols * (y       `div` cellWH))
         se = 2 ^ ((x + w) `div` cellWH + nCols * ((y + h) `div` cellWH))
         sw = 2 ^ (x       `div` cellWH + nCols * ((y + h) `div` cellWH))
     in ColliderCell $ nw .|. ne .|. se .|. sw
 
-colliderCell :: (MonadIO m, (Diff (Time cl)) ~ Double) => ClSFS m cl () ()
-colliderCell = sinceLastS >>> arrMCl _colliderCell
+colliderCell :: MonadIO m => ClSFS m cl () ()
+colliderCell = constMCl _colliderCell
 
 
 
 -- | Collider all movable entities with a collider cell.
 _collide :: MonadIO m => SystemT' m [(Int, Int)]
 _collide = do
-  store :: Storage (NormVelocity, ColliderCell) <- getStore
+  store :: Storage (Velocity, ColliderCell) <- getStore
   storel <- lift $ explMembers store
   let
     -- Check whether an entity collides with the remaining entities.

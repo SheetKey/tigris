@@ -32,7 +32,6 @@ makeWorld "World" [ ''Player
                   , ''Window
                   , ''Renderer
                   , ''WindowResized
-                  , ''NormVelocity
                   , ''Speed
                   , ''ColliderCell
                   , ''Collisions

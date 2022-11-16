@@ -7,6 +7,7 @@ module Tigris.Graphics
   , SDL.Rectangle (..)
   , SDL.Point (..)
   , SDL.V2 (..)
+  , SDL.V4 (..)
   ) where
 
 -- SDL exports

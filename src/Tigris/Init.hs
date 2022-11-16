@@ -32,3 +32,6 @@ initAndRun winName gameLoop = do
     setReadOnly global $ Window win
     setReadOnly global $ Renderer ren
     gameLoop world
+
+initPosition :: CInt -> CInt -> CInt -> CInt -> Position
+initPosition x y w h = let rect = mkRect x y w h in Position $ V4 rect rect rect rect

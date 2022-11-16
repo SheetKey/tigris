@@ -21,7 +21,7 @@ moveCamera (Rectangle _ (V2 w h)) (Rectangle (P (V2 x y)) _)
   = mkRect (x - (w `div` 2)) (y - (h `div` 2)) w h
 
 _updateCamera :: MonadIO m => SystemT' m ()
-_updateCamera = cmapM_ $ \(Player, Position pos) ->
+_updateCamera = cmapM_ $ \(Player, Position (V4 _ pos _ _)) ->
   do
     modify global $ \(Camera c) -> Camera $ moveCamera c pos
 

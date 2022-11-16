@@ -23,7 +23,7 @@ updateDestPos (Rectangle (P (V2 x y)) wh) (Rectangle (P (V2 cx cy)) _)
 _updateDestination :: MonadIO m => SystemT' m ()
 _updateDestination = do
   Camera cam <- get global
-  cmap $ \(Position pos) -> if intersectRects pos cam
+  cmap $ \(Position (V4 _ pos _ _)) -> if intersectRects pos cam
                             then Just $ Destination $ updateDestPos pos cam
                             else Nothing :: Maybe Destination
       

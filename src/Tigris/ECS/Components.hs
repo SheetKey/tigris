@@ -36,9 +36,8 @@ type All = ( Player
              , Window
              , Renderer
              , WindowResized
-             , NormVelocity
-             , ( Speed
-               , ColliderCell
+             , Speed
+             , ( ColliderCell
                , Collisions
                )
              )
@@ -53,8 +52,12 @@ instance Component Player where
 -- This is the real position (destination rect).
 -- The source rect is created from the sprite sheet.
 -- | The position of entities relative to
---   the tileset. 
-newtype Position = Position (Rectangle CInt) 
+--   the tileset. Stores the previous position at index 0,
+--   the next position at index 1,
+--   the next position only moving in the x direction at index 2,
+--   and the next position only moving in the y direction at index 3.
+--   This allows for position rollbacks on collision to avoid clipping.
+newtype Position = Position (V4 ((Rectangle CInt)))
 instance Component Position where
   type Storage Position = Map Position
 
@@ -91,12 +94,6 @@ instance Component Camera where
 newtype Velocity = Velocity (V2 CInt) 
 instance Component Velocity where
   type Storage Velocity = Map Velocity
-
--- | The normalized velocity, used to change the
---   `Position` component.
-newtype NormVelocity = NormVelocity (V2 Double)
-instance Component NormVelocity where
-  type Storage NormVelocity = Map NormVelocity
 
 -- | The speed of movement, multiplies the `NormVelocity`.
 newtype Speed = Speed Double

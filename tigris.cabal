@@ -58,7 +58,6 @@ library
                             , Tigris.ECS.Process.Camera
                             , Tigris.ECS.Process.Rotation
                             , Tigris.ECS.Process.Events
-                            , Tigris.ECS.Process.NormVelocity
                             , Tigris.ECS.Process.SpriteSheet
                             , Tigris.ECS.Process.Copy
                             , Tigris.ECS.Process.Present
