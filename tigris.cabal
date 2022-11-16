@@ -63,6 +63,7 @@ library
                             , Tigris.ECS.Process.Present
                             , Tigris.ECS.Process.BorderCollision
                             , Tigris.ECS.Process.ColliderCell
+                            , Tigris.ECS.Process.Collisions
                       
     build-depends:            base ^>=4.15.1.0
                             , rhine
