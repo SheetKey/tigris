@@ -159,3 +159,8 @@ instance Component ColliderCell where
 newtype Collisions = Collisions (Int, Int)
 instance Component Collisions where
   type Storage Collisions = BTQGlobal Collisions
+
+-- | An entities health.
+newtype Health = Health Int
+instance Health = Health where
+type Storage Health = Map Health
