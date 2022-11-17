@@ -21,31 +21,44 @@ import Apecs.Stores
 import Control.Monad (foldM)
 import Data.List (intersect)
 import Control.Monad.IO.Class
+import Control.Exception (throw
+                         , AssertionFailed (AssertionFailed)
+                         )
+
+-- random
+import System.Random (getStdGen)
+
+-- random-fu
+import Data.Random.Distribution.Categorical (weightedCategorical)
+
+-- rvar
+import Data.RVar (sampleStateRVar)
+
+-- transformers
+import Control.Monad.Trans.State (runState)
+
+  
 
 data Tile = Tile
-  { tileId :: TileId
+  { tileId :: Int
   , nconnector :: Int
   , econnector :: Int
   , sconnector :: Int
   , wconnector :: Int
   , weight :: Int
   }
+  deriving (Eq)
 
-newtype TileId = TileId Int deriving (Eq, Ord)
 
 type Entropy = M.Map (Int, Int) Int
 
-newtype AllTiles = AllTiles (V.Vector TileId) deriving (Semigroup, Monoid)
+newtype AllTiles = AllTiles (V.Vector Tile) deriving (Semigroup, Monoid)
 instance Component AllTiles where
   type Storage AllTiles = ReadOnly (Global AllTiles)
 
-newtype Grid = Grid (M.Map (Int, Int) TileId) deriving (Semigroup, Monoid)
+newtype Grid = Grid (M.Map (Int, Int) Tile) deriving (Semigroup, Monoid)
 instance Component Grid where
   type Storage Grid = Global Grid
-
-newtype TileFromId = TileFromId (M.Map TileId Tile) deriving (Semigroup, Monoid)
-instance Component TileFromId where
-  type Storage TileFromId = ReadOnly (Global TileFromId)
 
 newtype MapSize = MapSize (Int, Int) 
 instance Semigroup MapSize where
@@ -55,24 +68,24 @@ instance Monoid MapSize where
 instance Component MapSize where
   type Storage MapSize = Global MapSize
 
-newtype TileAdjacencyN = TileAdjacencyN (IM.IntMap (V.Vector TileId)) deriving (Semigroup, Monoid)
+newtype TileAdjacencyN = TileAdjacencyN (IM.IntMap (V.Vector Tile)) deriving (Semigroup, Monoid)
 instance Component TileAdjacencyN where
   type Storage TileAdjacencyN = ReadOnly (Global TileAdjacencyN)
 
-newtype TileAdjacencyE = TileAdjacencyE (IM.IntMap (V.Vector TileId)) deriving (Semigroup, Monoid)
+newtype TileAdjacencyE = TileAdjacencyE (IM.IntMap (V.Vector Tile)) deriving (Semigroup, Monoid)
 instance Component TileAdjacencyE where
   type Storage TileAdjacencyE = ReadOnly (Global TileAdjacencyE)
 
-newtype TileAdjacencyS = TileAdjacencyS (IM.IntMap (V.Vector TileId)) deriving (Semigroup, Monoid)
+newtype TileAdjacencyS = TileAdjacencyS (IM.IntMap (V.Vector Tile)) deriving (Semigroup, Monoid)
 instance Component TileAdjacencyS where
   type Storage TileAdjacencyS = ReadOnly (Global TileAdjacencyS)
 
-newtype TileAdjacencyW = TileAdjacencyW (IM.IntMap (V.Vector TileId)) deriving (Semigroup, Monoid)
+newtype TileAdjacencyW = TileAdjacencyW (IM.IntMap (V.Vector Tile)) deriving (Semigroup, Monoid)
 instance Component TileAdjacencyW where
   type Storage TileAdjacencyW = ReadOnly (Global TileAdjacencyW)
 
+
 makeWorld "WFCWorld" [ ''Grid
-                     , ''TileFromId
                      , ''MapSize
                      , ''AllTiles
                      , ''TileAdjacencyN
@@ -83,53 +96,62 @@ makeWorld "WFCWorld" [ ''Grid
 
 type WFCSystemT m a = SystemT WFCWorld m a
 
--- inputs neightboring tiles
-possibleTiles :: MonadIO m
-              => (Maybe TileId, Maybe TileId, Maybe TileId, Maybe TileId)
-              -> WFCSystemT m (V.Vector TileId)
-possibleTiles (n, e, s, w) = do
-  TileFromId tmap <- get global
-  let _connectN = case n of
-                    Nothing  -> return Nothing
-                    Just nid -> return $ Just $ sconnector $ tmap M.! nid
-      _connectE = case e of
-                    Nothing  -> return Nothing
-                    Just eid -> return $ Just $ wconnector $ tmap M.! eid
-      _connectS = case s of
-                    Nothing  -> return Nothing
-                    Just sid -> return $ Just $ nconnector $ tmap M.! sid
-      _connectW = case w of
-                    Nothing  -> return Nothing
-                    Just wid -> return $ Just $ econnector $ tmap M.! wid
-  connectN <- _connectN
-  connectE <- _connectE
-  connectS <- _connectS
-  connectW <- _connectW
-  AllTiles vtiles <- get global
-  let _possibleN = case connectN of
-                     Nothing   -> return vtiles
-                     Just conn -> do TileAdjacencyN ntiles <- get global
-                                     return $ ntiles IM.! conn
-      _possibleE = case connectE of
-                     Nothing   -> return vtiles
-                     Just conn -> do TileAdjacencyE etiles <- get global
-                                     return $ etiles IM.! conn
-      _possibleS = case connectS of
-                     Nothing   -> return vtiles
-                     Just conn -> do TileAdjacencyS stiles <- get global
-                                     return $ stiles IM.! conn
-      _possibleW = case connectW of
-                     Nothing   -> return vtiles
-                     Just conn -> do TileAdjacencyW wtiles <- get global
-                                     return $ wtiles IM.! conn
-  possibleN <- _possibleN
-  possibleE <- _possibleE
-  possibleS <- _possibleS
-  possibleW <- _possibleW
-  return
-    $ intersectVecs possibleW
-    $ intersectVecs possibleS
-    $ intersectVecs possibleE possibleN
+
+possibleTiles :: MonadIO m => (Int, Int) -> WFCSystemT m (V.Vector Tile)
+possibleTiles (x, y) = do
+  Grid grid <- get global
+  _possibleTiles (grid M.!? (x, y-1), grid M.!? (x+1, y), grid M.!? (x, y+1), grid M.!? (x-1, y))
+  where 
+    -- inputs neightboring tiles
+    _possibleTiles :: MonadIO m
+                  => (Maybe Tile, Maybe Tile, Maybe Tile, Maybe Tile)
+                  -> WFCSystemT m (V.Vector Tile)
+    _possibleTiles (n, e, s, w) = do
+      let
+        -- Get the corresponding connector from neighboring tiles if there are
+        -- neighboring tiles in the grid
+        connectN = case n of
+                     Nothing  -> Nothing
+                     Just ntile -> Just $ sconnector ntile
+        connectE = case e of
+                     Nothing  -> Nothing
+                     Just etile -> Just $ wconnector etile
+        connectS = case s of
+                     Nothing  -> Nothing
+                     Just stile -> Just $ nconnector stile
+        connectW = case w of
+                     Nothing  -> Nothing
+                     Just wtile -> Just $ econnector wtile
+      AllTiles vtiles <- get global
+      let
+        -- Get the tiles with the correct n,e,s,w connector if there is
+        -- a required n,e,s,w connector.
+        -- If there is not a required connection, return all tiles.
+        _possibleN = case connectN of
+                       Nothing   -> return vtiles
+                       Just conn -> do TileAdjacencyN ntiles <- get global
+                                       return $ ntiles IM.! conn
+        _possibleE = case connectE of
+                       Nothing   -> return vtiles
+                       Just conn -> do TileAdjacencyE etiles <- get global
+                                       return $ etiles IM.! conn
+        _possibleS = case connectS of
+                       Nothing   -> return vtiles
+                       Just conn -> do TileAdjacencyS stiles <- get global
+                                       return $ stiles IM.! conn
+        _possibleW = case connectW of
+                       Nothing   -> return vtiles
+                       Just conn -> do TileAdjacencyW wtiles <- get global
+                                       return $ wtiles IM.! conn
+      possibleN <- _possibleN
+      possibleE <- _possibleE
+      possibleS <- _possibleS
+      possibleW <- _possibleW
+      -- return the tiles that have the write n,e,s,w connector.
+      return
+        $ intersectVecs possibleW
+        $ intersectVecs possibleS
+        $ intersectVecs possibleE possibleN
 
 
 intersectVecs :: Eq a => V.Vector a -> V.Vector a -> V.Vector a
@@ -147,20 +169,51 @@ intersectVecs v1 v2 = if V.length v1 <= V.length v2
                      else go vs vl (n - 1)
 
 
-makeEntropy :: MonadIO m => Grid -> WFCSystemT m Entropy
-makeEntropy (Grid grid) = do
+makeEntropy :: MonadIO m => WFCSystemT m Entropy
+makeEntropy = do
   MapSize (xMax, yMax) <- get global
-  let gridKeys = M.keys grid
-      keys = [(x, y) | x <- [0..xMax], y <- [0..yMax]]
-      possibleKeys = intersect gridKeys keys
-      _makeEntropy :: MonadIO m => Entropy -> (Int, Int) -> WFCSystemT m Entropy
-      _makeEntropy acc (x, y) = do
-        tiles <- possibleTiles
-                 (grid M.!? (x, y-1), grid M.!? (x+1, y), grid M.!? (x, y+1), grid M.!? (x-1, y))
-        case V.length tiles of
-          0 -> error "no possible tiles"
-          1 -> do
-            modify global $ \(Grid g) -> Grid $ M.insert (x, y) (tiles V.! 0) g
-            return acc
-          _ -> return $ M.insert (x, y) (V.length tiles) acc
+  Grid grid <- get global
+  let
+    -- all of the cells that have been collapsed
+    gridKeys = M.keys grid
+    -- all the possible cells
+    -- TODO: store this as a global read only variable for efficiency
+    keys = [(x, y) | x <- [0..xMax], y <- [0..yMax]]
+    -- the cells that have not yet been collapsed
+    possibleKeys = intersect gridKeys keys
+    -- a function used to fold over the possibleKeys
+    _makeEntropy :: MonadIO m => Entropy -> (Int, Int) -> WFCSystemT m Entropy
+    _makeEntropy acc cell = do
+      -- get the possible tiles in the cell
+      tiles <- possibleTiles cell
+      case V.length tiles of
+        -- no possible tiles
+        -- TODO: this should probably use 'throw'
+        0 -> error "no possible tiles"
+        -- If there are possible tiles, add the number of tiles to the entropy.
+        _ -> return $ M.insert cell (V.length tiles) acc
+  -- fold over the possbleKeys to get a map of the entropy
   foldM _makeEntropy M.empty possibleKeys
+
+
+leastEntropy :: Entropy -> Maybe (Int, Int)
+leastEntropy = (fmap fst) . M.foldrWithKey
+               (\k a b -> case a of
+                            0 -> throw $ AssertionFailed "Zero entropy found."
+                            _ -> case b of
+                                   Nothing       -> Just (k, a)
+                                   Just (_, be) -> case compare a be of
+                                                     GT -> b
+                                                     EQ -> Just (k, a)
+                                                     LT -> Just (k, a)
+               )
+               Nothing
+    
+weightedChoice :: MonadIO m => (Int, Int) -> WFCSystemT m Tile
+weightedChoice cell = do
+  tiles <- possibleTiles cell
+  let weightList :: [(Double, Tile)]
+      weightList = [ (fromIntegral $ weight tile, tile) | tile <- V.toList tiles ]
+      tileRVar = weightedCategorical weightList
+  thing <- fmap (runState (sampleStateRVar tileRVar)) getStdGen
+  return $ fst thing
