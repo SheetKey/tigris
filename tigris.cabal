@@ -27,6 +27,8 @@ extra-source-files:
 library
     exposed-modules:          Tigris
 
+                            , Tigris.WFC.Algorithm
+
                             , Tigris.Init
                             , Tigris.Load
 

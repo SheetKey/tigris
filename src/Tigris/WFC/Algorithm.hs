@@ -1,3 +1,9 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 module Tigris.WFC.Algorithm where
 
 -- containers
@@ -9,18 +15,31 @@ import qualified Data.Vector as V
 
 -- import Apecs
 import Apecs
+import Apecs.Stores
 
+-- base
+import Control.Monad (foldM)
+import Data.List (intersect)
+import Control.Monad.IO.Class
 
+data Tile = Tile
+  { tileId :: TileId
+  , nconnector :: Int
+  , econnector :: Int
+  , sconnector :: Int
+  , wconnector :: Int
+  , weight :: Int
+  }
 
 newtype TileId = TileId Int deriving (Eq, Ord)
 
 type Entropy = M.Map (Int, Int) Int
 
 newtype AllTiles = AllTiles (V.Vector TileId) deriving (Semigroup, Monoid)
-instance Componenet AllTiles where
+instance Component AllTiles where
   type Storage AllTiles = ReadOnly (Global AllTiles)
 
-newtype Grid = Grip (M.Map (Int, Int) TileId) deriving (Semigroup, Monoid)
+newtype Grid = Grid (M.Map (Int, Int) TileId) deriving (Semigroup, Monoid)
 instance Component Grid where
   type Storage Grid = Global Grid
 
@@ -28,7 +47,9 @@ newtype TileFromId = TileFromId (M.Map TileId Tile) deriving (Semigroup, Monoid)
 instance Component TileFromId where
   type Storage TileFromId = ReadOnly (Global TileFromId)
 
-newtype MapSize = MapSize (Int, Int) deriving (Semigroup)
+newtype MapSize = MapSize (Int, Int) 
+instance Semigroup MapSize where
+  _ <> _ = error "'<>' should not be used for 'MapSize'."
 instance Monoid MapSize where
   mempty = MapSize (0, 0)
 instance Component MapSize where
@@ -50,34 +71,36 @@ newtype TileAdjacencyW = TileAdjacencyW (IM.IntMap (V.Vector TileId)) deriving (
 instance Component TileAdjacencyW where
   type Storage TileAdjacencyW = ReadOnly (Global TileAdjacencyW)
 
-makeWorld "WFCWorld" = [ ''Grid
-                       , ''TileFromId
-                       , ''MapSize
-                       , ''AllTiles
-                       , ''TileAdjacencyN
-                       , ''TileAdjacencyE
-                       , ''TileAdjacencyS
-                       , ''TileAdjacencyW
-                       ]
+makeWorld "WFCWorld" [ ''Grid
+                     , ''TileFromId
+                     , ''MapSize
+                     , ''AllTiles
+                     , ''TileAdjacencyN
+                     , ''TileAdjacencyE
+                     , ''TileAdjacencyS
+                     , ''TileAdjacencyW
+                     ]
 
 type WFCSystemT m a = SystemT WFCWorld m a
 
 -- inputs neightboring tiles
-possibleTiles :: (Maybe TileId, Maybe TileId, Maybe TileId, Maybe TileId) -> WFCSystemT m (V.Vector TileId)
+possibleTiles :: MonadIO m
+              => (Maybe TileId, Maybe TileId, Maybe TileId, Maybe TileId)
+              -> WFCSystemT m (V.Vector TileId)
 possibleTiles (n, e, s, w) = do
   TileFromId tmap <- get global
   let _connectN = case n of
                     Nothing  -> return Nothing
-                    Just nid -> return $ sconnector $ tmap M.! nid
+                    Just nid -> return $ Just $ sconnector $ tmap M.! nid
       _connectE = case e of
                     Nothing  -> return Nothing
-                    Just eid -> return $ wconnector $ tmap M.! eid
+                    Just eid -> return $ Just $ wconnector $ tmap M.! eid
       _connectS = case s of
                     Nothing  -> return Nothing
-                    Just sid -> return $ nconnector $ tmap M.! sid
+                    Just sid -> return $ Just $ nconnector $ tmap M.! sid
       _connectW = case w of
                     Nothing  -> return Nothing
-                    Just wid -> return $ econnector $ tmap M.! wid
+                    Just wid -> return $ Just $ econnector $ tmap M.! wid
   connectN <- _connectN
   connectE <- _connectE
   connectS <- _connectS
@@ -86,18 +109,19 @@ possibleTiles (n, e, s, w) = do
   let _possibleN = case connectN of
                      Nothing   -> return vtiles
                      Just conn -> do TileAdjacencyN ntiles <- get global
-                                     return ntile 
+                                     return $ ntiles IM.! conn
       _possibleE = case connectE of
                      Nothing   -> return vtiles
                      Just conn -> do TileAdjacencyE etiles <- get global
-                                     return etiles
+                                     return $ etiles IM.! conn
       _possibleS = case connectS of
                      Nothing   -> return vtiles
                      Just conn -> do TileAdjacencyS stiles <- get global
-                                     return stiles
+                                     return $ stiles IM.! conn
       _possibleW = case connectW of
                      Nothing   -> return vtiles
                      Just conn -> do TileAdjacencyW wtiles <- get global
+                                     return $ wtiles IM.! conn
   possibleN <- _possibleN
   possibleE <- _possibleE
   possibleS <- _possibleS
@@ -123,25 +147,20 @@ intersectVecs v1 v2 = if V.length v1 <= V.length v2
                      else go vs vl (n - 1)
 
 
-cellEntropy :: V.Vector TileId -> Int
-cellEntropy = undefined
-
-makeEntropy :: Grid -> WFCSystemT m Entropy
-makeEntropy grid = do
+makeEntropy :: MonadIO m => Grid -> WFCSystemT m Entropy
+makeEntropy (Grid grid) = do
   MapSize (xMax, yMax) <- get global
   let gridKeys = M.keys grid
       keys = [(x, y) | x <- [0..xMax], y <- [0..yMax]]
       possibleKeys = intersect gridKeys keys
-      --adj :: (Int, Int) -> 
-      _makeEntropy :: Entropy -> (Int, Int) -> WFCSystemT Entropy
-      _makeEntropy acc (x, y) =
-        let
-          tiles = possibleTiles
-                  (grid M.!? (x, y-1), grid M.!? (x+1, y), grid M.!? (x, y+1), grid M.!? (x-1, y))
-        in case V.length tiles of
-             0 -> error "no possible tiles"
-             1 -> do
-               modify global $ \(Grid g) -> Grid $ M.insert (x, y) (tile V.! 0) g
-               return acc
-             _ -> return $ M.insert (x, y) (cellEntropy tiles) acc
+      _makeEntropy :: MonadIO m => Entropy -> (Int, Int) -> WFCSystemT m Entropy
+      _makeEntropy acc (x, y) = do
+        tiles <- possibleTiles
+                 (grid M.!? (x, y-1), grid M.!? (x+1, y), grid M.!? (x, y+1), grid M.!? (x-1, y))
+        case V.length tiles of
+          0 -> error "no possible tiles"
+          1 -> do
+            modify global $ \(Grid g) -> Grid $ M.insert (x, y) (tiles V.! 0) g
+            return acc
+          _ -> return $ M.insert (x, y) (V.length tiles) acc
   foldM _makeEntropy M.empty possibleKeys
