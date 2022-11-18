@@ -141,7 +141,7 @@ remainingGrid (c@(x,y):cs) = do
           -- so that the connectors match
           Just tiles ->
             let newTiles = V.filter (\d -> f d == conn) tiles
-            in if newTiles = tiles
+            in if newTiles == tiles
                then return []
                else do modify global $ \(RemainingGrid nrgrid) ->
                                          RemainingGrid $ M.insert (a,b) newTiles nrgrid
