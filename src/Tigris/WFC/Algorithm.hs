@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -182,13 +183,18 @@ wave = do
             wave
 
 wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> IO Grid
-wfc tiles size mgrid = do
+wfc tiles size@(a,b) mgrid = do
   w <- initWFCWorld
   runWith w $ do
     setReadOnly global $ AllTiles tiles
     setReadOnly global $ MapSize size
+    let keys = [ (x,y) | x <- [0..(a-1)], y <- [0..(b-1)] ]
+        remList = (, tiles) <$> keys
+    set global $ RemainingGrid $ M.fromList remList
     case mgrid of
       Nothing -> return ()
-      Just grid -> set global grid
+      Just grid -> do set global grid
+                      let gridKeys (Grid g) = M.keys g
+                      remainingGrid $ gridKeys grid
     wave
     
