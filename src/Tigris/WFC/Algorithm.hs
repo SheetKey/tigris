@@ -48,13 +48,13 @@ data Tile = Tile
   , wconnector :: Int
   , weight :: Int
   }
-  deriving (Eq)
+  deriving (Eq, Show)
 
 newtype AllTiles = AllTiles (V.Vector Tile) deriving (Semigroup, Monoid)
 instance Component AllTiles where
   type Storage AllTiles = ReadOnly (Global AllTiles)
 
-newtype Grid = Grid (M.Map (Int, Int) Tile) deriving (Semigroup, Monoid)
+newtype Grid = Grid (M.Map (Int, Int) Tile) deriving (Semigroup, Monoid, Show)
 instance Component Grid where
   type Storage Grid = Global Grid
 
