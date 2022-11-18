@@ -66,7 +66,7 @@ instance Monoid MapSize where
 instance Component MapSize where
   type Storage MapSize = ReadOnly (Global MapSize)
 
-newtype RemainingGrid = RemainingGrid (M.Map (Int, Int) (V.Vector Tile)) deriving (Semigroup, Monoid)
+newtype RemainingGrid = RemainingGrid (M.Map (Int, Int) (V.Vector Tile)) deriving (Semigroup, Monoid, Show)
 instance Component RemainingGrid where
   type Storage RemainingGrid = Global RemainingGrid
 
@@ -180,6 +180,8 @@ wave = do
             c <- randomCell cs
             weightedChoice c
             remainingGrid [c]
+            RemainingGrid nrgrid <- get global
+            liftIO $ print nrgrid
             wave
 
 wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> IO Grid
