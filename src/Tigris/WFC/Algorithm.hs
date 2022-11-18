@@ -82,6 +82,7 @@ type WFCSystemT m a = SystemT WFCWorld m a
 leastEntropy :: MonadIO m => WFCSystemT m [(Int, Int)]
 leastEntropy = do
   RemainingGrid rgrid <- get global
+  liftIO $ putStrLn "leastEntorpy:"
   liftIO $ print rgrid
   let rsizes = V.length <$> rgrid
   case calcEnt rsizes of
@@ -182,6 +183,7 @@ wave = do
             weightedChoice c
             remainingGrid [c]
             RemainingGrid nrgrid <- get global
+            liftIO $ putStrLn "wave:"
             liftIO $ print nrgrid
             wave
 
