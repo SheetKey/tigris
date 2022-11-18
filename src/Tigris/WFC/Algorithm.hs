@@ -4,7 +4,11 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Tigris.WFC.Algorithm where
+module Tigris.WFC.Algorithm
+  ( wfc
+  , Tile (..)
+  , Grid (..)
+  ) where
 
 -- containers
 import qualified Data.Map.Strict as M
@@ -35,7 +39,6 @@ import Data.RVar (sampleStateRVar)
 import Control.Monad.Trans.State (runState)
 
   
-
 data Tile = Tile
   { tileId :: Int
   , nconnector :: Int
@@ -45,9 +48,6 @@ data Tile = Tile
   , weight :: Int
   }
   deriving (Eq)
-
-
-type Entropy = M.Map (Int, Int) Int
 
 newtype AllTiles = AllTiles (V.Vector Tile) deriving (Semigroup, Monoid)
 instance Component AllTiles where
