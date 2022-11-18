@@ -82,8 +82,6 @@ type WFCSystemT m a = SystemT WFCWorld m a
 leastEntropy :: MonadIO m => WFCSystemT m [(Int, Int)]
 leastEntropy = do
   RemainingGrid rgrid <- get global
-  liftIO $ putStrLn "leastEntorpy:"
-  liftIO $ print rgrid
   let rsizes = V.length <$> rgrid
   case calcEnt rsizes of
     Nothing -> throw $ AssertionFailed "'leastEntroy' found no entroy."
@@ -141,10 +139,13 @@ remainingGrid (c@(x,y):cs) = do
           -- new cell in remaining grid
           -- modify the remaining grip by filtering the vector of possible tiles
           -- so that the connectors match
-          Just tiles -> do modify global $ \(RemainingGrid nrgrid) ->
-                                             RemainingGrid $ M.insert (a,b)
-                                             (V.filter (\d -> f d == conn) tiles) nrgrid
-                           return [(a,b)]
+          Just tiles ->
+            let newTiles = V.filter (\d -> f d == conn) tiles
+            in if newTiles = tiles
+               then return []
+               else do modify global $ \(RemainingGrid nrgrid) ->
+                                         RemainingGrid $ M.insert (a,b) newTiles nrgrid
+                       return [(a,b)]
       d1 <- propDir (x, y-1) (nconnector tile) sconnector
       d2 <- propDir (x, y+1) (sconnector tile) nconnector
       d3 <- propDir (x+1, y) (econnector tile) wconnector
@@ -162,8 +163,7 @@ remainingGrid (c@(x,y):cs) = do
             in if dirtiles == newTiles
                then return []
                else do modify global $ \(RemainingGrid nrgrid) ->
-                                         RemainingGrid $ M.insert (a,b)
-                                         (V.filter (\d -> f d `V.elem` conns) tiles) nrgrid
+                                         RemainingGrid $ M.insert (a,b) newTiles nrgrid
                        return [(a,b)]
       d1 <- propDir (x, y-1) (V.uniq $ nconnector <$> tiles) sconnector
       d2 <- propDir (x, y+1) (V.uniq $ sconnector <$> tiles) nconnector
@@ -183,8 +183,6 @@ wave = do
             weightedChoice c
             remainingGrid [c]
             RemainingGrid nrgrid <- get global
-            liftIO $ putStrLn "wave:"
-            liftIO $ print nrgrid
             wave
 
 wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> IO Grid
