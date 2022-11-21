@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -23,9 +24,7 @@ import Apecs.Stores
 
 -- base
 import Control.Monad.IO.Class
-import Control.Exception (throw
-                         , AssertionFailed (AssertionFailed)
-                         )
+import Control.Exception 
 
 -- random
 import System.Random (randomRIO, getStdGen)
@@ -78,18 +77,21 @@ makeWorld "WFCWorld" [ ''Grid
 
 type WFCSystemT m a = SystemT WFCWorld m a
 
+newtype WFCException = WFCException String deriving (Show)
+instance Exception WFCException
+
 
 leastEntropy :: MonadIO m => WFCSystemT m [(Int, Int)]
 leastEntropy = do
   RemainingGrid rgrid <- get global
   let rsizes = V.length <$> rgrid
   case calcEnt rsizes of
-    Nothing -> throw $ AssertionFailed "'leastEntroy' found no entroy."
+    Nothing -> throw $ WFCException "'leastEntroy' found no entroy."
     Just en -> return $ fst en
   where calcEnt =
           M.foldrWithKey
           (\ k a b -> case a of
-                        0 -> throw $ AssertionFailed "Zero entropy found by 'leastEntropy'."
+                        0 -> throw $ WFCException "Zero entropy found by 'leastEntropy'."
                         _ -> case b of
                                Nothing -> Just ([k], a)
                                Just (bk, be) -> case compare a be of
@@ -100,7 +102,7 @@ leastEntropy = do
           Nothing
 
 randomCell :: MonadIO m => [(Int, Int)] -> WFCSystemT m (Int, Int)
-randomCell [] = error "'randomCell' recieved an empty list"
+randomCell [] = throw $ WFCException "'randomCell' recieved an empty list"
 randomCell l = do
   let leng = length l
   choice <- randomRIO (0, leng - 1)
@@ -171,7 +173,7 @@ remainingGrid (c@(x,y):cs) = do
       d4 <- propDir (x-1, y) (V.uniq $ wconnector <$> tiles) econnector
       remainingGrid $ d1 ++ d2 ++ d3 ++ d4 ++ cs
       
-    _ -> error "'remainingGrid' error"
+    _ -> throw $ WFCException "'remainingGrid' error"
 
 wave :: MonadIO m => WFCSystemT m Grid
 wave = do
@@ -185,8 +187,8 @@ wave = do
             RemainingGrid nrgrid <- get global
             wave
 
-wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> IO Grid
-wfc tiles size@(a,b) mgrid = do
+_wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> IO Grid
+_wfc tiles size@(a,b) mgrid = do
   w <- initWFCWorld
   runWith w $ do
     setReadOnly global $ AllTiles tiles
@@ -201,3 +203,9 @@ wfc tiles size@(a,b) mgrid = do
                       remainingGrid $ gridKeys grid
     wave
     
+wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> IO Grid
+wfc tiles size mgrid = do
+  r :: Either WFCException Grid <- try $ _wfc tiles size mgrid
+  case r of
+    Left _ -> wfc tiles size mgrid
+    Right grid -> return grid
