@@ -110,6 +110,14 @@ newtype Texture = Texture SDL.Texture
 instance Component Texture where
   type Storage Texture = Map Texture
 
+-- | Some entities will share a texture,
+--   so to prevent the same texture from being loaded
+--   multiple times, use a global map containing
+--   all loaded textures.
+--   Entities will store a map key to access their
+--   needed texture.
+newtype TextureMap = TextureMap (IM.IntMap SDL.Texture)
+
 -- | Determines what portion of the
 --   `Texture` will be rendered.
 data SpriteSheet = SpriteSheet
