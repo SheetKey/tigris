@@ -34,7 +34,6 @@ type All = ( Player
              , RToMouse
              , TileMapSize
              , Window
-             , Renderer
              , WindowResized
              , Speed
              , ( ColliderCell
@@ -116,7 +115,7 @@ instance Component Texture where
 --   all loaded textures.
 --   Entities will store a map key to access their
 --   needed texture.
-newtype TextureMap = TextureMap (IM.IntMap SDL.Texture)
+-- newtype TextureMap = TextureMap (IM.IntMap SDL.Texture)
 
 -- | Determines what portion of the
 --   `Texture` will be rendered.
@@ -141,11 +140,6 @@ instance Component TileMapSize where
 newtype Window = Window SDL.Window
 instance Component Window where
   type Storage Window = ReadOnly (TMVGlobal Window)
-
--- | The SDL `Renderer`.
-newtype Renderer = Renderer SDL.Renderer
-instance Component Renderer where
-  type Storage Renderer = ReadOnly (TMVGlobal Renderer)
 
 -- | Used for the `WindowResizedClock`. 
 newtype WindowResized = WindowResized (V2 Int32)

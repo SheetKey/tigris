@@ -30,7 +30,6 @@ makeWorld "World" [ ''Player
                   , ''RToMouse
                   , ''TileMapSize
                   , ''Window
-                  , ''Renderer
                   , ''WindowResized
                   , ''Speed
                   , ''ColliderCell
