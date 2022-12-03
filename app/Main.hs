@@ -37,22 +37,45 @@ main = initAndRun "Game Demo" gameLoop
 vertices :: V.Vector GL.GLfloat
 vertices = V.fromList
   [ -- positions     -- texture
-     0.25,  0.25, -1.0,  1.0/5, 1.0
-  ,  0.25, -0.25, -1.0,  1.0/5, 0.0
-  , -0.25, -0.25, -1.0,  0.0, 0.0
-  , -0.25,  0.25, -1.0,  0.0, 1.0
+     0.25,  0.51, 0.0,  1.0/5, 1.0
+  ,  0.25,  0.01, 0.0,  1.0/5, 0.0
+  , -0.25,  0.01, 0.0,  0.0, 0.0
+  , -0.25,  0.51, 0.0,  0.0, 1.0
+
+  ,  5.0 ,  0.0,  5.0,  1.0/5, 1.0
+  ,  5.0 ,  0.0, -5.0,  1.0/5, 0.0
+  , -5.0 ,  0.0, -5.0,  0.0, 0.0
+  , -5.0,   0.0,  5.0,  0.0, 1.0
   ]
 
 indices :: V.Vector GL.GLuint
 indices = V.fromList
-  [ 0, 1, 2, 3 ]
+  [
+  --  0, 1, 2, 3
+  --, 10000
+  --, 4, 5, 6, 7
+    4, 5, 6, 7
+  , 10000
+  , 0, 1, 2, 3
+  ]
 
 gameLoop :: World -> SystemT' IO ()
 gameLoop world = do
   liftIO $ do
+    ---------------------------------------------------------------------
+    -- opengl settings
+    ---------------------------------------------------------------------
     -- opengl blending
     GL.blend GL.$= GL.Enabled
     GL.blendFunc GL.$= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
+
+    -- opengl primitive restart
+    GL.primitiveRestartIndex GL.$= Just 10000
+
+    -- depth test
+    GL.depthFunc GL.$= Just GL.Less
+    ---------------------------------------------------------------------
+    ---------------------------------------------------------------------
     
     -- create the vao, vbo, and ebo
     (vao, vbo, ebo) <- bufferInit
@@ -87,7 +110,7 @@ gameLoop world = do
     -- -- set the texture to the shader uniform
     GL.uniform locTexture GL.$= GL.TextureUnit 0
     -- -- set the view and proj uniform matrices
-    let vm :: M44 GL.GLfloat = view (V3 0 0 0) (V3 0 1 1)
+    let vm :: M44 GL.GLfloat = view (V3 0 0 0) (V3 0 2 5)
         pm :: M44 GL.GLfloat = projection 45 800 600
     (toMatrix vm :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform locView GL.$=) 
     (toMatrix pm :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform locProj GL.$=) 
@@ -102,8 +125,7 @@ gameLoop world = do
     GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
     -- draw the square
-    GL.drawElements GL.TriangleFan 4 GL.UnsignedInt nullPtr
-    --GL.drawArrays GL.Triangles 0 3
+    GL.drawElements GL.TriangleFan (fromIntegral $ V.length indices) GL.UnsignedInt nullPtr
 
   -- get the sdl window from apecs
   Window window <- get global
@@ -112,16 +134,14 @@ gameLoop world = do
   SDL.glSwapWindow window
   liftIO $ do
     GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-    -- GL.drawArrays GL.Triangles 0 3
-    GL.drawElements GL.TriangleFan 4 GL.UnsignedInt nullPtr
+    GL.drawElements GL.TriangleFan (fromIntegral $ V.length indices) GL.UnsignedInt nullPtr
   SDL.glSwapWindow window
   
   liftIO $ threadDelay 20000
 
   liftIO $ do
     GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-    --GL.drawArrays GL.Triangles 0 3
-    GL.drawElements GL.TriangleFan 4 GL.UnsignedInt nullPtr
+    GL.drawElements GL.TriangleFan (fromIntegral $ V.length indices) GL.UnsignedInt nullPtr
   SDL.glSwapWindow window
   
   liftIO $ threadDelay 5000000

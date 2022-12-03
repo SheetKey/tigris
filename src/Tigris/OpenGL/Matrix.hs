@@ -23,7 +23,7 @@ view center constant = lookAt eye center up
 
 -- projectoin matrix
 projection :: (Floating a) => a -> a -> a -> M44 a
-projection fov winWidth winHeight = perspective fov (winWidth / winHeight) 0.1 100.0
+projection fov winWidth winHeight = perspective fov (winWidth / winHeight) 0.2 100.0
 
 -- convert to opengl matrix
 toMatrix :: (GL.Matrix m, GL.MatrixComponent c) => M44 c -> IO (m c)
