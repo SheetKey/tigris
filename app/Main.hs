@@ -51,12 +51,12 @@ vertices = V.fromList
 indices :: V.Vector GL.GLuint
 indices = V.fromList
   [
-  --  0, 1, 2, 3
-  --, 10000
-  --, 4, 5, 6, 7
-    4, 5, 6, 7
+    0, 1, 2, 3
   , 10000
-  , 0, 1, 2, 3
+  , 4, 5, 6, 7
+  --  4, 5, 6, 7
+  --, 10000
+  --, 0, 1, 2, 3
   ]
 
 gameLoop :: World -> SystemT' IO ()
