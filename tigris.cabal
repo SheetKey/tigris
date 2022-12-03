@@ -23,6 +23,9 @@ maintainer:         wveatchw@gmail.com
 extra-source-files:
     CHANGELOG.md
     README.org
+    sprites/**/*.png
+    shaders/**/*.vert
+    shaders/**/*.frag
 
 library
     exposed-modules:          Tigris
@@ -30,6 +33,8 @@ library
                             , Tigris.OpenGL
                             , Tigris.OpenGL.PNG
                             , Tigris.OpenGL.Shader
+                            , Tigris.OpenGL.Matrix
+                            , Tigris.OpenGL.Buffer
 
                             , Tigris.WFC
                             , Tigris.WFC.Algorithm
@@ -88,8 +93,31 @@ library
                             , random-fu
                             , rvar
                             , JuicyPixels
+                            , JuicyPixels-extra
                             , bytestring
+                            , linear
     hs-source-dirs:           src
+    default-language:         Haskell2010
+    ghc-options:              -W
+                              -Wall
+                              -Wincomplete-uni-patterns
+                              -Wincomplete-record-updates
+                              -Wpartial-fields
+                              -Werror=missing-home-modules
+                              -Widentities
+                              -Wredundant-constraints
+executable demo
+    main-is:                   Main.hs
+    build-depends:             base ^>=4.15.1.0
+                             , tigris
+                             , OpenGL
+                             , sdl2
+                             , apecs
+                             , rhine
+                             , vector
+                             , linear
+                             , text
+    hs-source-dirs:            app
     default-language:         Haskell2010
     ghc-options:              -W
                               -Wall

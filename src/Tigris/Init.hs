@@ -33,8 +33,8 @@ initAndRun winName gameLoop = do
 initPosition :: CInt -> CInt -> CInt -> CInt -> Position
 initPosition x y w h = let rect = mkRect x y w h in Position $ V4 rect rect rect rect
 
-initTexture :: MonadIO m => String -> SystemT' m Texture
-initTexture path = do
-  Renderer ren <- get global
-  texture <- SDLI.loadTexture ren path
-  return $ Texture texture
+--initTexture :: MonadIO m => String -> SystemT' m Texture
+--initTexture path = do
+--  Renderer ren <- get global
+--  texture <- SDLI.loadTexture ren path
+--  return $ Texture texture

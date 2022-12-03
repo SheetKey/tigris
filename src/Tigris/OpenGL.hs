@@ -4,3 +4,5 @@ module Tigris.OpenGL
 
 import Tigris.OpenGL.PNG as X
 import Tigris.OpenGL.Shader as X
+import Tigris.OpenGL.Buffer as X
+import Tigris.OpenGL.Matrix as X

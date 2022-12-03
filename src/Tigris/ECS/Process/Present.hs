@@ -14,12 +14,12 @@ import Tigris.ECS.Components
 import Apecs
 
 
-_present :: MonadIO m => SystemT' m ()
-_present = do
-  Renderer ren <- get global
-  SDL.present ren
-  SDL.rendererDrawColor ren SDL.$= SDL.V4 0 0 0 0
-  SDL.clear ren
-
-present :: MonadIO m => ClSFS m cl () ()
-present = constMCl _present
+--_present :: MonadIO m => SystemT' m ()
+--_present = do
+--  Renderer ren <- get global
+--  SDL.present ren
+--  SDL.rendererDrawColor ren SDL.$= SDL.V4 0 0 0 0
+--  SDL.clear ren
+--
+--present :: MonadIO m => ClSFS m cl () ()
+--present = constMCl _present
