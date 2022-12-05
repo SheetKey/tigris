@@ -4,6 +4,12 @@ module Tigris.OpenGL.Init where
 -- opengl
 import qualified Graphics.Rendering.OpenGL as GL
 
+-- mylib
+import Tigris.OpenGL.Buffer
+import Tigris.OpenGL.PNG
+import Tigris.OpenGL.Shader
+
+
 
 -- init vao, vba, ebo, and shader program
 -- also set some settings for rendering
@@ -28,7 +34,8 @@ initOpenGL = do
   ---------------------------------------------------------------------
     
   -- create the vao, vbo, and ebo
-  (vao, vbo, ebo) <- bufferInit GL.bindVertexArrayObject GL.$= Just vao
+  (vao, vbo, ebo) <- bufferInit
+  GL.bindVertexArrayObject GL.$= Just vao
 
   -- create the shader program
   program <- loadShaders [ (GL.VertexShader, "./shaders/default.vert")

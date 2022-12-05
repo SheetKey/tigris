@@ -3,10 +3,20 @@ module Tigris.ECS.Process.Projection where
 -- mylib
 import Tigris.ECS.Components
 import Tigris.ECS.System
+import Tigris.ECS.Clock
 import Tigris.OpenGL.Matrix
 
 -- rhine
-import Rhine
+import FRP.Rhine
+
+-- apecs
+import Apecs
+
+-- linear
+import Linear
+
+-- opengl
+import qualified Graphics.Rendering.OpenGL as GL
 
 
 _projection :: MonadIO m => V2 GL.GLfloat -> SystemT' m ()
