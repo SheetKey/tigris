@@ -7,7 +7,6 @@ The component types and instances used in the ECS.
 module Tigris.ECS.Components where
 
 -- mylib
-import Tigris.Graphics
 import Tigris.ECS.Stores
 
 -- base
@@ -20,18 +19,23 @@ import Apecs.Stores
 -- sdl
 import qualified SDL
 
+-- opengl
+import qualified Graphics.Rendering.OpenGL as GL
+
+-- vector
+import qualified Data.Vector.Storable as V
+
+-- linear
+import Linear
+
+
 -- | A collection of all components used as convenience
 --   for deleting all of an entities components.
 type All = ( Player
-           , Position
            , Rotation
-           , Destination
-           , Camera
            , Velocity
            , Health
-           , Texture
-           , ( SpriteSheet
-             , RToMouse
+           , ( RToMouse
              , TileMapSize
              , Window
              , WindowResized
@@ -48,22 +52,41 @@ data Player = Player
 instance Component Player where
   type Storage Player = Unique Player
 
--- This is the real position (destination rect).
--- The source rect is created from the sprite sheet.
--- | The position of entities relative to
---   the tileset. Stores the previous position at index 0,
---   the next position at index 1,
---   the next position only moving in the x direction at index 2,
---   and the next position only moving in the y direction at index 3.
---   This allows for position rollbacks on collision to avoid clipping.
-newtype Position = Position (V4 ((Rectangle CInt)))
+-- | The local space of an object. Centered at (0,0,0)
+--   This will be transformed by model, view, and projection
+--   matrices in order to be rendered.
+newtype Size = Size (V.Vector (V3 GL.GLfloat))
+instance Component Size where
+  type Storage Size = Map Size
+
+-- | The model matrix. Transforms the entity size to its
+--   position in the world.
+newtype Model = Model (M44 GL.GLfloat)
+instance Component Model where
+  type Storage Model = Map Model
+
+-- | The view matrix. Functions as the "camera."
+newtype View = View (M44 GL.GLfloat)
+instance Component View where
+  type Storage View = TMVGlobal View
+
+-- | The projection matrix. 
+newtype Projection = Projection (M44 GL.GLfloat)
+instance Component Projection where
+  type Storage Projection = TMVGlobal Projection
+
+-- | The position of entities in the "World Space."
+--   Used to create the model matrix for entities
+--   with this component. 
+--   Stores the previous, next, next in x, and next in y positions.
+newtype Position = Position (V4 (V3 GL.GLfloat))
 instance Component Position where
   type Storage Position = Map Position
 
 -- | Entities may have a rotational component.
 data Rotation = Rotation
-  { angle :: CDouble           -- ^ The angle of rotation.
-  , rotPntFrac :: (CInt, CInt) -- ^ Values to be used to determine the center of rotation. `(2, 2)` centers rotation by setting the rotation point to `(V2 (w `div` 2) (h `div` 2))` where `w` and `h` are the width and height of the destination rectangle.
+  { angle :: Double           -- ^ The angle of rotation.
+  , rotPntFrac :: (Int, Int) -- ^ Values to be used to determine the center of rotation. `(2, 2)` centers rotation by setting the rotation point to `(V2 (w `div` 2) (h `div` 2))` where `w` and `h` are the width and height of the destination rectangle.
   , flipXY :: V2 Bool          -- ^ Whether or not to flip in the x and y directions.
   }
 instance Component Rotation where
@@ -75,27 +98,29 @@ data RToMouse = RToMouse
 instance Component RToMouse where
   type Storage RToMouse = Map RToMouse
 
--- | The destination rectangle, i.e., where an
---   entity will be rendered to the screen.
-newtype Destination = Destination (Rectangle CInt)
-instance Component Destination where
-  type Storage Destination = Map Destination
+-- -- | The destination rectangle, i.e., where an
+-- --   entity will be rendered to the screen.
+-- newtype Destination = Destination (Rectangle CInt)
+-- instance Component Destination where
+--   type Storage Destination = Map Destination
+-- 
+-- -- | Used to create the `Destination` rectangle
+-- --   for entities with a position component.
+-- newtype Camera = Camera (Rectangle CInt)
+-- instance Component Camera where
+--   type Storage Camera = TMVGlobal Camera
 
--- | Used to create the `Destination` rectangle
---   for entities with a position component.
-newtype Camera = Camera (Rectangle CInt)
-instance Component Camera where
-  type Storage Camera = TMVGlobal Camera
+data VEnum = Z | One | NOne deriving (Eq)
 
 -- | The velocity of an entity.
---   The x and y compnenets should only ever
---   be 0, 1, or -1.
-newtype Velocity = Velocity (V2 CInt) 
+--   note that this is the x,z velocity, as in opengl,
+--   the y axis is vertical. The xz plane is horizontal
+newtype Velocity = Velocity (VEnum, VEnum) 
 instance Component Velocity where
   type Storage Velocity = Map Velocity
 
 -- | The speed of movement, multiplies the `NormVelocity`.
-newtype Speed = Speed Double
+newtype Speed = Speed GL.GLfloat
 instance Component Speed where
   type Storage Speed = Map Speed
 
@@ -104,35 +129,27 @@ newtype Health = Health Integer
 instance Component Health where
   type Storage Health = Map Health
 
--- | The SDL `Texture` of an entity.
-newtype Texture = Texture SDL.Texture
-instance Component Texture where
-  type Storage Texture = Map Texture
+-- -- | The SDL `Texture` of an entity.
+-- newtype Texture = Texture SDL.Texture
+-- instance Component Texture where
+--   type Storage Texture = Map Texture
 
--- | Some entities will share a texture,
---   so to prevent the same texture from being loaded
---   multiple times, use a global map containing
---   all loaded textures.
---   Entities will store a map key to access their
---   needed texture.
--- newtype TextureMap = TextureMap (IM.IntMap SDL.Texture)
-
--- | Determines what portion of the
---   `Texture` will be rendered.
-data SpriteSheet = SpriteSheet
-  { rowIndex :: CInt    -- ^ Indexed starting at 0. Rows are different states, i.e., for a player they might include idle, walking, running, etc.
-  , colIndex :: CInt    -- ^ Indexed starting at 0. Columns are different frames of a single animation state.
-  , maxColIndex :: CInt -- ^ The maximum column index should be equal to the number of frames in the row minus 1.
-  , frameWidth :: CInt  -- ^ The pixel width of a single frame.
-  , frameHeight :: CInt -- ^ The pixel height of a single frame.
-  , waitTime :: Double  -- ^ Difference in time to wait before changing frames.
-  , accTime :: Double   -- ^ An internal time accumulator that should be initialized as 0.
-  }
-instance Component SpriteSheet where
-  type Storage SpriteSheet = Map SpriteSheet
+-- -- | Determines what portion of the
+-- --   `Texture` will be rendered.
+-- data SpriteSheet = SpriteSheet
+--   { rowIndex :: CInt    -- ^ Indexed starting at 0. Rows are different states, i.e., for a player they might include idle, walking, running, etc.
+--   , colIndex :: CInt    -- ^ Indexed starting at 0. Columns are different frames of a single animation state.
+--   , maxColIndex :: CInt -- ^ The maximum column index should be equal to the number of frames in the row minus 1.
+--   , frameWidth :: CInt  -- ^ The pixel width of a single frame.
+--   , frameHeight :: CInt -- ^ The pixel height of a single frame.
+--   , waitTime :: Double  -- ^ Difference in time to wait before changing frames.
+--   , accTime :: Double   -- ^ An internal time accumulator that should be initialized as 0.
+--   }
+-- instance Component SpriteSheet where
+--   type Storage SpriteSheet = Map SpriteSheet
 
 -- | The size of the tilemap in pixels. Used for bounding the `Camera`.
-newtype TileMapSize = TileMapSize (V2 CInt)
+newtype TileMapSize = TileMapSize (V2 Int)
 instance Component TileMapSize where
   type Storage TileMapSize = ReadOnly (TMVGlobal TileMapSize)
 
@@ -141,13 +158,18 @@ newtype Window = Window SDL.Window
 instance Component Window where
   type Storage Window = ReadOnly (TMVGlobal Window)
 
+-- | OpenGL buffers and shader program
+newtype GLBuffers = GLBuffers (GL.VertexArrayObject, GL.BufferObject, GL.BufferObject, GL.Program)
+instance Component GLBuffers where
+  type Storage GLBuffers = ReadOnly (TMVGlobal GLBuffers)
+
 -- | Used for the `WindowResizedClock`. 
 newtype WindowResized = WindowResized (V2 Int32)
 instance Component WindowResized where
   type Storage WindowResized = BTMVGlobal WindowResized
 
 -- | Use for bitwise comparison to determine if two entities might collide.
-newtype ColliderCell = ColliderCell CInt
+newtype ColliderCell = ColliderCell Int
 instance Component ColliderCell where
   type Storage ColliderCell = Map ColliderCell
 
@@ -161,3 +183,4 @@ instance Component ColliderCell where
 newtype Collisions = Collisions (Int, Int)
 instance Component Collisions where
   type Storage Collisions = BTQGlobal Collisions
+

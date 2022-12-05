@@ -20,8 +20,13 @@ import Data.Time.Clock
 -- apecs
 import Apecs
 
+-- opengl
+import qualified Graphics.Rendering.OpenGL as GL
+
+-- linear
+import Linear
+
 -- mylib
-import Tigris.Graphics 
 import Tigris.ECS.World
 import Tigris.ECS.Components
 
@@ -32,7 +37,7 @@ data WindowResizeClock = WindowResizeClock
 
 instance MonadIO m => Clock (SystemT World m) WindowResizeClock where
   type Time WindowResizeClock = UTCTime
-  type Tag  WindowResizeClock = V2 CInt
+  type Tag  WindowResizeClock = V2 GL.GLfloat
 
   initClock _ = do
     initialTime <- liftIO getCurrentTime

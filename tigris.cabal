@@ -31,6 +31,7 @@ library
     exposed-modules:          Tigris
 
                             , Tigris.OpenGL
+                            , Tigris.OpenGL.Init
                             , Tigris.OpenGL.PNG
                             , Tigris.OpenGL.Shader
                             , Tigris.OpenGL.Matrix
@@ -64,10 +65,12 @@ library
                             , Tigris.ECS.Clock.WindowResize
                             , Tigris.ECS.Clock.Collision
                             , Tigris.ECS.Components
+
                             , Tigris.ECS.Process
+                            , Tigris.ECS.Process.Model
+                            , Tigris.ECS.Process.View
+                            , Tigris.ECS.Process.Projection
                             , Tigris.ECS.Process.Position
-                            , Tigris.ECS.Process.Destination
-                            , Tigris.ECS.Process.Camera
                             , Tigris.ECS.Process.Rotation
                             , Tigris.ECS.Process.Events
                             , Tigris.ECS.Process.SpriteSheet

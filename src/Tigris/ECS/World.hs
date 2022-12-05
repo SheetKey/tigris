@@ -19,14 +19,13 @@ import Tigris.ECS.Components
 -- | Creates all things that are
 --   necessary.
 makeWorld "World" [ ''Player
-                  , ''Position
                   , ''Rotation
-                  , ''Destination
-                  , ''Camera
+                  , ''Position
+                  , ''Model
+                  , ''View
+                  , ''Projection
                   , ''Velocity
                   , ''Health
-                  , ''Texture
-                  , ''SpriteSheet
                   , ''RToMouse
                   , ''TileMapSize
                   , ''Window
@@ -34,4 +33,5 @@ makeWorld "World" [ ''Player
                   , ''Speed
                   , ''ColliderCell
                   , ''Collisions
+                  , ''GLBuffers
                   ]

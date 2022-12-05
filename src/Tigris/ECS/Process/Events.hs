@@ -18,7 +18,6 @@ import Data.Sequence
 import Tigris.ECS.System
 import Tigris.ECS.World
 import Tigris.ECS.Components
-import Tigris.Graphics
 import Tigris.FRP
 
 -- sdl
@@ -54,21 +53,21 @@ eventBuffer = timelessResamplingBuffer AsyncMealy {..} empty
       as' :> a -> return (Just a , as'  )
 
 _handleKeycodePressed :: MonadIO m => Keycode -> SystemT' m ()
-_handleKeycodePressed KeycodeW = cmap $ \(Player, Velocity v) -> Velocity $ setYV2 (-1) v
-_handleKeycodePressed KeycodeA = cmap $ \(Player, Velocity v) -> Velocity $ setXV2 (-1) v
-_handleKeycodePressed KeycodeS = cmap $ \(Player, Velocity v) -> Velocity $ setYV2 1 v
-_handleKeycodePressed KeycodeD = cmap $ \(Player, Velocity v) -> Velocity $ setXV2 1 v
+_handleKeycodePressed KeycodeW = cmap $ \(Player, Velocity (x,_)) -> Velocity (x, NOne)
+_handleKeycodePressed KeycodeA = cmap $ \(Player, Velocity (_,z)) -> Velocity (NOne, z)
+_handleKeycodePressed KeycodeS = cmap $ \(Player, Velocity (x,_)) -> Velocity (x, One)
+_handleKeycodePressed KeycodeD = cmap $ \(Player, Velocity (_,z)) -> Velocity (One, z)
 _handleKeycodePressed _ = return ()
 
 _handleKeycodeReleased :: MonadIO m => Keycode -> SystemT' m ()
-_handleKeycodeReleased KeycodeW = cmapIf (\(Velocity v) -> getYV2 v == (-1))
-  $ \(Player, Velocity v) -> Velocity $ setYV2 0 v
-_handleKeycodeReleased KeycodeA = cmapIf (\(Velocity v) -> getXV2 v == (-1))
-  $ \(Player, Velocity v) -> Velocity $ setXV2 0 v
-_handleKeycodeReleased KeycodeS = cmapIf (\(Velocity v) -> getYV2 v ==   1 )
-  $ \(Player, Velocity v) -> Velocity $ setYV2 0 v
-_handleKeycodeReleased KeycodeD = cmapIf (\(Velocity v) -> getXV2 v ==   1 )
-  $ \(Player, Velocity v) -> Velocity $ setXV2 0 v
+_handleKeycodeReleased KeycodeW = cmapIf (\(Player, Velocity (_,z)) -> z == NOne)
+  $ \(Player, Velocity (x,_)) -> Velocity (x, Z)
+_handleKeycodeReleased KeycodeA = cmapIf (\(Player, Velocity (x,_)) -> x == NOne)
+  $ \(Player, Velocity (_,z)) -> Velocity (Z, z)
+_handleKeycodeReleased KeycodeS = cmapIf (\(Player, Velocity (_,z)) -> z ==  One)
+  $ \(Player, Velocity (x,_)) -> Velocity (x, Z)
+_handleKeycodeReleased KeycodeD = cmapIf (\(Player, Velocity (x,_)) -> x ==  One)
+  $ \(Player, Velocity (_,z)) -> Velocity (Z, z)
 _handleKeycodeReleased _ = return ()
 
 _handleKeyboardEvent :: MonadIO m => KeyboardEventData -> SystemT' m ()

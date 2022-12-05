@@ -6,6 +6,7 @@ module Tigris.Init where
 -- mylib
 import Tigris.Graphics
 import Tigris.ECS
+import Tigris.OpenGL.Init
 
 -- sdl
 import qualified SDL
@@ -25,9 +26,11 @@ initAndRun winName gameLoop = do
   SDL.initializeAll
   win <- SDL.createWindow winName windowConfig
   SDL.glCreateContext win
+  glBuffers <- initOpenGL
   world <- initWorld
   runWith world $ do
     setReadOnly global $ Window win
+    setReadOnly global $ GLBuffers glBuffers
     gameLoop world
 
 initPosition :: CInt -> CInt -> CInt -> CInt -> Position

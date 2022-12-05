@@ -13,17 +13,20 @@ import Linear.Projection
 -- opengl
 import qualified Graphics.Rendering.OpenGL as GL
   
+-- world space
+modelMatrix :: Num a => V3 a -> M44 a
+modelMatrix = mkTransformationMat identity
 
 -- camera position matrix
-view :: (Epsilon a, Floating a) => V3 a -> V3 a -> M44 a
-view center constant = lookAt eye center up
+viewMatrix :: (Epsilon a, Floating a) => V3 a -> V3 a -> M44 a
+viewMatrix center constant = lookAt eye center up
   where
     eye = constant + center
     up = V3 0 1 0
 
 -- projectoin matrix
-projection :: (Floating a) => a -> a -> a -> M44 a
-projection fov winWidth winHeight = perspective fov (winWidth / winHeight) 0.2 100.0
+projectionMatrix :: (Floating a) => a -> a -> a -> M44 a
+projectionMatrix fov winWidth winHeight = perspective fov (winWidth / winHeight) 0.2 100.0
 
 -- convert to opengl matrix
 toMatrix :: (GL.Matrix m, GL.MatrixComponent c) => M44 c -> IO (m c)

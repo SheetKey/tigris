@@ -6,10 +6,9 @@ module Tigris.ECS.Process.Position where
 -- mylib
 import Tigris.ECS.System
 import Tigris.ECS.Components
-import Tigris.Graphics
 
 -- rhine
-import FRP.Rhine
+import FRP.Rhine hiding ((^+^))
 
 -- apecs
 import Apecs
@@ -17,17 +16,31 @@ import Apecs
 -- sdl
 import qualified SDL
 
-nextPosition :: Rectangle CInt -> V2 Double -> Double -> Double -> Rectangle CInt
-nextPosition p v s dT = modPntV (truncate . (*s) . (*dT) <$> v) p
+-- opengl
+import qualified Graphics.Rendering.OpenGL as GL
 
-normVelocity :: V2 CInt -> V2 Double
-normVelocity = SDL.normalize . (fmap fromIntegral)
+-- linear
+import Linear
 
-setX0 :: V2 CInt -> V2 CInt
-setX0 (V2 _ y) = V2 0 y
+nextPosition :: V3 GL.GLfloat -> V3 GL.GLfloat -> GL.GLfloat -> Double -> V3 GL.GLfloat
+nextPosition p v s dT = p ^+^ ( v ^* (s * realToFrac dT) ) 
 
-setY0 :: V2 CInt -> V2 CInt
-setY0 (V2 x _) = V2 x 0
+normVelocity :: (VEnum, VEnum) -> V3 GL.GLfloat
+normVelocity (Z, Z)       = V3 0            0 0           
+normVelocity (Z, One)     = V3 0            0 1           
+normVelocity (Z, NOne)    = V3 0            0 (-1)        
+normVelocity (One, Z)     = V3 1            0 0           
+normVelocity (One, One)   = V3 (sqrt 2)     0 (sqrt 2)    
+normVelocity (One, NOne)  = V3 (sqrt 2)     0 (- (sqrt 2))
+normVelocity (NOne, Z)    = V3 (-1)         0 0           
+normVelocity (NOne, One)  = V3 (- (sqrt 2)) 0 (sqrt 2)    
+normVelocity (NOne, NOne) = V3 (- (sqrt 2)) 0 (- (sqrt 2))
+
+setX0 :: (VEnum, VEnum) -> (VEnum, VEnum)
+setX0 (_, z) = (Z, z)
+
+setZ0 :: (VEnum, VEnum) -> (VEnum, VEnum)
+setZ0 (x, _) = (x, Z)
   
 -- old
 -- _setPosition :: MonadIO m => Double -> SystemT' m ()
@@ -38,7 +51,7 @@ _setPosition dT = cmap $ \(Position (V4 _ n _ _), Velocity v, Speed s) ->
   Position $ V4
   n
   (nextPosition n (normVelocity v) s dT)
-  (nextPosition n (normVelocity $ setY0 v) s dT)
+  (nextPosition n (normVelocity $ setZ0 v) s dT)
   (nextPosition n (normVelocity $ setX0 v) s dT)
 
 setPosition :: (MonadIO m, (Diff (Time cl)) ~ Double) => ClSFS m cl () ()

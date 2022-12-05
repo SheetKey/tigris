@@ -8,8 +8,6 @@ module Tigris.ECS.Process
   ) where
 
 import Tigris.ECS.Process.Position as X
-import Tigris.ECS.Process.Destination as X
-import Tigris.ECS.Process.Camera as X
 import Tigris.ECS.Process.Rotation as X
 import Tigris.ECS.Process.Events as X
 import Tigris.ECS.Process.SpriteSheet as X
@@ -18,3 +16,6 @@ import Tigris.ECS.Process.Present as X
 import Tigris.ECS.Process.BorderCollision as X
 import Tigris.ECS.Process.ColliderCell as X
 import Tigris.ECS.Process.Collisions as X
+import Tigris.ECS.Process.Model as X
+import Tigris.ECS.Process.View as X
+import Tigris.ECS.Process.Projection as X
