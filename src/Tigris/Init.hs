@@ -4,8 +4,8 @@
 module Tigris.Init where
 
 -- mylib
-import Tigris.Graphics
 import Tigris.ECS
+import Tigris.SDL
 import Tigris.OpenGL.Init
 
 -- sdl
@@ -33,8 +33,8 @@ initAndRun winName gameLoop = do
     setReadOnly global $ GLBuffers glBuffers
     gameLoop world
 
-initPosition :: CInt -> CInt -> CInt -> CInt -> Position
-initPosition x y w h = let rect = mkRect x y w h in Position $ V4 rect rect rect rect
+--initPosition :: CInt -> CInt -> CInt -> CInt -> Position
+--initPosition x y w h = let rect = mkRect x y w h in Position $ V4 rect rect rect rect
 
 --initTexture :: MonadIO m => String -> SystemT' m Texture
 --initTexture path = do

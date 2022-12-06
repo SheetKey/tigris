@@ -2,7 +2,7 @@
 Things related to `Window` for `SDL`.
 -}
 
-module Tigris.Graphics.Window where
+module Tigris.SDL.Window where
 
 import qualified SDL
 

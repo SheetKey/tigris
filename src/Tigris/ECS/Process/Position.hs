@@ -13,9 +13,6 @@ import FRP.Rhine hiding ((^+^))
 -- apecs
 import Apecs
 
--- sdl
-import qualified SDL
-
 -- opengl
 import qualified Graphics.Rendering.OpenGL as GL
 

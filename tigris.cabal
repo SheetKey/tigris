@@ -41,14 +41,12 @@ library
                             , Tigris.WFC.Algorithm
 
                             , Tigris.Init
-                            , Tigris.Load
 
                             , Tigris.Collision
                             , Tigris.Collision.KDTreeMap
 
-                            , Tigris.Graphics
-                            , Tigris.Graphics.Rectangle
-                            , Tigris.Graphics.Window
+                            , Tigris.SDL
+                            , Tigris.SDL.Window
 
                             , Tigris.FRP
                             , Tigris.FRP.Util
@@ -71,11 +69,10 @@ library
                             , Tigris.ECS.Process.View
                             , Tigris.ECS.Process.Projection
                             , Tigris.ECS.Process.Position
+                            , Tigris.ECS.Process.UV
                             , Tigris.ECS.Process.Rotation
                             , Tigris.ECS.Process.Events
                             , Tigris.ECS.Process.SpriteSheet
-                            , Tigris.ECS.Process.Copy
-                            , Tigris.ECS.Process.Present
                             , Tigris.ECS.Process.BorderCollision
                             , Tigris.ECS.Process.ColliderCell
                             , Tigris.ECS.Process.Collisions

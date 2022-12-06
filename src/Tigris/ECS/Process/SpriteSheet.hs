@@ -19,9 +19,9 @@ _incFrame time = cmap $ \(SpriteSheet {..}) ->
   if time + accTime >= waitTime
   then
     SpriteSheet
-    { colIndex = if colIndex < maxColIndex
-                 then colIndex + 1
-                 else 0
+    { colIndex = if colIndex < colMax
+                 then colIndex + frameWidth
+                 else colMin
     , accTime = 0
     , ..
     }

@@ -129,24 +129,28 @@ newtype Health = Health Integer
 instance Component Health where
   type Storage Health = Map Health
 
--- -- | The SDL `Texture` of an entity.
--- newtype Texture = Texture SDL.Texture
--- instance Component Texture where
---   type Storage Texture = Map Texture
+-- | OpenGL texture coordinates.
+newtype UV = UV (V4 (V2 GL.GLfloat))
+instance Component UV where
+  type Storage UV = Map UV
 
--- -- | Determines what portion of the
--- --   `Texture` will be rendered.
--- data SpriteSheet = SpriteSheet
---   { rowIndex :: CInt    -- ^ Indexed starting at 0. Rows are different states, i.e., for a player they might include idle, walking, running, etc.
---   , colIndex :: CInt    -- ^ Indexed starting at 0. Columns are different frames of a single animation state.
---   , maxColIndex :: CInt -- ^ The maximum column index should be equal to the number of frames in the row minus 1.
---   , frameWidth :: CInt  -- ^ The pixel width of a single frame.
---   , frameHeight :: CInt -- ^ The pixel height of a single frame.
---   , waitTime :: Double  -- ^ Difference in time to wait before changing frames.
---   , accTime :: Double   -- ^ An internal time accumulator that should be initialized as 0.
---   }
--- instance Component SpriteSheet where
---   type Storage SpriteSheet = Map SpriteSheet
+-- | Determines what portion of the
+--   `Texture` will be rendered.
+data SpriteSheet = SpriteSheet
+  { texId       :: Int -- ^ Texture uniform id.
+  , rowIndex    :: Int -- ^ The current row index. Should be the top left coord of the current cell. (In pixels.)
+  , colIndex    :: Int -- ^ The current col index. Should be the top left coord of the current cell. (In pixels.)
+  , colMin      :: Int -- ^ This entity's min top left col.
+  , colMax      :: Int -- ^ This entity's max top left col.
+  , frameWidth  :: Int -- ^ The pixel width of a single frame.
+  , frameHeight :: Int -- ^ The pixel height of a single frame.
+  , sheetWidth  :: Int -- ^ The pixel width of the spritesheet.
+  , sheetHeight :: Int -- ^ The pixel height of the spritesheet.
+  , waitTime    :: Double -- ^ Difference in time to wait before changing frames.
+  , accTime     :: Double  -- ^ An internal time accumulator that should be initialized as 0.
+  }
+instance Component SpriteSheet where
+  type Storage SpriteSheet = Map SpriteSheet
 
 -- | The size of the tilemap in pixels. Used for bounding the `Camera`.
 newtype TileMapSize = TileMapSize (V2 Int)

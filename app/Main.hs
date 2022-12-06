@@ -110,8 +110,8 @@ gameLoop world = do
     -- -- set the texture to the shader uniform
     GL.uniform locTexture GL.$= GL.TextureUnit 0
     -- -- set the view and proj uniform matrices
-    let vm :: M44 GL.GLfloat = view (V3 0 0 0) (V3 0 2 5)
-        pm :: M44 GL.GLfloat = projection 45 800 600
+    let vm :: M44 GL.GLfloat = viewMatrix (V3 0 0 0) (V3 0 2 5)
+        pm :: M44 GL.GLfloat = projectionMatrix 45 800 600
     (toMatrix vm :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform locView GL.$=) 
     (toMatrix pm :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform locProj GL.$=) 
 
