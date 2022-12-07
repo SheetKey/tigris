@@ -36,4 +36,5 @@ makeWorld "World" [ ''Player
                   , ''GLBuffers
                   , ''SpriteSheet
                   , ''UV
+                  , ''Size
                   ]

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -20,8 +21,7 @@ import Apecs
 import qualified Data.Vector.Storable as V
 
 -- linear
-import Linear.V3
-import Linear.Matrix
+import Linear
 
 -- base
 import Data.Foldable (traverse_)
@@ -31,29 +31,106 @@ import Control.Concurrent
 -- text
 import Data.Text
 
+-- rhine
+import FRP.Rhine hiding (get)
+
+
+
 main :: IO ()
-main = initAndRun "Game Demo" gameLoop
+main = initAndRun "Game Demo" gameLoop''
+
+
+
+clsfLoop :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) (Millisecond 16)) () ()
+clsfLoop =
+  setPosition
+  >>> model
+  >>> view
+  >>> incFrame
+  >>> uv
+
+rhineLoop
+  :: World
+  -> RhineS IO (ParClockS IO 
+                (ParClockS IO (SeqClockS IO
+                                (HoistClock IO (SystemT World IO) Busy)
+                                (HoistClock IO (SystemT World IO) Busy)
+                              )
+                              (ParClockS IO (HoistClock IO (SystemT World IO) (Millisecond 16))
+                                            WindowResizeClock
+                              )
+                )
+                (HoistClock IO (SystemT World IO) (Millisecond 16))
+               )
+  () ()
+rhineLoop world =
+  (handleEvent world ||@ (concurrentlySystem world) @||
+    (clsfLoop @@ (HoistClock waitClock liftIO) ||@ (concurrentlySystem world) @||
+     (projection @@ WindowResizeClock)
+    )
+  )
+  ||@ (concurrentlySystem world) @||
+  (draw) @@ (HoistClock waitClock liftIO)
+
+
+gameLoop' :: World -> SystemT' IO ()
+gameLoop' world = do
+  GLBuffers (vao,_,_, program) <- get global
+
+  liftIO $ do 
+    GL.currentProgram GL.$= Just program
+    Right texture0001 <- createTextureFromPNG "./sprites/Sprite-0001.png"
+    GL.activeTexture GL.$= GL.TextureUnit 0
+    GL.textureBinding GL.Texture2D GL.$= Just texture0001
+    locTexture <- GL.get . GL.uniformLocation program $ "Texture"
+    GL.uniform locTexture GL.$= GL.TextureUnit 0
+    GL.currentProgram GL.$= Nothing
+
+  let p = V3 0 0 0
+  newEntity_ ( Player
+             , Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
+             , Position (V4 p p p p)
+             , Speed 250
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
+             )
+  newEntity_ ( Size (V4 (V3 (-10) 0 (-10)) (V3 10 0 (-10)) (V3 10 0 10) (V3 (-10) 0 10))
+             , Position (V4 p p p p)
+             , Speed 250
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
+             )
+
+  flow $ rhineLoop world
+  --flow $
+  --  (model >>> view >>> incFrame >>> uv >>> draw)
+  --  @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
+
+
+
+
+
+  
 
 vertices :: V.Vector GL.GLfloat
 vertices = V.fromList
-  [ -- positions     -- texture
-     0.25,  0.51, 0.0,  1.0/5, 1.0
-  ,  0.25,  0.01, 0.0,  1.0/5, 0.0
-  , -0.25,  0.01, 0.0,  0.0, 0.0
-  , -0.25,  0.51, 0.0,  0.0, 1.0
+  [ -- positions             -- texture
+    -0.25,  0.51, 0.0, 1.0,  0.0, 1.0
+  ,  0.25,  0.51, 0.0, 1.0,  1.0/5, 1.0
+  ,  0.25,  0.01, 0.0, 1.0,  1.0/5, 0.0
+  , -0.25,  0.01, 0.0, 1.0,  0.0, 0.0
 
-  ,  5.0 ,  0.0,  5.0,  1.0/5, 1.0
-  ,  5.0 ,  0.0, -5.0,  1.0/5, 0.0
-  , -5.0 ,  0.0, -5.0,  0.0, 0.0
-  , -5.0,   0.0,  5.0,  0.0, 1.0
+  , -5.0,   0.0,  5.0, 1.0,  0.0, 1.0
+  ,  5.0 ,  0.0,  5.0, 1.0,  1.0/5, 1.0
+  ,  5.0 ,  0.0, -5.0, 1.0,  1.0/5, 0.0
+  , -5.0 ,  0.0, -5.0, 1.0,  0.0, 0.0
   ]
 
 indices :: V.Vector GL.GLuint
 indices = V.fromList
   [
-    0, 1, 2, 3
-  , 10000
-  , 4, 5, 6, 7
+    0, 1, 2, 0, 2, 3
+  , 4, 5, 6, 4, 6, 7
   --  4, 5, 6, 7
   --, 10000
   --, 0, 1, 2, 3
@@ -69,11 +146,11 @@ gameLoop world = do
     GL.blend GL.$= GL.Enabled
     GL.blendFunc GL.$= (GL.SrcAlpha, GL.OneMinusSrcAlpha)
 
-    -- opengl primitive restart
-    GL.primitiveRestartIndex GL.$= Just 10000
-
     -- depth test
     GL.depthFunc GL.$= Just GL.Less
+
+    -- msaa 
+    GL.multisample GL.$= GL.Enabled
     ---------------------------------------------------------------------
     ---------------------------------------------------------------------
     
@@ -125,7 +202,7 @@ gameLoop world = do
     GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
     -- draw the square
-    GL.drawElements GL.TriangleFan (fromIntegral $ V.length indices) GL.UnsignedInt nullPtr
+    GL.drawElements GL.Triangles (fromIntegral $ V.length indices) GL.UnsignedInt nullPtr
 
   -- get the sdl window from apecs
   Window window <- get global
@@ -134,14 +211,62 @@ gameLoop world = do
   SDL.glSwapWindow window
   liftIO $ do
     GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-    GL.drawElements GL.TriangleFan (fromIntegral $ V.length indices) GL.UnsignedInt nullPtr
+    GL.drawElements GL.Triangles (fromIntegral $ V.length indices) GL.UnsignedInt nullPtr
   SDL.glSwapWindow window
   
   liftIO $ threadDelay 20000
 
   liftIO $ do
     GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-    GL.drawElements GL.TriangleFan (fromIntegral $ V.length indices) GL.UnsignedInt nullPtr
+    GL.drawElements GL.Triangles (fromIntegral $ V.length indices) GL.UnsignedInt nullPtr
   SDL.glSwapWindow window
   
+  liftIO $ threadDelay 5000000
+
+gameLoop'' :: World -> SystemT' IO ()
+gameLoop'' world = do
+  GLBuffers (vao, vbo, ebo, program) <- get global
+
+  liftIO $ do
+    GL.currentProgram GL.$= Just program
+    Right texture0001 <- createTextureFromPNG "./sprites/Sprite-0001.png"
+    GL.activeTexture GL.$= GL.TextureUnit 0
+    GL.textureBinding GL.Texture2D GL.$= Just texture0001
+    locTexture <- GL.get . GL.uniformLocation program $ "Texture"
+    GL.uniform locTexture GL.$= GL.TextureUnit 0
+    GL.currentProgram GL.$= Nothing
+
+  let p = V3 0 0 0
+      p' = V3 2 0 2
+  newEntity_ ( Player
+             , Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
+             , Position (V4 p p p p)
+             , Speed 250
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
+             )
+  newEntity_ ( Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
+             , Position (V4 p' p' p' p')
+             , Speed 250
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
+             )
+  newEntity_ ( Size (V4 (V3 (-10) 0 (-10)) (V3 10 0 (-10)) (V3 10 0 10) (V3 (-10) 0 10))
+             , Position (V4 p p p p)
+             , Speed 250
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
+             )
+
+
+  _model
+  _view
+  _projection $ V2 800 600
+
+  l <- _loadVBOEBO
+
+  _draw l
+  liftIO $ threadDelay 20000
+
+  _draw l
   liftIO $ threadDelay 5000000

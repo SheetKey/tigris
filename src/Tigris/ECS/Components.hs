@@ -22,9 +22,6 @@ import qualified SDL
 -- opengl
 import qualified Graphics.Rendering.OpenGL as GL
 
--- vector
-import qualified Data.Vector.Storable as V
-
 -- linear
 import Linear
 
@@ -55,7 +52,7 @@ instance Component Player where
 -- | The local space of an object. Centered at (0,0,0)
 --   This will be transformed by model, view, and projection
 --   matrices in order to be rendered.
-newtype Size = Size (V.Vector (V3 GL.GLfloat))
+newtype Size = Size (V4 (V3 GL.GLfloat))
 instance Component Size where
   type Storage Size = Map Size
 

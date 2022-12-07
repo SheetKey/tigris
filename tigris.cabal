@@ -65,6 +65,7 @@ library
                             , Tigris.ECS.Components
 
                             , Tigris.ECS.Process
+                            , Tigris.ECS.Process.Draw
                             , Tigris.ECS.Process.Model
                             , Tigris.ECS.Process.View
                             , Tigris.ECS.Process.Projection

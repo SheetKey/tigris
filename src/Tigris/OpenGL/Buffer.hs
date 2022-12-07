@@ -43,9 +43,9 @@ bufferInit = do
   GL.vertexAttribPointer (GL.AttribLocation 0) GL.$=
     ( GL.ToFloat
     , GL.VertexArrayDescriptor
-      3
+      4
       GL.Float
-      (fromIntegral $ 5 * sizeOf (undefined :: GL.GLfloat))
+      (fromIntegral $ 6 * sizeOf (undefined :: GL.GLfloat))
       (intPtrToPtr 0)
     )
   GL.vertexAttribArray (GL.AttribLocation 0) GL.$= GL.Enabled
@@ -55,8 +55,8 @@ bufferInit = do
     , GL.VertexArrayDescriptor
       2
       GL.Float
-      (fromIntegral $ 5 * sizeOf (undefined :: GL.GLfloat))
-      (intPtrToPtr (fromIntegral $ 3 * sizeOf (undefined :: GL.GLfloat)))
+      (fromIntegral $ 6 * sizeOf (undefined :: GL.GLfloat))
+      (intPtrToPtr (fromIntegral $ 4 * sizeOf (undefined :: GL.GLfloat)))
     )
   GL.vertexAttribArray (GL.AttribLocation 1) GL.$= GL.Enabled
 

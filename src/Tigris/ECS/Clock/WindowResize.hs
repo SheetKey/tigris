@@ -20,15 +20,15 @@ import Data.Time.Clock
 -- apecs
 import Apecs
 
--- opengl
-import qualified Graphics.Rendering.OpenGL as GL
-
 -- linear
 import Linear
 
 -- mylib
 import Tigris.ECS.World
 import Tigris.ECS.Components
+
+-- base
+import Data.Int
 
 -- | This clock will tick when the `Window` has
 --   been resized.
@@ -37,7 +37,7 @@ data WindowResizeClock = WindowResizeClock
 
 instance MonadIO m => Clock (SystemT World m) WindowResizeClock where
   type Time WindowResizeClock = UTCTime
-  type Tag  WindowResizeClock = V2 GL.GLfloat
+  type Tag  WindowResizeClock = V2 Int32
 
   initClock _ = do
     initialTime <- liftIO getCurrentTime
@@ -45,7 +45,7 @@ instance MonadIO m => Clock (SystemT World m) WindowResizeClock where
       ( constM $ do
           WindowResized size <- get global
           time <- liftIO getCurrentTime
-          return (time, fromIntegral <$> size)
+          return (time, size)
       , initialTime
       )
 

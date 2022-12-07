@@ -26,7 +26,7 @@ initAndRun winName gameLoop = do
   SDL.initializeAll
   win <- SDL.createWindow winName windowConfig
   SDL.glCreateContext win
-  glBuffers <- initOpenGL
+  glBuffers <- initOpenGL win
   world <- initWorld
   runWith world $ do
     setReadOnly global $ Window win

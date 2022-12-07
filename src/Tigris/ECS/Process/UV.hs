@@ -30,3 +30,6 @@ _uv = cmap $ \(SpriteSheet {..}) ->
     br = f <*> _br
     bl = f <*> _bl
   in UV $ V4 tl tr br bl
+
+uv :: MonadIO m => ClSFS m cl () ()
+uv = constMCl _uv
