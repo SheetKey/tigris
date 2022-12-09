@@ -37,7 +37,7 @@ import SDL ( Event (..)
            )
   
 
-getEvents :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) Busy) () [Event]
+getEvents :: MonadIO m => ClSFS m cl () [Event]
 getEvents = constM pollEvents
 
 -- TODO: test performace of
@@ -71,13 +71,12 @@ _handleKeycodeReleased KeycodeD = cmapIf (\(Player, Velocity (x,_)) -> x ==  One
 _handleKeycodeReleased _ = return ()
 
 _handleKeyboardEvent :: MonadIO m => KeyboardEventData -> SystemT' m ()
-_handleKeyboardEvent (KeyboardEventData _ _ True _) = return ()
+--_handleKeyboardEvent (KeyboardEventData _ _ True _) = return ()
 _handleKeyboardEvent (KeyboardEventData _ Pressed  _ keysym) = _handleKeycodePressed $ keysymKeycode keysym
 _handleKeyboardEvent (KeyboardEventData _ Released _ keysym) = _handleKeycodeReleased $ keysymKeycode keysym
 
 _handleEventPayload :: MonadIO m => EventPayload -> SystemT' m ()
-_handleEventPayload (WindowSizeChangedEvent e)
-  = set global (WindowResized $ windowSizeChangedEventSize e)
+_handleEventPayload (WindowSizeChangedEvent e) = set global (WindowResized $ windowSizeChangedEventSize e)
 _handleEventPayload (KeyboardEvent e) = _handleKeyboardEvent e
 _handleEventPayload _ = return ()
 
@@ -97,3 +96,16 @@ handleEvent :: World
 handleEvent world = (getEvents @@ (HoistClock Busy liftIO))
               >-- eventBuffer -@- (concurrentlySystem world)
               --> (handleMEvent @@ (HoistClock Busy liftIO))
+
+althandleEvent :: World
+               -> RhineS IO (SeqClockS IO
+                             (HoistClock IO (SystemT World IO) Busy)
+                             (HoistClock IO (SystemT World IO) Busy)
+                            )
+               () ()
+althandleEvent world = (getEvent @@ (HoistClock Busy liftIO))
+                       >-- fifoUnbounded -@- (concurrentlySystem world)
+                       --> (handleMEvent @@ (HoistClock Busy liftIO))
+
+aalthandleEvent :: MonadIO m => ClSFS m cl () ()
+aalthandleEvent = getEvents >>> arrMCl (\lst -> mapM_ (_handleMEvent . Just) lst)

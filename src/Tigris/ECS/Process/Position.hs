@@ -23,15 +23,15 @@ nextPosition :: V3 GL.GLfloat -> V3 GL.GLfloat -> GL.GLfloat -> Double -> V3 GL.
 nextPosition p v s dT = p ^+^ ( v ^* (s * realToFrac dT) ) 
 
 normVelocity :: (VEnum, VEnum) -> V3 GL.GLfloat
-normVelocity (Z, Z)       = V3 0            0 0           
-normVelocity (Z, One)     = V3 0            0 1           
-normVelocity (Z, NOne)    = V3 0            0 (-1)        
-normVelocity (One, Z)     = V3 1            0 0           
-normVelocity (One, One)   = V3 (sqrt 2)     0 (sqrt 2)    
-normVelocity (One, NOne)  = V3 (sqrt 2)     0 (- (sqrt 2))
-normVelocity (NOne, Z)    = V3 (-1)         0 0           
-normVelocity (NOne, One)  = V3 (- (sqrt 2)) 0 (sqrt 2)    
-normVelocity (NOne, NOne) = V3 (- (sqrt 2)) 0 (- (sqrt 2))
+normVelocity (Z, Z)       = V3 0              0 0           
+normVelocity (Z, One)     = V3 0              0 1           
+normVelocity (Z, NOne)    = V3 0              0 (-1)        
+normVelocity (One, Z)     = V3 1              0 0           
+normVelocity (One, One)   = V3 ((sqrt 2)/2)   0 ((sqrt 2)/2)
+normVelocity (One, NOne)  = V3 ((sqrt 2)/2)   0 (- (sqrt 2)/2)
+normVelocity (NOne, Z)    = V3 (-1)           0 0           
+normVelocity (NOne, One)  = V3 (- (sqrt 2)/2) 0 ((sqrt 2)/2)
+normVelocity (NOne, NOne) = V3 (- (sqrt 2)/2) 0 (- (sqrt 2)/2)
 
 setX0 :: (VEnum, VEnum) -> (VEnum, VEnum)
 setX0 (_, z) = (Z, z)

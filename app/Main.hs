@@ -37,17 +37,33 @@ import FRP.Rhine hiding (get)
 
 
 main :: IO ()
-main = initAndRun "Game Demo" gameLoop''
+main = initAndRun "Game Demo" gameLoop'
 
 
 
 clsfLoop :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) (Millisecond 16)) () ()
 clsfLoop =
-  setPosition
+  aalthandleEvent
+  >>> setPosition
   >>> model
   >>> view
   >>> incFrame
   >>> uv
+
+rhineLoop'
+  :: World
+  -> RhineS IO (ParClockS IO (ParClockS IO (HoistClock IO (SystemT World IO) (Millisecond 16))
+                                            WindowResizeClock
+                              )
+               (HoistClock IO (SystemT World IO) (Millisecond 16))
+               )
+  () ()
+rhineLoop' world =
+  (clsfLoop @@ (HoistClock waitClock liftIO) ||@ (concurrentlySystem world) @||
+     (projection @@ WindowResizeClock)
+  )
+  ||@ (concurrentlySystem world) @||
+  (altDraw) @@ (HoistClock waitClock liftIO)
 
 rhineLoop
   :: World
@@ -64,13 +80,13 @@ rhineLoop
                )
   () ()
 rhineLoop world =
-  (handleEvent world ||@ (concurrentlySystem world) @||
+  (althandleEvent world ||@ (concurrentlySystem world) @||
     (clsfLoop @@ (HoistClock waitClock liftIO) ||@ (concurrentlySystem world) @||
      (projection @@ WindowResizeClock)
     )
   )
   ||@ (concurrentlySystem world) @||
-  (draw) @@ (HoistClock waitClock liftIO)
+  (altDraw) @@ (HoistClock waitClock liftIO)
 
 
 gameLoop' :: World -> SystemT' IO ()
@@ -87,24 +103,30 @@ gameLoop' world = do
     GL.currentProgram GL.$= Nothing
 
   let p = V3 0 0 0
+      p' = V3 2 0 2
   newEntity_ ( Player
              , Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
              , Position (V4 p p p p)
-             , Speed 250
+             , Speed 10
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
+             , Velocity (Z, Z)
+             )
+  newEntity_ ( Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
+             , Position (V4 p' p' p' p')
              , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
              )
   newEntity_ ( Size (V4 (V3 (-10) 0 (-10)) (V3 10 0 (-10)) (V3 10 0 10) (V3 (-10) 0 10))
              , Position (V4 p p p p)
-             , Speed 250
              , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
              )
 
-  flow $ rhineLoop world
-  --flow $
-  --  (model >>> view >>> incFrame >>> uv >>> draw)
-  --  @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
+  --flow $ rhineLoop' world
+  flow $
+    (clsfLoop >>> altDraw)
+    @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
 
 
 
