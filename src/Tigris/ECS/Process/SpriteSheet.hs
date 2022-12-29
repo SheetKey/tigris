@@ -20,7 +20,7 @@ _incFrame time = cmap $ \(SpriteSheet {..}) ->
   then
     SpriteSheet
     { colIndex = if colIndex < colMax
-                 then colIndex + frameWidth
+                 then colIndex + abs frameWidth
                  else colMin
     , accTime = 0
     , ..

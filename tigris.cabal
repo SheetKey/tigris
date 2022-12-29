@@ -77,6 +77,9 @@ library
                             , Tigris.ECS.Process.BorderCollision
                             , Tigris.ECS.Process.ColliderCell
                             , Tigris.ECS.Process.Collisions
+
+                            , Tigris.ECS.Load
+                            , Tigris.ECS.Load.DB
                       
     build-depends:            base ^>=4.15.1.0
                             , rhine
@@ -97,6 +100,8 @@ library
                             , JuicyPixels-extra
                             , bytestring
                             , linear
+                            , sqlite-simple
+                            , raw-strings-qq
     hs-source-dirs:           src
     default-language:         Haskell2010
     ghc-options:              -W
@@ -119,6 +124,23 @@ executable demo
                              , linear
                              , text
     hs-source-dirs:            app
+    default-language:         Haskell2010
+    ghc-options:              -W
+                              -Wall
+                              -Wincomplete-uni-patterns
+                              -Wincomplete-record-updates
+                              -Wpartial-fields
+                              -Werror=missing-home-modules
+                              -Widentities
+                              -Wredundant-constraints
+executable db
+    main-is:                   Main.hs
+    build-depends:             base ^>=4.15.1.0
+                             , tigris
+                             , vector
+                             , linear
+                             , text
+    hs-source-dirs:            db
     default-language:         Haskell2010
     ghc-options:              -W
                               -Wall

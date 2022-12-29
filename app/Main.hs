@@ -108,18 +108,18 @@ gameLoop' world = do
              , Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
              , Position (V4 p p p p)
              , Speed 10
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 5 0
              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
              , Velocity (Z, Z)
              )
   newEntity_ ( Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
              , Position (V4 p' p' p' p')
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 5 0
              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
              )
   newEntity_ ( Size (V4 (V3 (-10) 0 (-10)) (V3 10 0 (-10)) (V3 10 0 10) (V3 (-10) 0 10))
              , Position (V4 p p p p)
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 5 0
              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
              )
 
@@ -264,19 +264,19 @@ gameLoop'' world = do
              , Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
              , Position (V4 p p p p)
              , Speed 250
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 5 0
              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
              )
   newEntity_ ( Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
              , Position (V4 p' p' p' p')
              , Speed 250
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 5 0
              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
              )
   newEntity_ ( Size (V4 (V3 (-10) 0 (-10)) (V3 10 0 (-10)) (V3 10 0 10) (V3 (-10) 0 10))
              , Position (V4 p p p p)
              , Speed 250
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 (32 * 5) 32 5 0
+             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 5 0
              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
              )
 
