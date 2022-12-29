@@ -31,6 +31,7 @@ data Entry = Entry
   , frameWidth'  :: Int -- ^ Width of a frame
   , frameHeight' :: Int -- ^ Height of a frame
   }
+  deriving (Show, Eq)
 
 instance FromRow Entry where
   fromRow = Entry <$> field
@@ -69,16 +70,14 @@ CREATE TABLE IF NOT EXISTS entries
 |]
 
 insertEntry :: Query
-insertEntry = "INSET INTO entries VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+insertEntry = "INSERT INTO entries VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 allEntries :: Query
 allEntries = "SELECT * from entries"
 
 
-useConnection :: (Connection -> IO ()) -> IO ()
-useConnection f = do
-  putStrLn "Database path: "
-  path <- getLine
+useConnection :: String -> (Connection -> IO ()) -> IO ()
+useConnection path f = do
   conn <- open path
   f conn
   close conn

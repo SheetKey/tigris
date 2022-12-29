@@ -1,9 +1,36 @@
 module Main where
 
+-- tigris
 import Tigris.ECS.Load.DB
 
+-- text
+import Data.Text hiding (null)
+
+-- sqlite-simple
+import Database.SQLite.Simple
+
+-- options
+import Options
+
+-- vector
+import qualified Data.Vector as V
+
+-- base
+import System.Exit
+import System.IO
+import Text.Read
+import Control.Monad 
+
+  
+
 main :: IO ()
-main = putStrLn "Hello"
+main = runCommand $ \opts args -> do
+  when (not $ null args) (do putStrLn "use '--help' for options"; exitSuccess)
+  when (not $ null $ optCreate opts) (do (createDatabase $ optCreate opts); exitSuccess)
+  when (not $ null $ optAdd    opts) (do (addEntries $ optAdd opts); exitSuccess)
+  when (not $ null $ optPrint  opts) (do (printDB $ optPrint opts); exitSuccess)
+  putStrLn "use '--help' for option"
+  exitSuccess
 
 -- Getline that checks for ":q" to quit program
 myGetLine :: IO String
@@ -33,8 +60,8 @@ intGetLine = do
 textGetLine :: IO Text
 textGetLine = pack <$> myGetLine
 
-createDatabase :: IO ()
-createDatabase = useConnection $ \conn -> execute_ conn createEntries
+createDatabase :: String -> IO ()
+createDatabase path = useConnection path $ \conn -> execute_ conn createEntries
 
 newEntries :: IO [Entry]
 newEntries = do
@@ -62,17 +89,17 @@ newEntries = do
   fh <- intGetLine
 
   let
-    getFlip :: Str -> IO Bool
+    getFlip :: String -> IO Bool
     getFlip str = do
       myPutStr str
       f <- myGetLine
-      if fx /= "y" && fx /= "n"
+      if f /= "y" && f /= "n"
         then getFlip str
-        else if fx == "y"
-             then True
-             else False
-  fx <- getFlip "flip over x: "
-  fy <- getFlip "flip over y: "
+        else if f == "y"
+             then return True
+             else return False
+  fx <- getFlip "flip over x (y/n): "
+  fy <- getFlip "flip over y (y/n): "
   
   case (fx, fy) of
     (True, True)   ->
@@ -92,9 +119,37 @@ newEntries = do
     (False, False) -> 
       return [Entry 0 n e s w weight tid h v fn fw fh]
 
-addEntries :: IO ()
-addEntries = do
+addEntries :: String -> IO ()
+addEntries path = do
   entries <- newEntries
-  useConnection $ \conn -> executeMany conn insertEntry entries
+  useConnection path $ \conn -> executeMany conn insertEntry entries
+
+rowToVector :: V.Vector Entry -> Entry -> IO (V.Vector Entry)
+rowToVector v t = return $ V.cons t v
+
+rowToVectorIO :: Connection -> IO (V.Vector Entry)
+rowToVectorIO conn = fold_ conn allEntries V.empty rowToVector
+
+printDB :: String -> IO ()
+printDB path = do
+  conn <- open path
+  rows <- rowToVectorIO conn
+  mapM_ print (rows :: V.Vector Entry)
+  close conn
   
   
+data MainOptions = MainOptions
+  { optCreate :: String
+  , optAdd    :: String
+  , optPrint  :: String
+  }
+
+instance Options MainOptions where
+  defineOptions = pure MainOptions
+    <*> simpleOption "create" ""
+        "Create the database."
+    <*> simpleOption "add" ""
+        "Add an entry to the database."
+    <*> simpleOption "print" ""
+        "Print the database."
+
