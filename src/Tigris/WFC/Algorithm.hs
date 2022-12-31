@@ -148,8 +148,8 @@ remainingGrid (c@(x,y):cs) = do
                else do modify global $ \(RemainingGrid nrgrid) ->
                                          RemainingGrid $ M.insert (a,b) newTiles nrgrid
                        return [(a,b)]
-      d1 <- propDir (x, y-1) (nconnector tile) sconnector
-      d2 <- propDir (x, y+1) (sconnector tile) nconnector
+      d1 <- propDir (x, y+1) (nconnector tile) sconnector
+      d2 <- propDir (x, y-1) (sconnector tile) nconnector
       d3 <- propDir (x+1, y) (econnector tile) wconnector
       d4 <- propDir (x-1, y) (wconnector tile) econnector
       -- propagate to the neighboring cells if there are any (may be []), and the remaining cs
@@ -167,8 +167,8 @@ remainingGrid (c@(x,y):cs) = do
                else do modify global $ \(RemainingGrid nrgrid) ->
                                          RemainingGrid $ M.insert (a,b) newTiles nrgrid
                        return [(a,b)]
-      d1 <- propDir (x, y-1) (V.uniq $ nconnector <$> tiles) sconnector
-      d2 <- propDir (x, y+1) (V.uniq $ sconnector <$> tiles) nconnector
+      d1 <- propDir (x, y+1) (V.uniq $ nconnector <$> tiles) sconnector
+      d2 <- propDir (x, y-1) (V.uniq $ sconnector <$> tiles) nconnector
       d3 <- propDir (x+1, y) (V.uniq $ econnector <$> tiles) wconnector
       d4 <- propDir (x-1, y) (V.uniq $ wconnector <$> tiles) econnector
       remainingGrid $ d1 ++ d2 ++ d3 ++ d4 ++ cs
