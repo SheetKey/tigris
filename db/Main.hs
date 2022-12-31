@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiWayIf #-}
+
 module Main where
 
 -- tigris
@@ -27,7 +29,7 @@ main :: IO ()
 main = runCommand $ \opts args -> do
   when (not $ null args) (do putStrLn "use '--help' for options"; exitSuccess)
   when (not $ null $ optCreate opts) (do (createDatabase $ optCreate opts); exitSuccess)
-  when (not $ null $ optAdd    opts) (do (addEntries $ optAdd opts); exitSuccess)
+  when (not $ null $ optAdd    opts) (do (addTileDBs $ optAdd opts); exitSuccess)
   when (not $ null $ optPrint  opts) (do (printDB $ optPrint opts); exitSuccess)
   putStrLn "use '--help' for option"
   exitSuccess
@@ -61,10 +63,10 @@ textGetLine :: IO Text
 textGetLine = pack <$> myGetLine
 
 createDatabase :: String -> IO ()
-createDatabase path = useConnection path $ \conn -> execute_ conn createEntries
+createDatabase path = useConnection path $ \conn -> execute_ conn createTileDBs
 
-newEntries :: IO [Entry]
-newEntries = do
+newTileDBs :: IO [TileDB]
+newTileDBs = do
   myPutStr "nconn: "
   n <- intGetLine
   myPutStr "econn: "
@@ -88,53 +90,78 @@ newEntries = do
   myPutStr "frameHeight: "
   fh <- intGetLine
 
-  let
-    getFlip :: String -> IO Bool
-    getFlip str = do
+  let 
+    getRot :: String -> IO Int
+    getRot str = do
       myPutStr str
-      f <- myGetLine
-      if f /= "y" && f /= "n"
-        then getFlip str
-        else if f == "y"
-             then return True
-             else return False
-  fx <- getFlip "flip over x (y/n): "
-  fy <- getFlip "flip over y (y/n): "
-  
-  case (fx, fy) of
-    (True, True)   ->
-      return [ Entry 0 n e s w weight tid h v fn fw fh
-             , Entry 0 n w s e weight tid (h+fw) v fn (-fw) fh
-             , Entry 0 s e n w weight tid h (v-fh) fn fw (-fh)
-             , Entry 0 s w n e weight tid (h+fw) (v-fh) fn (-fw) (-fh)
-             ]
-    (True, False)  ->
-      return [ Entry 0 n e s w weight tid h v fn fw fh
-             , Entry 0 n w s e weight tid (h+fw) v fn (-fw) fh
-             ]
-    (False, True)  -> 
-      return [ Entry 0 n e s w weight tid h v fn fw fh
-             , Entry 0 s e n w weight tid h (v-fh) fn fw (-fh)
-             ]
-    (False, False) -> 
-      return [Entry 0 n e s w weight tid h v fn fw fh]
+      r <- myGetLine
+      if | r == "0"  -> return 0
+         | r == "1"  -> return 1
+         | r == "2"  -> return 2
+         | r == "3"  -> return 3
+         | otherwise -> getRot str
 
-addEntries :: String -> IO ()
-addEntries path = do
-  entries <- newEntries
-  useConnection path $ \conn -> executeMany conn insertEntry entries
+  r <- getRot "number of rotations 90deg clockwise (0, 1, 2, or 3): "
+  case r of
+    0 -> 
+      return [ TileDB 0 n e s w weight tid h v fn fw fh 0 ]
+    1 -> 
+      return [ TileDB 0 n e s w weight tid h v fn fw fh 0
+             , TileDB 0 w n e s weight tid h v fn fw fh 1
+             ]
+    2 ->
+      return [ TileDB 0 n e s w weight tid h v fn fw fh 0
+             , TileDB 0 w n e s weight tid h v fn fw fh 1
+             , TileDB 0 s w e n weight tid h v fn fw fh 2
+             ]
+    3 ->
+      return [ TileDB 0 n e s w weight tid h v fn fw fh 0
+             , TileDB 0 w n e s weight tid h v fn fw fh 1
+             , TileDB 0 s w e n weight tid h v fn fw fh 2
+             , TileDB 0 e s w n weight tid h v fn fw fh 3
+             ]
+    _ -> error "Invalid number of rotations."
+--  let
+--    getFlip :: String -> IO Bool
+--    getFlip str = do
+--      myPutStr str
+--      f <- myGetLine
+--      if f /= "y" && f /= "n"
+--        then getFlip str
+--        else if f == "y"
+--             then return True
+--             else return False
+--  fx <- getFlip "flip over x (y/n): "
+--  fy <- getFlip "flip over y (y/n): "
+--  
+--  case (fy, fx) of
+--    (True, True)   ->
+--      return [ TileDB 0 n e s w weight tid h v fn fw fh
+--             , TileDB 0 n w s e weight tid (h+fw) v fn (-fw) fh
+--             , TileDB 0 s e n w weight tid h (v-fh) fn fw (-fh)
+--             , TileDB 0 s w n e weight tid (h+fw) (v-fh) fn (-fw) (-fh)
+--             ]
+--    (True, False)  ->
+--      return [ TileDB 0 n e s w weight tid h v fn fw fh
+--             , TileDB 0 n w s e weight tid (h+fw) v fn (-fw) fh
+--             ]
+--    (False, True)  -> 
+--      return [ TileDB 0 n e s w weight tid h v fn fw fh
+--             , TileDB 0 s e n w weight tid h (v-fh) fn fw (-fh)
+--             ]
+--    (False, False) -> 
+--      return [TileDB 0 n e s w weight tid h v fn fw fh]
 
-rowToVector :: V.Vector Entry -> Entry -> IO (V.Vector Entry)
-rowToVector v t = return $ V.cons t v
-
-rowToVectorIO :: Connection -> IO (V.Vector Entry)
-rowToVectorIO conn = fold_ conn allEntries V.empty rowToVector
+addTileDBs :: String -> IO ()
+addTileDBs path = do
+  tiles <- newTileDBs
+  useConnection path $ \conn -> executeMany conn insertTileDB tiles
 
 printDB :: String -> IO ()
 printDB path = do
   conn <- open path
   rows <- rowToVectorIO conn
-  mapM_ print (rows :: V.Vector Entry)
+  mapM_ print (rows :: V.Vector TileDB)
   close conn
   
   

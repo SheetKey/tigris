@@ -19,6 +19,7 @@ import Apecs
 
 -- vector
 import qualified Data.Vector.Storable as V
+import qualified Data.Vector as VV
 
 -- linear
 import Linear
@@ -37,8 +38,15 @@ import FRP.Rhine hiding (get)
 
 
 main :: IO ()
-main = initAndRun "Game Demo" gameLoop'
-
+main = initAndRun "Game Demo" gameLoop'''
+--main = do 
+--  g <- wfc (VV.fromList [tile1, tile2, tile3, tile4]) (2, 2) Nothing
+--  print g
+----             n e s w
+--tile1 = Tile 1 1 2 1 1 1
+--tile2 = Tile 2 1 1 1 2 1
+--tile3 = Tile 3 2 2 1 2 1
+--tile4 = Tile 4 1 2 2 2 1
 
 
 clsfLoop :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) (Millisecond 16)) () ()
@@ -129,6 +137,36 @@ gameLoop' world = do
     @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
 
 
+gameLoop''' :: World -> SystemT' IO ()
+gameLoop''' world = do
+  GLBuffers (vao,_,_, program) <- get global
+
+  liftIO $ do 
+    GL.currentProgram GL.$= Just program
+    Right texture0001 <- createTextureFromPNG "./sprites/Sheet-1.png"
+    GL.activeTexture GL.$= GL.TextureUnit 0
+    GL.textureBinding GL.Texture2D GL.$= Just texture0001
+    locTexture <- GL.get . GL.uniformLocation program $ "Texture"
+    GL.uniform locTexture GL.$= GL.TextureUnit 0
+    GL.currentProgram GL.$= Nothing
+
+  loadNewGrid "data/sheet-1.db"
+
+  let 
+    p = V3 0 0 0
+  newEntity_ ( Player
+             , Size (V4 (V3 (-16) 32 0) (V3 16 32 0) (V3 16 0 0) (V3 (-16) 0 0))
+             , Position (V4 p p p p)
+             , Speed 80
+             , SpriteSheet 1 (4096-32) 0 0 (32 * 4) 32 32 2 0
+             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
+             , Velocity (Z, Z)
+             )
+
+  --flow $ rhineLoop' world
+  flow $
+    (clsfLoop >>> altDraw)
+    @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
 
 
 
