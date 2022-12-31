@@ -26,6 +26,13 @@ import qualified Graphics.Rendering.OpenGL as GL
 import Linear
 
 
+sheetWidth :: Int
+sheetWidth = 4096
+
+sheetHeight :: Int
+sheetHeight = 4096
+
+
 -- | A collection of all components used as convenience
 --   for deleting all of an entities components.
 type All = ( Player
