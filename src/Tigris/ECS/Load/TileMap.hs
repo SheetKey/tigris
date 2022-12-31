@@ -36,7 +36,7 @@ genNewGrid path = do
   tiledbs <- rowToVectorIO conn
   close conn
   let tiles = tileDBtoTile <$> tiledbs
-  wfc tiles (5, 5) Nothing
+  wfc tiles (16, 16) Nothing
 
 
 loadGrid :: MonadIO m => String -> Grid -> SystemT' m ()
