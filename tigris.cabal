@@ -23,6 +23,8 @@ maintainer:         wveatchw@gmail.com
 extra-source-files:
     CHANGELOG.md
     README.org
+
+data-files:
     sprites/**/*.png
     shaders/**/*.vert
     shaders/**/*.frag
@@ -81,6 +83,10 @@ library
 
                             , Tigris.ECS.Load
                             , Tigris.ECS.Load.DB
+                            , Tigris.ECS.Load.TileMap
+
+    other-modules:            Paths_tigris
+    autogen-modules:          Paths_tigris
                       
     build-depends:            base ^>=4.15.1.0
                             , rhine
