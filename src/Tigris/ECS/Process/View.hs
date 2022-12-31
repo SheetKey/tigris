@@ -19,7 +19,7 @@ import qualified Graphics.Rendering.OpenGL as GL
 
 _view :: MonadIO m => SystemT' m ()
 _view = cmapM_ $ \(Player, Position (V4 _ n _ _)) -> do
-  let vm = viewMatrix n (V3 0 2 5)
+  let vm = viewMatrix n (V3 0 500 400)
   set global $ View vm
   GLBuffers (_,_,_, program) <- get global
   liftIO $ do 
