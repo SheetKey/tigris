@@ -15,12 +15,6 @@ import Apecs
 -- linear
 import Linear
 
-sheetWidth :: Int
-sheetWidth = 4096
-
-sheetHeight :: Int
-sheetHeight = 4096
-
 _uv :: MonadIO m => SystemT' m ()
 _uv = cmap $ \(SpriteSheet {..}) -> 
   let
