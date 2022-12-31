@@ -13,48 +13,53 @@ import Data.Text
 -- raw-strings-qq
 import Text.RawString.QQ (r)
 
+-- vector
+import qualified Data.Vector as V
+
 -- base
 import Data.Typeable (Typeable)
 
 
-data Entry = Entry
+data TileDB = TileDB
   { id'          :: Int -- ^ DB id 
   , nconnector'  :: Int -- ^ North wfc connector
   , econnector'  :: Int -- ^ East wfc conncect
   , sconnector'  :: Int -- ^ South wfc conncect
   , wconnector'  :: Int -- ^ West wfc conncect
-  , weight'      :: Int -- ^ Tile weight
+  , weight'      :: Int -- ^ TileDB weight
   , texId'       :: Int -- ^ Texture uniform id
   , hOffset'     :: Int -- ^ Horizonal offset in pixels of the top left corner of sprite
   , vOffset'     :: Int -- ^ Vertical offset in pixels of the top left corner of sprite
   , frameNum'    :: Int -- ^ Number of frames in the animation
   , frameWidth'  :: Int -- ^ Width of a frame
   , frameHeight' :: Int -- ^ Height of a frame
+  , rotation'    :: Int -- ^ How many times a tile is rotated (0, 1, 2, or 3 90deg rotations)
   }
   deriving (Show, Eq)
 
-instance FromRow Entry where
-  fromRow = Entry <$> field
-                  <*> field
-                  <*> field
-                  <*> field
-                  <*> field
-                  <*> field
-                  <*> field
-                  <*> field
-                  <*> field
-                  <*> field
-                  <*> field
-                  <*> field
+instance FromRow TileDB where
+  fromRow = TileDB <$> field
+                   <*> field
+                   <*> field
+                   <*> field
+                   <*> field
+                   <*> field
+                   <*> field
+                   <*> field
+                   <*> field
+                   <*> field
+                   <*> field
+                   <*> field
+                   <*> field
 
-instance ToRow Entry where
-  toRow (Entry id_ n e s w weight tid h v fn fw fh)
-    = toRow $ (Null, n, e, s, w, weight, tid, h, v, fn) :. (fw, fh)
+instance ToRow TileDB where
+  toRow (TileDB id_ n e s w weight tid h v fn fw fh r)
+    = toRow $ (Null, n, e, s, w, weight, tid, h, v, fn) :. (fw, fh, r)
 
 
-createEntries :: Query
-createEntries = [r|
-CREATE TABLE IF NOT EXISTS entries
+createTileDBs :: Query
+createTileDBs = [r|
+CREATE TABLE IF NOT EXISTS tiles
   (id INTEGER PRIMARY KEY AUTOINCREMENT,
   nconnector INTEGER,
   econnector INTEGER,
@@ -66,18 +71,35 @@ CREATE TABLE IF NOT EXISTS entries
   vOffset INTEGER,
   frameNum INTEGER,
   frameWidth INTEGER,
-  frameHeight INTEGER)
+  frameHeight INTEGER,
+  rotation INTEGER)
 |]
 
-insertEntry :: Query
-insertEntry = "INSERT INTO entries VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+insertTileDB :: Query
+insertTileDB = "INSERT INTO tiles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
-allEntries :: Query
-allEntries = "SELECT * from entries"
+allTileDBs :: Query
+allTileDBs = "SELECT * from tiles"
 
+_getTileFromId :: Query
+_getTileFromId = "SELECT * from tiles where id = ?"
+
+getTileFromId :: Int -> Connection -> IO TileDB
+getTileFromId i conn = do
+  res <- query conn _getTileFromId (Only i)
+  case res of
+    [x] -> return x
+    _   -> error "Invalid tiledb id."
+  
 
 useConnection :: String -> (Connection -> IO ()) -> IO ()
 useConnection path f = do
   conn <- open path
   f conn
   close conn
+
+rowToVector :: V.Vector TileDB -> TileDB -> IO (V.Vector TileDB)
+rowToVector v t = return $ V.cons t v
+
+rowToVectorIO :: Connection -> IO (V.Vector TileDB)
+rowToVectorIO conn = fold_ conn allTileDBs V.empty rowToVector
