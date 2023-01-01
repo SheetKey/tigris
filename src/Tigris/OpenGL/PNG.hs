@@ -37,7 +37,7 @@ createTextureFromPNG filePath = do
                           0 .
             GL.PixelData GL.RGBA GL.UnsignedByte . castPtr
           GL.generateMipmap' GL.Texture2D
-          GL.textureFilter GL.Texture2D GL.$= ((GL.Nearest, Nothing), GL.Nearest)
+          GL.textureFilter GL.Texture2D GL.$= ((GL.Nearest, Just GL.Nearest), GL.Nearest)
           GL.textureBinding GL.Texture2D GL.$= Nothing
           pure $ Right tex
         _ -> pure . Left $ "Unrecognized format."
