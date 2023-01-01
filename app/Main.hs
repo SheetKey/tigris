@@ -157,7 +157,7 @@ gameLoop''' world = do
   newEntity_ ( Player
              , Size (V4 (V3 (-16) 32 0) (V3 16 32 0) (V3 16 0 0) (V3 (-16) 0 0))
              , Position (V4 p p p p)
-             , Speed 80
+             , Speed 200
              , SpriteSheet 1 (4096-32) 0 0 (32 * 4) 32 32 2 0
              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
              , Velocity (Z, Z)
