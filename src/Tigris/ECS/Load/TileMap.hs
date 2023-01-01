@@ -50,13 +50,22 @@ loadGrid path (Grid g) = do
       let p = fromIntegral <$> (V3 (64*x) 0 (64*(-y)))
           pos = Position (V4 p p p p)
           f = V2 (/ fromIntegral sheetWidth) (/ fromIntegral sheetHeight)
-          uv = UV (fmap (f <*>)
-                       ((fmap . fmap) fromIntegral
-                        (V4 (V2 (hOffset' tiledb) (vOffset' tiledb - frameHeight' tiledb))                      -- bl
-                            (V2 (hOffset' tiledb + frameWidth' tiledb) (vOffset' tiledb - frameHeight' tiledb)) -- br
-                            (V2 (hOffset' tiledb + frameWidth' tiledb) (vOffset' tiledb))                       -- tr
-                            (V2 (hOffset' tiledb) (vOffset' tiledb))                                            -- tl
-                        )))
+          uv = UV
+               ((V4
+                 (+ V2 (2 / fromIntegral sheetWidth) (2 / fromIntegral sheetHeight))
+                 (+ V2 ((-2) / fromIntegral sheetWidth) (2 / fromIntegral sheetHeight))
+                 (+ V2 ((-2) / fromIntegral sheetWidth) ((-2) / fromIntegral sheetHeight))
+                 (+ V2 (2 / fromIntegral sheetWidth) ((-2) / fromIntegral sheetHeight))
+                ) 
+                <*>
+                (fmap (f <*>)
+                  ((fmap . fmap) fromIntegral
+                    (V4
+                      (V2 (hOffset' tiledb) (vOffset' tiledb - frameHeight' tiledb))                      -- bl
+                      (V2 (hOffset' tiledb + frameWidth' tiledb) (vOffset' tiledb - frameHeight' tiledb)) -- br
+                      (V2 (hOffset' tiledb + frameWidth' tiledb) (vOffset' tiledb))                       -- tr
+                      (V2 (hOffset' tiledb) (vOffset' tiledb))                                            -- tl
+                    ))))
       case rotation' tiledb of
         0 -> newEntity_ ( uv, pos, Size (V4 (V3 0 0 0) (V3 64 0 0) (V3 64 0 (-64)) (V3 0 0 (-64))) )
         1 -> newEntity_ ( uv, pos, Size (V4 (V3 0 0 (-64)) (V3 0 0 0) (V3 64 0 0) (V3 64 0 (-64))) )
@@ -70,5 +79,4 @@ loadNewGrid :: MonadIO m => String -> SystemT' m ()
 loadNewGrid p = do
   path <- liftIO $ getDataFileName p
   grid <- liftIO $ genNewGrid path
-  liftIO $ print grid
   loadGrid path grid
