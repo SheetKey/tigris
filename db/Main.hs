@@ -112,12 +112,12 @@ newTileDBs = do
     2 ->
       return [ TileDB 0 n e s w weight tid h v fn fw fh 0
              , TileDB 0 w n e s weight tid h v fn fw fh 1
-             , TileDB 0 s w e n weight tid h v fn fw fh 2
+             , TileDB 0 s w n e weight tid h v fn fw fh 2
              ]
     3 ->
       return [ TileDB 0 n e s w weight tid h v fn fw fh 0
              , TileDB 0 w n e s weight tid h v fn fw fh 1
-             , TileDB 0 s w e n weight tid h v fn fw fh 2
+             , TileDB 0 s w n e weight tid h v fn fw fh 2
              , TileDB 0 e s w n weight tid h v fn fw fh 3
              ]
     _ -> error "Invalid number of rotations."
