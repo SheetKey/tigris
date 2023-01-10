@@ -148,8 +148,7 @@ data SpriteSheet = SpriteSheet
   , colMax      :: Int -- ^ This entity's max top left col.
   , frameWidth  :: Int -- ^ The pixel width of a single frame.
   , frameHeight :: Int -- ^ The pixel height of a single frame.
---  , sheetWidth  :: Int -- ^ The pixel width of the spritesheet.
---  , sheetHeight :: Int -- ^ The pixel height of the spritesheet.
+  , borderWidth :: Int -- ^ The width of the border around the sprite in the texture atlas.
   , waitTime    :: Double -- ^ Difference in time to wait before changing frames.
   , accTime     :: Double  -- ^ An internal time accumulator that should be initialized as 0.
   }

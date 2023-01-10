@@ -34,6 +34,7 @@ data TileDB = TileDB
   , frameWidth'  :: Int -- ^ Width of a frame
   , frameHeight' :: Int -- ^ Height of a frame
   , rotation'    :: Int -- ^ How many times a tile is rotated (0, 1, 2, or 3 90deg rotations)
+  , borderWidth' :: Int -- ^ The width of the border around the texture in the texture atlas.
   }
   deriving (Show, Eq)
 
@@ -51,10 +52,11 @@ instance FromRow TileDB where
                    <*> field
                    <*> field
                    <*> field
+                   <*> field
 
 instance ToRow TileDB where
-  toRow (TileDB id_ n e s w weight tid h v fn fw fh r)
-    = toRow $ (Null, n, e, s, w, weight, tid, h, v, fn) :. (fw, fh, r)
+  toRow (TileDB id_ n e s w weight tid h v fn fw fh r b)
+    = toRow $ (Null, n, e, s, w, weight, tid, h, v, fn) :. (fw, fh, r, b)
 
 
 createTileDBs :: Query
@@ -72,11 +74,12 @@ CREATE TABLE IF NOT EXISTS tiles
   frameNum INTEGER,
   frameWidth INTEGER,
   frameHeight INTEGER,
-  rotation INTEGER)
+  rotation INTEGER,
+  borderWidth INTEGER)
 |]
 
 insertTileDB :: Query
-insertTileDB = "INSERT INTO tiles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+insertTileDB = "INSERT INTO tiles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 allTileDBs :: Query
 allTileDBs = "SELECT * from tiles"
