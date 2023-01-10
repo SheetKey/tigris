@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Tigris.ECS.Load.TileMap
   ( loadNewGrid
   ) where
@@ -7,6 +9,7 @@ import Tigris.ECS.Load.DB
 import Tigris.WFC
 import Tigris.ECS.System
 import Tigris.ECS.Components
+import Tigris.ECS.Process.UV
 import Paths_tigris
 
 -- sqlite-simple
@@ -28,7 +31,7 @@ import Apecs
 import Linear
 
 tileDBtoTile :: TileDB -> Tile
-tileDBtoTile (TileDB id n e s w weight _ _ _ _ _ _ _) = Tile id n e s w weight
+tileDBtoTile (TileDB id n e s w weight _ _ _ _ _ _ _ _) = Tile id n e s w weight
 
 genNewGrid :: String -> IO Grid
 genNewGrid path = do
@@ -38,41 +41,30 @@ genNewGrid path = do
   let tiles = tileDBtoTile <$> tiledbs
   wfc tiles (16, 16) Nothing
 
+tileToEnt :: MonadIO m => (Int, Int) -> TileDB -> SystemT' m ()
+tileToEnt (x, y) TileDB {..} = 
+  let
+    p = fromIntegral <$> (V3 (64 * x) 0 (64 * (-y)))
+    pos = Position (V4 p p p p)
+    uv = mkUV hOffset' vOffset' frameWidth' frameHeight' borderWidth'
+  in case rotation' of
+    0 -> newEntity_ ( uv, pos, Size (V4 (V3 0 0 (-64)) (V3 64 0 (-64)) (V3 64 0 0) (V3 0 0 0)) )
+    1 -> newEntity_ ( uv, pos, Size (V4 (V3 64 0 (-64)) (V3 64 0 0) (V3 0 0 0) (V3 0 0 (-64))) )
+    2 -> newEntity_ ( uv, pos, Size (V4 (V3 64 0 0) (V3 0 0 0) (V3 0 0 (-64)) (V3 64 0 (-64))) )
+    3 -> newEntity_ ( uv, pos, Size (V4 (V3 0 0 0) (V3 0 0 (-64)) (V3 64 0 (-64)) (V3 64 0 0)) )
+    _ -> error "Wrong number of rotations found in database."
+  
 
 loadGrid :: MonadIO m => String -> Grid -> SystemT' m ()
 loadGrid path (Grid g) = do
   conn <- liftIO $ open path
   let
     grid = M.toList $ tileId <$> g
-    tileToEnt :: MonadIO m => ((Int, Int), Int) -> SystemT' m ()
-    tileToEnt ((x, y), id) = do
-      tiledb <- liftIO $  getTileFromId id conn
-      let p = fromIntegral <$> (V3 (64*x) 0 (64*(-y)))
-          pos = Position (V4 p p p p)
-          f = V2 (/ fromIntegral sheetWidth) (/ fromIntegral sheetHeight)
-          uv = UV
-               ((V4
-                 (+ V2 (2 / fromIntegral sheetWidth) (2 / fromIntegral sheetHeight))
-                 (+ V2 ((-2) / fromIntegral sheetWidth) (2 / fromIntegral sheetHeight))
-                 (+ V2 ((-2) / fromIntegral sheetWidth) ((-2) / fromIntegral sheetHeight))
-                 (+ V2 (2 / fromIntegral sheetWidth) ((-2) / fromIntegral sheetHeight))
-                ) 
-                <*>
-                (fmap (f <*>)
-                  ((fmap . fmap) fromIntegral
-                    (V4
-                      (V2 (hOffset' tiledb) (vOffset' tiledb - frameHeight' tiledb))                      -- bl
-                      (V2 (hOffset' tiledb + frameWidth' tiledb) (vOffset' tiledb - frameHeight' tiledb)) -- br
-                      (V2 (hOffset' tiledb + frameWidth' tiledb) (vOffset' tiledb))                       -- tr
-                      (V2 (hOffset' tiledb) (vOffset' tiledb))                                            -- tl
-                    ))))
-      case rotation' tiledb of
-        0 -> newEntity_ ( uv, pos, Size (V4 (V3 0 0 0) (V3 64 0 0) (V3 64 0 (-64)) (V3 0 0 (-64))) )
-        1 -> newEntity_ ( uv, pos, Size (V4 (V3 0 0 (-64)) (V3 0 0 0) (V3 64 0 0) (V3 64 0 (-64))) )
-        2 -> newEntity_ ( uv, pos, Size (V4 (V3 64 0 (-64)) (V3 0 0 (-64)) (V3 0 0 0) (V3 64 0 0)) )
-        3 -> newEntity_ ( uv, pos, Size (V4 (V3 64 0 0) (V3 64 0 (-64)) (V3 0 0 (-64)) (V3 0 0 0)) )
-        _ -> error "Wrong number of rotations found in database."
-  mapM_ tileToEnt grid
+    mkEnt :: MonadIO m => ((Int, Int), Int) -> SystemT' m ()
+    mkEnt (pos, id) = do
+      tiledb <- liftIO $ getTileFromId id conn
+      tileToEnt pos tiledb
+  mapM_ mkEnt grid
   liftIO $ close conn
 
 loadNewGrid :: MonadIO m => String -> SystemT' m ()
