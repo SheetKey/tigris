@@ -89,6 +89,8 @@ newTileDBs = do
   fw <- intGetLine
   myPutStr "frameHeight: "
   fh <- intGetLine
+  myPutStr "borderWidth: "
+  b <- intGetLine
 
   let 
     getRot :: String -> IO Int
@@ -104,21 +106,21 @@ newTileDBs = do
   r <- getRot "number of rotations 90deg clockwise (0, 1, 2, or 3): "
   case r of
     0 -> 
-      return [ TileDB 0 n e s w weight tid h v fn fw fh 0 ]
+      return [ TileDB 0 n e s w weight tid h v fn fw fh 0 b ]
     1 -> 
-      return [ TileDB 0 n e s w weight tid h v fn fw fh 0
-             , TileDB 0 w n e s weight tid h v fn fw fh 1
+      return [ TileDB 0 n e s w weight tid h v fn fw fh 0 b
+             , TileDB 0 w n e s weight tid h v fn fw fh 1 b
              ]
     2 ->
-      return [ TileDB 0 n e s w weight tid h v fn fw fh 0
-             , TileDB 0 w n e s weight tid h v fn fw fh 1
-             , TileDB 0 s w n e weight tid h v fn fw fh 2
+      return [ TileDB 0 n e s w weight tid h v fn fw fh 0 b
+             , TileDB 0 w n e s weight tid h v fn fw fh 1 b
+             , TileDB 0 s w n e weight tid h v fn fw fh 2 b
              ]
     3 ->
-      return [ TileDB 0 n e s w weight tid h v fn fw fh 0
-             , TileDB 0 w n e s weight tid h v fn fw fh 1
-             , TileDB 0 s w n e weight tid h v fn fw fh 2
-             , TileDB 0 e s w n weight tid h v fn fw fh 3
+      return [ TileDB 0 n e s w weight tid h v fn fw fh 0 b
+             , TileDB 0 w n e s weight tid h v fn fw fh 1 b
+             , TileDB 0 s w n e weight tid h v fn fw fh 2 b
+             , TileDB 0 e s w n weight tid h v fn fw fh 3 b
              ]
     _ -> error "Invalid number of rotations."
 --  let
