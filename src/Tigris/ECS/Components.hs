@@ -87,6 +87,14 @@ newtype Position = Position (V4 (V3 GL.GLfloat))
 instance Component Position where
   type Storage Position = Map Position
 
+-- | An entity can "follow" another entity.
+--   For example, an equipped weapon will follow the player.
+--   Has the id of the entity being followed and a
+--   position offset.
+data Follows = Follows Int (V3 GL.GLfloat)
+instance Component Follows where
+  type Storage Follows = Map Follows
+
 -- | Entities may have a rotational component.
 data Rotation = Rotation
   { angle :: Double           -- ^ The angle of rotation.

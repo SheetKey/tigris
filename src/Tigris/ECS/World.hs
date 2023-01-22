@@ -37,4 +37,5 @@ makeWorld "World" [ ''Player
                   , ''SpriteSheet
                   , ''UV
                   , ''Size
+                  , ''Follows
                   ]
