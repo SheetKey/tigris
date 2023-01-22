@@ -7,17 +7,11 @@ module Tigris.ECS.Load.DB where
 import Database.SQLite.Simple
 import Database.SQLite.Simple.Types (Null(..))
 
--- text
-import Data.Text
-
 -- raw-strings-qq
 import Text.RawString.QQ (r)
 
 -- vector
 import qualified Data.Vector as V
-
--- base
-import Data.Typeable (Typeable)
 
 
 data TileDB = TileDB
@@ -55,8 +49,8 @@ instance FromRow TileDB where
                    <*> field
 
 instance ToRow TileDB where
-  toRow (TileDB id_ n e s w weight tid h v fn fw fh r b)
-    = toRow $ (Null, n, e, s, w, weight, tid, h, v, fn) :. (fw, fh, r, b)
+  toRow (TileDB _ n e s w weight tid h v fn fw fh rot b)
+    = toRow $ (Null, n, e, s, w, weight, tid, h, v, fn) :. (fw, fh, rot, b)
 
 
 createTileDBs :: Query

@@ -18,14 +18,12 @@ import Apecs.Stores
 -- text
 import Data.Text
 
--- base
-import Control.Monad.IO.Class
-
+  
 initAndRun :: Text -> (World -> SystemT' IO ()) -> IO ()
 initAndRun winName gameLoop = do
   SDL.initializeAll
   win <- SDL.createWindow winName windowConfig
-  SDL.glCreateContext win
+  _ <- SDL.glCreateContext win
   glBuffers <- initOpenGL win
   world <- initWorld
   runWith world $ do

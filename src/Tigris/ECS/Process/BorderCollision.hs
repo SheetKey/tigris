@@ -7,15 +7,15 @@ the bounds of the tilemap.
 
 module Tigris.ECS.Process.BorderCollision where
 
--- mylib
-import Tigris.ECS.System
-import Tigris.ECS.Components
-
--- rhine
-import FRP.Rhine hiding (get)
-
--- apecs
-import Apecs
+-- -- mylib
+-- import Tigris.ECS.System
+-- import Tigris.ECS.Components
+-- 
+-- -- rhine
+-- import FRP.Rhine hiding (get)
+-- 
+-- -- apecs
+-- import Apecs
 
 -- -- | Detect the collision of a movable entity.
 -- --   collision based on next predicted position in order to

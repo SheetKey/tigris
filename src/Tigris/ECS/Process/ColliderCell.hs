@@ -4,23 +4,23 @@
 
 module Tigris.ECS.Process.ColliderCell where
 
--- base
-import Data.Bits
-import Control.Monad (forM)
-
--- apecs
-import Apecs
-import Apecs.Core
-
--- vectors used by apecs
-import qualified Data.Vector.Unboxed as U
-
--- mylib
-import Tigris.ECS.Components
-import Tigris.ECS.System
-
--- rhine
-import FRP.Rhine hiding (get)
+-- -- base
+-- import Data.Bits
+-- import Control.Monad (forM)
+-- 
+-- -- apecs
+-- import Apecs
+-- import Apecs.Core
+-- 
+-- -- vectors used by apecs
+-- import qualified Data.Vector.Unboxed as U
+-- 
+-- -- mylib
+-- import Tigris.ECS.Components
+-- import Tigris.ECS.System
+-- 
+-- -- rhine
+-- import FRP.Rhine hiding (get)
 
 -- cellWH :: CInt
 -- cellWH = 128

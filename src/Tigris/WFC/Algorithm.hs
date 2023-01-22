@@ -184,7 +184,6 @@ wave = do
             c <- randomCell cs
             weightedChoice c
             remainingGrid [c]
-            RemainingGrid nrgrid <- get global
             wave
 
 _wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> IO Grid

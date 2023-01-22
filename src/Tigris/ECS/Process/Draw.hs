@@ -10,7 +10,6 @@ import Apecs
 
 -- mylib
 import Tigris.ECS.System
-import Tigris.ECS.World
 import Tigris.ECS.Components
 import Tigris.OpenGL
 
@@ -26,14 +25,13 @@ import qualified Data.Vector.Storable as V
 -- base
 import Foreign.Ptr
 import Data.Foldable (toList)
-import Control.Monad.Zip (mzipWith)
 
 -- sdl
 import qualified SDL
 
 _loadVBOEBO :: MonadIO m => SystemT' m Int
 _loadVBOEBO = do
-  GLBuffers (vao, vbo, ebo, program) <- get global
+  GLBuffers (vao, _, _, _) <- get global
   GL.bindVertexArrayObject GL.$= Just vao
 
   (vertices :: V.Vector GL.GLfloat, indices :: V.Vector GL.GLuint) <- (flip cfold) (V.empty, V.empty) $ \(v,i) (Size size, Model m, UV uv) ->
@@ -59,7 +57,7 @@ _loadVBOEBO = do
 
 _draw :: MonadIO m => Int -> SystemT' m ()
 _draw l = do
-  GLBuffers (vao, vbo, ebo, program) <- get global
+  GLBuffers (vao, _, _, program) <- get global
   Window window <- get global
 
   GL.bindVertexArrayObject GL.$= Just vao
@@ -82,7 +80,7 @@ _altDraw :: MonadIO m => SystemT' m ()
 _altDraw = do
   Window window <- get global
 
-  GLBuffers (vao, vbo, ebo, program) <- get global
+  GLBuffers (vao, _, _, program) <- get global
   GL.bindVertexArrayObject GL.$= Just vao
   GL.currentProgram GL.$= Just program
 

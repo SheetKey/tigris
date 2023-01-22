@@ -3,18 +3,18 @@
 
 module Tigris.ECS.Process.Rotation where
 
--- mylib
-import Tigris.ECS.System
-import Tigris.ECS.Components
-
--- rhine
-import FRP.Rhine
-
--- apecs
-import Apecs
-
--- sdl
-import qualified SDL
+-- -- mylib
+-- import Tigris.ECS.System
+-- import Tigris.ECS.Components
+-- 
+-- -- rhine
+-- import FRP.Rhine
+-- 
+-- -- apecs
+-- import Apecs
+-- 
+-- -- sdl
+-- import qualified SDL
 
 -- _mousePosition :: MonadIO m => m (V2 CInt)
 -- _mousePosition = do

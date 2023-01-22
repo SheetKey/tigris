@@ -15,9 +15,6 @@ import Paths_tigris
 -- sqlite-simple
 import Database.SQLite.Simple
 
--- vector
-import qualified Data.Vector as V
-
 -- containers
 import qualified Data.Map.Strict as M
 
@@ -31,7 +28,7 @@ import Apecs
 import Linear
 
 tileDBtoTile :: TileDB -> Tile
-tileDBtoTile (TileDB id n e s w weight _ _ _ _ _ _ _ _) = Tile id n e s w weight
+tileDBtoTile (TileDB _id n e s w weight _ _ _ _ _ _ _ _) = Tile _id n e s w weight
 
 genNewGrid :: String -> IO Grid
 genNewGrid path = do
@@ -46,12 +43,12 @@ tileToEnt (x, y) TileDB {..} =
   let
     p = fromIntegral <$> (V3 (64 * x) 0 (64 * (-y)))
     pos = Position (V4 p p p p)
-    uv = mkUV hOffset' vOffset' frameWidth' frameHeight' borderWidth'
+    _uv = mkUV hOffset' vOffset' frameWidth' frameHeight' borderWidth'
   in case rotation' of
-    0 -> newEntity_ ( uv, pos, Size (V4 (V3 0 0 (-64)) (V3 64 0 (-64)) (V3 64 0 0) (V3 0 0 0)) )
-    1 -> newEntity_ ( uv, pos, Size (V4 (V3 64 0 (-64)) (V3 64 0 0) (V3 0 0 0) (V3 0 0 (-64))) )
-    2 -> newEntity_ ( uv, pos, Size (V4 (V3 64 0 0) (V3 0 0 0) (V3 0 0 (-64)) (V3 64 0 (-64))) )
-    3 -> newEntity_ ( uv, pos, Size (V4 (V3 0 0 0) (V3 0 0 (-64)) (V3 64 0 (-64)) (V3 64 0 0)) )
+    0 -> newEntity_ ( _uv, pos, Size (V4 (V3 0 0 (-64)) (V3 64 0 (-64)) (V3 64 0 0) (V3 0 0 0)) )
+    1 -> newEntity_ ( _uv, pos, Size (V4 (V3 64 0 (-64)) (V3 64 0 0) (V3 0 0 0) (V3 0 0 (-64))) )
+    2 -> newEntity_ ( _uv, pos, Size (V4 (V3 64 0 0) (V3 0 0 0) (V3 0 0 (-64)) (V3 64 0 (-64))) )
+    3 -> newEntity_ ( _uv, pos, Size (V4 (V3 0 0 0) (V3 0 0 (-64)) (V3 64 0 (-64)) (V3 64 0 0)) )
     _ -> error "Wrong number of rotations found in database."
   
 
@@ -61,8 +58,8 @@ loadGrid path (Grid g) = do
   let
     grid = M.toList $ tileId <$> g
     mkEnt :: MonadIO m => ((Int, Int), Int) -> SystemT' m ()
-    mkEnt (pos, id) = do
-      tiledb <- liftIO $ getTileFromId id conn
+    mkEnt (pos, _id) = do
+      tiledb <- liftIO $ getTileFromId _id conn
       tileToEnt pos tiledb
   mapM_ mkEnt grid
   liftIO $ close conn

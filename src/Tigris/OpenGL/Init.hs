@@ -65,6 +65,6 @@ initOpenGL window = do
   let pm :: M44 GL.GLfloat = projectionMatrix 45 800 600
   (toMatrix pm :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform locProj GL.$=) 
   
-  traverse_ (putStrLn . show) <$> (GL.get GL.errors)
+  _ <- traverse_ (putStrLn . show) <$> (GL.get GL.errors)
 
   return (vao, vbo, ebo, program)
