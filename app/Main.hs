@@ -53,6 +53,7 @@ clsfLoop :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) (Millisecond 1
 clsfLoop =
   aalthandleEvent
   >>> setPosition
+  >>> follow
   >>> model
   >>> view
   >>> incFrame
@@ -129,16 +130,23 @@ gameLoop' world = do
     (clsfLoop >>> altDraw)
     @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
 
-player :: SystemT' IO ()
+player :: SystemT' IO Entity
 player = 
   let p = V3 0 0 0
-  in newEntity_ ( Player
+  in newEntity ( Player
                 , Size (V4 (V3 (-16) 32 0) (V3 16 32 0) (V3 16 0 0) (V3 (-16) 0 0))
                 , Position (V4 p p p p)
                 , Speed 250
                 , SpriteSheet 1 (4096-34) 0 0 (34 * 4) 34 34 1 2 0
                 , Velocity (Z, Z)
                 )
+followPlayer :: Int -> SystemT' IO ()
+followPlayer _id =
+  newEntity_ ( Size (V4 (V3 (-16) 32 0) (V3 16 32 0) (V3 16 0 0) (V3 (-16) 0 0))
+             , SpriteSheet 1 (4096) 0 0 (34 * 4) 34 34 1 2 0
+             , Follows _id (V3 32 0 0)
+             )
+  
 
 gameLoop''' :: World -> SystemT' IO ()
 gameLoop''' world = do
@@ -155,7 +163,8 @@ gameLoop''' world = do
 
   loadNewGrid "data/sheet-1.db"
 
-  player
+  Entity _id <- player
+  followPlayer _id
 
   --flow $ rhineLoop' world
   flow $
