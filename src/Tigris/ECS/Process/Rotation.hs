@@ -38,7 +38,7 @@ rotAngle :: MonadIO m => Plane -> ClSFS m cl GL.GLfloat ()
 rotAngle plane = arrMCl $ _rotAngle plane
 
 _rotate :: MonadIO m => SystemT' m ()
-_rotate = cmap $ \(Rotation {..}, Position (V4 _ n _ _)) ->
+_rotate = cmap $ \(Rotation {..}) ->
   let sa = sin xyangle
       sb = sin xzangle
       sg = sin yzangle
