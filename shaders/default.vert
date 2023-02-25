@@ -8,10 +8,11 @@ out vec2 TexCoord;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
+uniform mat4 rmat;
 
 
 void main()
 {
-  gl_Position = proj * view * model * aPos;
+  gl_Position = proj * view * model * rmat * aPos;
   TexCoord = aTexCoord;
 }

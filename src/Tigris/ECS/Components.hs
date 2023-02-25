@@ -95,32 +95,27 @@ data Follows = Follows Int (V3 GL.GLfloat)
 instance Component Follows where
   type Storage Follows = Map Follows
 
+data Plane = XY | YZ | XZ
+
 -- | Entities may have a rotational component.
 data Rotation = Rotation
-  { angle :: Double           -- ^ The angle of rotation.
+  { xyangle :: GL.GLfloat    -- ^ The angle of rotation. 
+  , yzangle :: GL.GLfloat    -- ^ The angle of rotation.
+  , xzangle :: GL.GLfloat    -- ^ The angle of rotation.
   , rotPntFrac :: (Int, Int) -- ^ Values to be used to determine the center of rotation. `(2, 2)` centers rotation by setting the rotation point to `(V2 (w `div` 2) (h `div` 2))` where `w` and `h` are the width and height of the destination rectangle.
-  , flipXY :: V2 Bool          -- ^ Whether or not to flip in the x and y directions.
   }
 instance Component Rotation where
   type Storage Rotation = Map Rotation
+
+data RotationMat = RotationMat (M44 GL.GLfloat)
+instance Component RotationMat where
+  type Storage RotationMat = Map RotationMat
 
 -- | Whether or not entities with a rotation
 --   component should be rotated towards the mouse.
 data RToMouse = RToMouse
 instance Component RToMouse where
   type Storage RToMouse = Map RToMouse
-
--- -- | The destination rectangle, i.e., where an
--- --   entity will be rendered to the screen.
--- newtype Destination = Destination (Rectangle CInt)
--- instance Component Destination where
---   type Storage Destination = Map Destination
--- 
--- -- | Used to create the `Destination` rectangle
--- --   for entities with a position component.
--- newtype Camera = Camera (Rectangle CInt)
--- instance Component Camera where
---   type Storage Camera = TMVGlobal Camera
 
 data VEnum = Z | One | NOne deriving (Eq)
 

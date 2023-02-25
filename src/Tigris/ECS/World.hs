@@ -38,4 +38,5 @@ makeWorld "World" [ ''Player
                   , ''UV
                   , ''Size
                   , ''Follows
+                  , ''RotationMat
                   ]

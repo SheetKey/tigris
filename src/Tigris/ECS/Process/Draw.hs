@@ -90,7 +90,7 @@ _altDraw = do
   let indices :: V.Vector GL.GLuint = V.fromList [0, 1, 2, 0, 2, 3]
   liftIO $ bufferDataWithVector indices GL.ElementArrayBuffer GL.DynamicDraw
 
-  cmapM_ $ \(Size size, Model m, UV uv) -> do
+  cmapM_ $ \(Size size, Model m, UV uv, rmat :: Maybe RotationMat) -> do
     let (V4 tl  tr  br  bl ) = (V.fromList . toList . point) <$> size
         (V4 tl' tr' br' bl') = (V.fromList . toList) <$> uv
         vertices = V.concat [tl, tl', tr, tr', br, br', bl, bl']
@@ -101,6 +101,10 @@ _altDraw = do
       bufferDataWithVector vertices GL.ArrayBuffer GL.DynamicDraw
       modelLoc <- GL.get . GL.uniformLocation program $ "model"
       (toMatrix m :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform modelLoc GL.$=)
+      rmatLoc <- GL.get . GL.uniformLocation program $ "rmat"
+      case rmat of
+        Just (RotationMat rmat') -> (toMatrix rmat' :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform rmatLoc GL.$=)
+        Nothing                  -> (toMatrix identity :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform rmatLoc GL.$=)
       GL.drawElements GL.Triangles 6 GL.UnsignedInt nullPtr
 
   SDL.glSwapWindow window
