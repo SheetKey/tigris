@@ -60,6 +60,7 @@ clsfLoop =
   >>> view
   >>> incFrame
   >>> uv
+  >>> mousePosition >>> arr (\_ -> ())
 
 rhineLoop'
   :: World
@@ -168,6 +169,8 @@ gameLoop''' world = do
 
   Entity _id <- player
   followPlayer _id
+
+  _projection $ V2 800 600
 
   --flow $ rhineLoop' world
   flow $
