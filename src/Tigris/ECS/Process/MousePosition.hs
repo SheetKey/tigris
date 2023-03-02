@@ -51,10 +51,34 @@ mousePosition = constMCl _mousePosition
 _mousePosition' :: MonadIO m => m (V3 GL.GLfloat)
 _mousePosition' = do
   SDL.P (SDL.V2 mx my) <- SDL.getAbsoluteMouseLocation
+  let winX = mx
+      winY = abs (600 - my)
   z <- liftIO $ alloca $ \ptr -> do
     let pdata = GL.PixelData GL.DepthComponent GL.Float ptr
-    GL.readPixels (GL.Position (fromIntegral mx) (fromIntegral my)) (GL.Size 1 1) pdata
+    GL.readPixels (GL.Position (fromIntegral winX) (fromIntegral winY)) (GL.Size 1 1) pdata
     peek ptr
-  return $ V3 (fromIntegral mx) (fromIntegral my) z
+  liftIO $ print "':"
+  liftIO $ print ((fromIntegral winX), (fromIntegral winY), z)
+  return $ V3 (fromIntegral winX) (fromIntegral winY) z
         
+mousePosition' :: MonadIO m => ClSFS m cl () (V3 GL.GLfloat)
+mousePosition' = constMCl _mousePosition'
+
+_mouseCoord :: MonadIO m => V3 GL.GLfloat -> SystemT' m (V3 GL.GLfloat)
+_mouseCoord (V3 x y z) = do
+  View view <- get global
+  Projection proj <- get global
+  view' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) view
+  proj' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) proj
+  model :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix identity
+  vp <- GL.get GL.viewport
+  GL.Vertex3 x' y' z' <- liftIO $ GL.unProject
+                               (GL.Vertex3 (float2Double x) (float2Double y) (float2Double z))
+                               view'
+                               proj'
+                               vp
+  liftIO $ print (x',y',z')
+  return $ double2Float <$> (V3 x' y' z')
   
+mouseCoord :: MonadIO m => ClSFS m cl (V3 GL.GLfloat) (V3 GL.GLfloat)
+mouseCoord = arrMCl _mouseCoord
