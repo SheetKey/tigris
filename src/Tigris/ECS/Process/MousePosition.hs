@@ -42,7 +42,6 @@ _mousePosition = do
                                view'
                                proj'
                                vp
-  liftIO $ print (x,y,z)
   return $ double2Float <$> (V3 x y z)
 
 mousePosition :: MonadIO m => ClSFS m cl () (V3 GL.GLfloat)
@@ -57,8 +56,6 @@ _mousePosition' = do
     let pdata = GL.PixelData GL.DepthComponent GL.Float ptr
     GL.readPixels (GL.Position (fromIntegral winX) (fromIntegral winY)) (GL.Size 1 1) pdata
     peek ptr
-  liftIO $ print "':"
-  liftIO $ print ((fromIntegral winX), (fromIntegral winY), z)
   return $ V3 (fromIntegral winX) (fromIntegral winY) z
         
 mousePosition' :: MonadIO m => ClSFS m cl () (V3 GL.GLfloat)
@@ -77,7 +74,6 @@ _mouseCoord (V3 x y z) = do
                                view'
                                proj'
                                vp
-  liftIO $ print (x',y',z')
   return $ double2Float <$> (V3 x' y' z')
   
 mouseCoord :: MonadIO m => ClSFS m cl (V3 GL.GLfloat) (V3 GL.GLfloat)
