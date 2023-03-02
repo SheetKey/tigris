@@ -32,7 +32,7 @@ _rotAngle plane ang = cmap $
     case plane of
       XY -> Rotation { xyangle = ang, .. }
       YZ -> Rotation { yzangle = ang, .. }
-      XZ -> Rotation { xzangle = ang, .. }
+      XZ -> Rotation { xzangle = -ang, .. }
 
 rotAngle :: MonadIO m => Plane -> ClSFS m cl GL.GLfloat ()
 rotAngle plane = arrMCl $ _rotAngle plane
