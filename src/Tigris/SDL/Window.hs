@@ -19,7 +19,7 @@ windowConfig = SDL.WindowConfig
                                 , SDL.glMultisampleSamples = 4             -- MSAA
                                 }
   , SDL.windowPosition        = SDL.Wherever
-  , SDL.windowResizable       = False
+  , SDL.windowResizable       = True
   , SDL.windowInitialSize     = SDL.V2 800 600
   , SDL.windowVisible         = True
   }

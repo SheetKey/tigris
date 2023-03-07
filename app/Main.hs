@@ -107,24 +107,39 @@ gameLoop' = mkGameLoop
   (flow $ (clsfLoop >>> altDraw)
    @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16)))
 
-  let p = V3 0 0 0
-      p' = V3 2 0 2
-  player
-  newEntity_ ( Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
-             , Position (V4 p' p' p' p')
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 1 5 0
-             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
-             )
-  newEntity_ ( Size (V4 (V3 (-10) 0 (-10)) (V3 10 0 (-10)) (V3 10 0 10) (V3 (-10) 0 10))
-             , Position (V4 p p p p)
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 1 5 0
-             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
-             )
+gameLoop''' :: World -> SystemT' IO ()
+gameLoop''' world = mkGameLoop
+  (flow $ ((clsfLoop >>> altDraw)
+            @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16)))
+   ||@ (concurrentlySystem world) @||
+   (projection @@ WindowResizeClock))
+  world
+                    
 
-  --flow $ rhineLoop' world
-  flow $
-    (clsfLoop >>> altDraw)
-    @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
+--  do
+--  GLBuffers (vao,_,_, program) <- get global
+--
+--  liftIO $ do 
+--    GL.currentProgram GL.$= Just program
+--    Right texture0001 <- createTextureFromPNG "./sprites/Sheet-1.png"
+--    GL.activeTexture GL.$= GL.TextureUnit 0
+--    GL.textureBinding GL.Texture2D GL.$= Just texture0001
+--    locTexture <- GL.get . GL.uniformLocation program $ "Texture"
+--    GL.uniform locTexture GL.$= GL.TextureUnit 0
+--    GL.currentProgram GL.$= Nothing
+--
+--  loadNewGrid "data/sheet-1.db"
+--
+--  Entity _id <- player
+--  followPlayer _id
+--
+--  _projection $ V2 800 600
+--
+--  --flow $ rhineLoop' world
+--  flow $
+--    (clsfLoop >>> altDraw)
+--    @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
+
 
 player :: SystemT' IO Entity
 player = 
