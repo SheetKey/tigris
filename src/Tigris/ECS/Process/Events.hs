@@ -4,6 +4,10 @@
 
 module Tigris.ECS.Process.Events where
 
+
+-- base
+import Data.Int
+
 -- rhine
 import FRP.Rhine
 
@@ -24,9 +28,13 @@ import Tigris.FRP
 import SDL ( Event (..)
            , EventPayload (..)
            , KeyboardEventData (..)
+           , MouseButtonEventData (..)
+           , MouseButton (..)
            , Keycode (..)
            , Keysym (..)
            , InputMotion (..)
+           , Point (..)
+           , V2 (..)
            , pattern KeycodeW
            , pattern KeycodeA
            , pattern KeycodeS
@@ -75,9 +83,16 @@ _handleKeyboardEvent :: MonadIO m => KeyboardEventData -> SystemT' m ()
 _handleKeyboardEvent (KeyboardEventData _ Pressed  _ keysym) = _handleKeycodePressed $ keysymKeycode keysym
 _handleKeyboardEvent (KeyboardEventData _ Released _ keysym) = _handleKeycodeReleased $ keysymKeycode keysym
 
+_handleMouseEvent :: MonadIO m => InputMotion -> MouseButton -> Point V2 Int32 -> SystemT' m ()
+_handleMouseEvent = undefined
+
+_handleMouseButtonEvent :: MonadIO m => MouseButtonEventData -> SystemT' m ()
+_handleMouseButtonEvent (MouseButtonEventData _ pr _ lr _ pos) = _handleMouseEvent pr lr pos
+
 _handleEventPayload :: MonadIO m => EventPayload -> SystemT' m ()
 _handleEventPayload (WindowSizeChangedEvent e) = set global (WindowResized $ windowSizeChangedEventSize e)
 _handleEventPayload (KeyboardEvent e) = _handleKeyboardEvent e
+_handleEventPayload (MouseButtonEvent e) = _handleMouseButtonEvent e
 _handleEventPayload _ = return ()
 
 _handleMEvent :: MonadIO m => Maybe Event -> SystemT' m ()
