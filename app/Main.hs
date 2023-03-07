@@ -101,18 +101,11 @@ rhineLoop world =
   (altDraw) @@ (HoistClock waitClock liftIO)
 
 
-gameLoop' :: World -> SystemT' IO ()
-gameLoop' world = do
-  GLBuffers (vao,_,_, program) <- get global
 
-  liftIO $ do 
-    GL.currentProgram GL.$= Just program
-    Right texture0001 <- createTextureFromPNG "./sprites/Sprite-0001.png"
-    GL.activeTexture GL.$= GL.TextureUnit 0
-    GL.textureBinding GL.Texture2D GL.$= Just texture0001
-    locTexture <- GL.get . GL.uniformLocation program $ "Texture"
-    GL.uniform locTexture GL.$= GL.TextureUnit 0
-    GL.currentProgram GL.$= Nothing
+gameLoop' :: World -> SystemT' IO ()
+gameLoop' = mkGameLoop
+  (flow $ (clsfLoop >>> altDraw)
+   @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16)))
 
   let p = V3 0 0 0
       p' = V3 2 0 2
@@ -151,9 +144,8 @@ followPlayer _id =
              , Rotation 0 0 0 (2, 2) 
              )
   
-
-gameLoop''' :: World -> SystemT' IO ()
-gameLoop''' world = do
+mkGameLoop :: SystemT' IO () -> World -> SystemT' IO ()
+mkGameLoop loop world = do
   GLBuffers (vao,_,_, program) <- get global
 
   liftIO $ do 
@@ -172,10 +164,20 @@ gameLoop''' world = do
 
   _projection $ V2 800 600
 
-  --flow $ rhineLoop' world
-  flow $
-    (clsfLoop >>> altDraw)
-    @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
+  loop
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
