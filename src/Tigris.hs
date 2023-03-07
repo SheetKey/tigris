@@ -9,3 +9,4 @@ import Tigris.Init as X
 import Tigris.Collision as X
 import Tigris.WFC as X
 import Tigris.OpenGL as X
+import Tigris.Inventory as X

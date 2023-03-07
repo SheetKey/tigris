@@ -88,6 +88,9 @@ library
                             , Tigris.ECS.Load.DB
                             , Tigris.ECS.Load.TileMap
 
+                            , Tigris.Inventory
+                            , Tigris.Inventory.Types
+
     other-modules:            Paths_tigris
     autogen-modules:          Paths_tigris
                       
