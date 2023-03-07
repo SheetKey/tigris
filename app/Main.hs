@@ -60,7 +60,7 @@ clsfLoop =
   >>> view
   >>> incFrame
   >>> uv
-  >>> mousePosition' >>> mouseCoord >>> arr (\_ -> ())
+  -- >>> mousePosition' >>> mouseCoord >>> arr (\_ -> ())
 
 rhineLoop'
   :: World
