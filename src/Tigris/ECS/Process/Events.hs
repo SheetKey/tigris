@@ -23,6 +23,7 @@ import Tigris.ECS.System
 import Tigris.ECS.World
 import Tigris.ECS.Components
 import Tigris.FRP
+import Tigris.ECS.Process.MousePosition
 
 -- sdl
 import SDL ( Event (..)
@@ -84,7 +85,10 @@ _handleKeyboardEvent (KeyboardEventData _ Pressed  _ keysym) = _handleKeycodePre
 _handleKeyboardEvent (KeyboardEventData _ Released _ keysym) = _handleKeycodeReleased $ keysymKeycode keysym
 
 _handleMouseEvent :: MonadIO m => InputMotion -> MouseButton -> Point V2 Int32 -> SystemT' m ()
-_handleMouseEvent = undefined
+_handleMouseEvent motion ButtonLeft (P (V2 x y)) = cmapM $ \(WMouseLeftClick _) -> do
+  coords <- _inGameMousePos (x, y)
+  return $ WMouseLeftClick (Just (motion, coords))
+_handleMouseEvent _ _ _ = return ()
 
 _handleMouseButtonEvent :: MonadIO m => MouseButtonEventData -> SystemT' m ()
 _handleMouseButtonEvent (MouseButtonEventData _ pr _ lr _ pos) = _handleMouseEvent pr lr pos
