@@ -194,3 +194,6 @@ newtype Collisions = Collisions (Int, Int)
 instance Component Collisions where
   type Storage Collisions = BTQGlobal Collisions
 
+newtype WMouseLeftClick = WMouseLeftClick (Maybe (SDL.InputMotion, (V3 GL.GLfloat)))
+instance Component WMouseLeftClick where
+  type Storage WMouseLeftClick = Map WMouseLeftClick
