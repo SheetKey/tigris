@@ -62,6 +62,7 @@ library
                             , Tigris.ECS.Stores.TMVGlobal
                             , Tigris.ECS.Stores.BTMVGlobal
                             , Tigris.ECS.Stores.BTQGlobal
+                            , Tigris.ECS.Stores.TQGlobal
                             , Tigris.ECS.Clock
                             , Tigris.ECS.Clock.WindowResize
                             , Tigris.ECS.Clock.Collision

@@ -10,3 +10,4 @@ module Tigris.ECS.Stores
 import Tigris.ECS.Stores.TMVGlobal as X
 import Tigris.ECS.Stores.BTMVGlobal as X
 import Tigris.ECS.Stores.BTQGlobal as X
+import Tigris.ECS.Stores.TQGlobal as X

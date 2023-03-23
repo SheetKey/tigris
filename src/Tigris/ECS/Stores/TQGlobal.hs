@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -25,17 +26,17 @@ import Control.Monad.IO.Class
 
 -- | A global component store using `TQueue`.
 newtype TQGlobal c = TQGlobal (TQueue c)
-type instance Elem (TQGlobal c) = Maybe c
-instance MonadIO m => ExplInit m (TQGlobal c) where
+type instance Elem (TQGlobal c) = c
+instance (MonadIO m, Monoid c) => ExplInit m (TQGlobal c) where
   {-# INLINE explInit #-}
   explInit = liftIO $ TQGlobal <$> newTQueueIO
 
-instance MonadIO m => ExplGet m (TQGlobal c) where
+instance (MonadIO m, Monoid c) => ExplGet m (TQGlobal c) where
   {-# INLINE explGet #-}
-  explGet (TQGlobal tqueue) _ = liftIO $ atomically $ tryReadTQueue tqueue
+  explGet (TQGlobal tqueue) _ = fmap (\case { Nothing -> mempty; Just c -> c}) (liftIO $ atomically $ tryReadTQueue tqueue)
   {-# INLINE explExists #-}
   explExists (TQGlobal tqueue) _ = liftIO $ atomically $ not <$> isEmptyTQueue tqueue
 
-instance MonadIO m => ExplSet m (TQGlobal c) where
+instance (MonadIO m, Monoid c) => ExplSet m (TQGlobal c) where
   {-# INLINE explSet #-}
   explSet (TQGlobal tqueue) _ c = liftIO $ atomically $ writeTQueue tqueue c
