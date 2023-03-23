@@ -194,6 +194,11 @@ newtype Collisions = Collisions (Int, Int)
 instance Component Collisions where
   type Storage Collisions = BTQGlobal Collisions
 
-newtype WMouseLeftClick = WMouseLeftClick (Maybe (SDL.InputMotion, (V3 GL.GLfloat)))
-instance Component WMouseLeftClick where
-  type Storage WMouseLeftClick = Map WMouseLeftClick
+-- | Holds global left click information.
+newtype MouseLeftClick = MouseLeftClick (Maybe (SDL.InputMotion, (V3 GL.GLfloat)))
+instance Semigroup MouseLeftClick where
+  _ <> _ = error "Semigroup instance for 'MouseLeftClick' should not be used."
+instance Monoid MouseLeftClick where
+  mempty = MouseLeftClick Nothing
+instance Component MouseLeftClick where
+  type Storage MouseLeftClick = TQGlobal MouseLeftClick
