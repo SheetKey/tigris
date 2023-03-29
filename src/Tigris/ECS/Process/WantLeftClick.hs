@@ -35,22 +35,29 @@ getFunc i m = case (m M.!? i) of
                 Just f -> f
                 Nothing -> error $ "'FuncMap' does not contain key " ++ show i
 
-_useLeftClick :: MonadIO m => ReaderT' (FuncMap (V3 GL.GLfloat) m ()) m ()
-_useLeftClick = do
+_useLeftClick :: MonadIO m => ((), SDL.InputMotion)
+              -> ReaderT' (FuncMap (V3 GL.GLfloat) m ()) m ((), SDL.InputMotion)
+_useLeftClick ((), last) = do
   funMap <- ask
   MouseLeftClick click <- lift $ get global
-  case click of
-    (SDL.Released, _) -> return ()
-    (SDL.Pressed, Just pos) -> do
-      lift $ cmapM_ $ \(WantLeftClick i) -> (getFunc i funMap) pos
-      lift $ set global $ MouseLeftClick (SDL.Pressed, Nothing)
+  case (last, click) of
+    -- If previously released and currently released do nothing.
+    (SDL.Released, Nothing) -> return ((), SDL.Released)
+    -- If previously pressed and no further input, mouse is being held down.
     (SDL.Pressed, Nothing) -> do
       SDL.P (SDL.V2 (CInt x) (CInt y)) <- SDL.getAbsoluteMouseLocation
       pos <- lift $ _inGameMousePos (x, y)
       lift $ cmapM_ $ \(WantLeftClick i) -> (getFunc i funMap) pos
+      return ((), SDL.Pressed)
+    -- On release, release.
+    (_, Just (SDL.Released, _)) -> return ((), SDL.Released)
+    -- On press, handle press.
+    (_, Just (SDL.Pressed, pos)) -> do
+      lift $ cmapM_ $ \(WantLeftClick i) -> (getFunc i funMap) pos
+      return ((), SDL.Pressed)
 
 useLeftClickR :: MonadIO m => ClSFSR (FuncMap (V3 GL.GLfloat) m ()) m cl () ()
-useLeftClickR = constMCl _useLeftClick
+useLeftClickR = feedback SDL.Released $ arrMCl _useLeftClick
 
 useLeftClick :: MonadIO m => FuncMap (V3 GL.GLfloat) m () -> ClSFS m cl () ()
 useLeftClick = runReaderS_ useLeftClickR

@@ -87,7 +87,7 @@ _handleKeyboardEvent (KeyboardEventData _ Released _ keysym) = _handleKeycodeRel
 _handleMouseEvent :: MonadIO m => InputMotion -> MouseButton -> Point V2 Int32 -> SystemT' m ()
 _handleMouseEvent motion ButtonLeft (P (V2 x y)) = do
   coords <- _inGameMousePos (x, y)
-  set global $ MouseLeftClick (motion, Just coords)
+  set global $ MouseLeftClick $ Just (motion, coords)
 _handleMouseEvent _ _ _ = return ()
 
 _handleMouseButtonEvent :: MonadIO m => MouseButtonEventData -> SystemT' m ()
