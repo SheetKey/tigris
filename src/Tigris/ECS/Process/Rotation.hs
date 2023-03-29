@@ -6,6 +6,8 @@ module Tigris.ECS.Process.Rotation where
 -- mylib
 import Tigris.ECS.System
 import Tigris.ECS.Components
+import Tigris.ECS.Process.MousePosition
+import Tigris.ECS.Process.MouseAngle
 
 -- rhine
 import FRP.Rhine
@@ -36,6 +38,14 @@ _rotAngle plane ang = cmap $
 
 rotAngle :: MonadIO m => Plane -> ClSFS m cl GL.GLfloat ()
 rotAngle plane = arrMCl $ _rotAngle plane
+
+_rotAngleToMouse :: MonadIO m => SystemT' m ()
+_rotAngleToMouse = do
+  mpos <- _mousePos
+  cmapM_ $ \(RToMouse, Position (V4 _ pos _ _)) -> _rotAngle XZ (_angleFromTo pos mpos)
+
+rotAngleToMouse :: MonadIO m => ClSFS m cl () ()
+rotAngleToMouse = constMCl _rotAngleToMouse
 
 _rotate :: MonadIO m => SystemT' m ()
 _rotate = cmap $ \(Rotation {..}) ->
