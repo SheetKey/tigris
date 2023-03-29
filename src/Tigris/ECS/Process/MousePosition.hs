@@ -69,3 +69,8 @@ _inGameMousePos = _mouseZCoord >=> _screenToGameCoord
 
 inGameMousePos :: MonadIO m => ClSFS m cl (Int32, Int32) (V3 GL.GLfloat)
 inGameMousePos = arrMCl _inGameMousePos
+
+_mousePos :: MonadIO m => SystemT' m (V3 GL.GLfloat)
+_mousePos = do
+  SDL.P (SDL.V2 (CInt _mx) (CInt _my)) <- SDL.getAbsoluteMouseLocation
+  _inGameMousePos (_mx, _my)
