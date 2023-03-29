@@ -63,10 +63,10 @@ clsfLoop =
   >>> useLeftClick testFuncMap
   >>> setPosition
   >>> follow
-  >>> mouseAngle >>> (rotAngle XZ)
   >>> Tigris.rotate
   >>> model
   >>> view
+  >>> rotAngleToMouse
   >>> incFrame
   >>> uv
   -- >>> mousePosition' >>> mouseCoord >>> arr (\_ -> ())
@@ -167,6 +167,7 @@ followPlayer _id =
              , SpriteSheet 1 (4096) 0 0 (34 * 4) 34 34 1 2 0
              , Follows _id (V3 32 0 0)
              , Rotation 0 0 0 (2, 2) 
+             , RToMouse
              )
   
 mkGameLoop :: SystemT' IO () -> World -> SystemT' IO ()
