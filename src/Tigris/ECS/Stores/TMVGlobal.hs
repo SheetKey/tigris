@@ -24,6 +24,7 @@ import Apecs.Core
 
 -- base
 import Control.Monad.IO.Class
+import Data.Typeable
 
 -- | A global component store using `TMVar`.
 newtype TMVGlobal c = TMVGlobal (TMVar c)
@@ -32,9 +33,9 @@ instance MonadIO m => ExplInit m (TMVGlobal c) where
   {-# INLINE explInit #-}
   explInit = liftIO $ TMVGlobal <$> newEmptyTMVarIO
 
-instance MonadIO m => ExplGet m (TMVGlobal c) where
+instance (MonadIO m, Typeable c) => ExplGet m (TMVGlobal c) where
   {-# INLINE explGet #-}
-  explGet (TMVGlobal tmvar) _ = (\case {Just a -> a; Nothing -> error "'TMVarGlobal' is empty for some component. Thread blocked indefinitely in STM transaction."}) <$> (liftIO $ atomically $ tryReadTMVar tmvar)
+  explGet (TMVGlobal tmvar) _ = (\case {Just a -> a; Nothing -> error ("'TMVarGlobal' is empty for " ++ (show $ typeOf tmvar) ++ ". Thread blocked indefinitely in STM transaction.")}) <$> (liftIO $ atomically $ tryReadTMVar tmvar)
   {-# INLINE explExists #-}
   explExists (TMVGlobal tmvar) _ = liftIO $ atomically $ not <$> isEmptyTMVar tmvar
 
