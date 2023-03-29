@@ -22,3 +22,4 @@ import Tigris.ECS.Process.Draw as X
 import Tigris.ECS.Process.Follows as X
 import Tigris.ECS.Process.MouseAngle as X
 import Tigris.ECS.Process.MousePosition as X
+import Tigris.ECS.Process.WantLeftClick as X

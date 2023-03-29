@@ -40,4 +40,5 @@ makeWorld "World" [ ''Player
                   , ''Follows
                   , ''RotationMat
                   , ''MouseLeftClick
+                  , ''WantLeftClick
                   ]
