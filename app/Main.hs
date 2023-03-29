@@ -21,6 +21,9 @@ import Apecs
 import qualified Data.Vector.Storable as V
 import qualified Data.Vector as VV
 
+-- containers
+import qualified Data.IntMap.Strict as M
+
 -- linear
 import Linear
 
@@ -49,9 +52,15 @@ main = initAndRun "Game Demo" gameLoop'''
 --tile4 = Tile 4 1 2 2 2 1
 
 
+testFuncMap :: MonadIO m => FuncMap (V3 GL.GLfloat) m ()
+testFuncMap = M.fromList [ (1, liftIO . print)
+                         ]
+
+
 clsfLoop :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) (Millisecond 16)) () ()
 clsfLoop =
   aalthandleEvent
+  >>> useLeftClick testFuncMap
   >>> setPosition
   >>> follow
   >>> mouseAngle >>> (rotAngle XZ)
@@ -150,6 +159,7 @@ player =
                 , Speed 250
                 , SpriteSheet 1 (4096-34) 0 0 (34 * 4) 34 34 1 2 0
                 , Velocity (Z, Z)
+                , WantLeftClick 1
                 )
 followPlayer :: Int -> SystemT' IO ()
 followPlayer _id =
