@@ -31,12 +31,16 @@ import Linear
 import Data.Foldable (traverse_)
 import Foreign.Ptr
 import Control.Concurrent
+import Control.Monad (forM, forM_)
 
 -- text
-import Data.Text
+import Data.Text hiding (zip)
 
 -- rhine
 import FRP.Rhine hiding (get)
+
+-- random
+import System.Random (randomRIO)
 
 
 
@@ -65,7 +69,7 @@ clsfLoop =
   >>> follow
   >>> Tigris.rotate
   >>> model
-  >>> view
+  >>> customView
   >>> rotAngleToMouse
   >>> incFrame
   >>> uv
@@ -169,6 +173,22 @@ followPlayer _id =
              , Rotation 0 0 0 (2, 2) 
              , RToMouse
              )
+
+tree :: Position -> SystemT' IO ()
+tree pos =
+  newEntity_ (Size (V4 (V3 (-115.5) 264 0) (V3 115.5 264 0) (V3 115.5 0 0) (V3 (-115.5) 0 0))
+             , SpriteSheet 1 4096 1190 4096 1190 238 272 1 1000000000 0
+             , pos
+             )
+
+trees :: SystemT' IO ()
+trees = do
+  randListX <- forM [1 .. 10] $ \_ -> randomRIO (0, 1024)
+  randListZ <- forM [1 .. 10] $ \_ -> randomRIO (-1024, 0)
+  let randList = zip randListX randListZ
+      tList = (flip fmap) randList $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
+  forM_ tList tree 
+                   
   
 mkGameLoop :: SystemT' IO () -> World -> SystemT' IO ()
 mkGameLoop loop world = do
@@ -187,6 +207,7 @@ mkGameLoop loop world = do
 
   Entity _id <- player
   followPlayer _id
+  trees
 
   _projection $ V2 800 600
 
