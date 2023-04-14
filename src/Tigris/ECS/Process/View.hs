@@ -30,3 +30,17 @@ _view = cmapM_ $ \(Player, Position (V4 _ n _ _)) -> do
 
 view :: MonadIO m => ClSFS m cl () ()
 view = constMCl _view
+
+_customView :: MonadIO m => SystemT' m ()
+_customView = cmapM_ $ \(Player, Position (V4 _ n _ _)) -> do
+  let vm = customViewMatrix $ viewMatrix n (V3 0 400 300)
+  set global $ View vm
+  GLBuffers (_,_,_, program) <- get global
+  liftIO $ do 
+    GL.currentProgram GL.$= Just program
+    loc <- GL.get . GL.uniformLocation program $ "view"
+    (toMatrix vm :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform loc GL.$=)
+    GL.currentProgram GL.$= Nothing
+
+customView :: MonadIO m => ClSFS m cl () ()
+customView = constMCl _customView

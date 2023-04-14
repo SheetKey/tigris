@@ -6,7 +6,9 @@ import Foreign.Ptr
 
 -- linear
 import Linear.V3
+import Linear.V4
 import Linear.Matrix
+import Linear.Vector
 import Linear.Epsilon
 import Linear.Projection
 
@@ -23,6 +25,15 @@ viewMatrix center constant = lookAt eye center up
   where
     eye = constant + center
     up = V3 0 1 0
+
+-- a view matrix that makes vertical things look better
+customViewMatrix :: Fractional a => M44 a -> M44 a
+customViewMatrix m@(V4 (V4 _ a _ _) (V4 _ b _ _) (V4 _ c _ _) (V4 _ d _ _)) =
+  m !+! (V4 a' b' c' d')
+  where a' = V4 0 ((0.001 * a) - a) 0 0
+        b' = V4 0 (((0.001 * b) + 1) - b) 0 0
+        c' = V4 0 ((0.001 * c) - c) 0 0
+        d' = V4 0 ((0.001 * d) - d) 0 0
 
 -- projectoin matrix
 projectionMatrix :: (Floating a) => a -> a -> a -> M44 a
