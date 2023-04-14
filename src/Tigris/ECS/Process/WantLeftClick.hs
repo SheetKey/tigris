@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Tigris.ECS.Process.WantLeftClick where
 
 -- mylib
@@ -27,15 +29,16 @@ import Linear
 import Foreign.C.Types (CInt (..))
 
 
-type FuncMap a m b = M.IntMap (a -> SystemT' m b)
+type FuncMap a m b = M.IntMap (Int -> a -> SystemT' m b)
 
   
-getFunc :: MonadIO m => Int -> FuncMap a m b -> (a -> SystemT' m b)
+getFunc :: MonadIO m => Int -> FuncMap a m b -> (Int -> a -> SystemT' m b)
 getFunc i m = case (m M.!? i) of
                 Just f -> f
                 Nothing -> error $ "'FuncMap' does not contain key " ++ show i
 
-_useLeftClick :: MonadIO m => ((), SDL.InputMotion)
+_useLeftClick :: MonadIO m
+              => ((), SDL.InputMotion)
               -> ReaderT' (FuncMap (V3 GL.GLfloat) m ()) m ((), SDL.InputMotion)
 _useLeftClick ((), last) = do
   funMap <- ask
@@ -47,13 +50,13 @@ _useLeftClick ((), last) = do
     (SDL.Pressed, Nothing) -> do
       SDL.P (SDL.V2 (CInt x) (CInt y)) <- SDL.getAbsoluteMouseLocation
       pos <- lift $ _inGameMousePos (x, y)
-      lift $ cmapM_ $ \(WantLeftClick i) -> (getFunc i funMap) pos
+      lift $ cmapM_ $ \(WantLeftClick i, ety :: Entity) -> (getFunc i funMap) (unEntity ety) pos
       return ((), SDL.Pressed)
     -- On release, release.
     (_, Just (SDL.Released, _)) -> return ((), SDL.Released)
     -- On press, handle press.
     (_, Just (SDL.Pressed, pos)) -> do
-      lift $ cmapM_ $ \(WantLeftClick i) -> (getFunc i funMap) pos
+      lift $ cmapM_ $ \(WantLeftClick i, ety :: Entity) -> (getFunc i funMap) (unEntity ety) pos
       return ((), SDL.Pressed)
 
 useLeftClickR :: MonadIO m => ClSFSR (FuncMap (V3 GL.GLfloat) m ()) m cl () ()
