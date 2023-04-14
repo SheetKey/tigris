@@ -39,3 +39,21 @@ _projection (V2 w h) = do
 
 projection :: MonadIO m => ClSFS m WindowResizeClock () ()
 projection = tagS >>> arrMCl _projection
+
+_orthoProjection :: MonadIO m => V2 Int32 -> SystemT' m ()
+_orthoProjection (V2 w h) = do
+  let pm = orthoMatrix (fromIntegral w) (fromIntegral h)
+  set global $ Projection pm
+  GLBuffers (_,_,_, program) <- get global
+  liftIO $ do
+    GL.currentProgram GL.$= Just program
+    loc <- GL.get . GL.uniformLocation program $ "proj"
+    (toMatrix pm :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform loc GL.$=)
+    GL.currentProgram GL.$= Nothing
+
+    GL.viewport GL.$= (GL.Position 0 0, GL.Size w h)
+  
+  
+
+orthoProjection :: MonadIO m => ClSFS m WindowResizeClock () ()
+orthoProjection = tagS >>> arrMCl _orthoProjection

@@ -37,7 +37,10 @@ customViewMatrix m@(V4 (V4 _ a _ _) (V4 _ b _ _) (V4 _ c _ _) (V4 _ d _ _)) =
 
 -- projectoin matrix
 projectionMatrix :: (Floating a) => a -> a -> a -> M44 a
-projectionMatrix fov winWidth winHeight = perspective fov (winWidth / winHeight) 0.2 10000.0
+projectionMatrix fov winWidth winHeight = perspective fov (winWidth / winHeight) 0.1 10000.0
+
+orthoMatrix :: (Fractional a) => a -> a -> M44 a
+orthoMatrix winWidth winHeight = ortho (- winWidth / 3) (winWidth / 3) (- winHeight / 3) (winHeight / 3) 0.1 10000.0
 
 -- convert to opengl matrix
 toMatrix :: (GL.Matrix m, GL.MatrixComponent c) => M44 c -> IO (m c)
