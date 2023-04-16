@@ -11,7 +11,7 @@ import Tigris.OpenGL
 import Apecs
 
 -- rhine
-import FRP.Rhine hiding (get)
+import FRP.Rhine hiding (get, dot, (*^))
 
 -- sld
 import qualified SDL
@@ -29,6 +29,7 @@ import Foreign.Storable
 import Data.Int
 import Control.Monad ((>=>))
 import Foreign.C.Types
+
 
 
 _mouseZCoord :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat)
@@ -93,3 +94,54 @@ _planeMousePos :: MonadIO m => SystemT' m (V3 GL.GLfloat)
 _planeMousePos = do
   SDL.P (SDL.V2 (CInt _mx) (CInt _my)) <- SDL.getAbsoluteMouseLocation
   _planeInGameMousePos (_mx, _my)
+
+
+-- using ray tracing
+-- https://antongerdelan.net/opengl/raycasting.html
+-- https://stackoverflow.com/questions/23975555/how-to-do-ray-plane-intersection
+
+
+mouseRay :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat, V3 GL.GLfloat)
+mouseRay (mx, my) = do
+  Window win <- get global
+  V2 _ (CInt height) <- SDL.get $ SDL.windowSize win
+  let winX = mx
+      winY = abs (height - my)
+  View view <- get global
+  Projection proj <- get global
+  view' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) view
+  proj' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) proj
+  model :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix identity
+  vp <- GL.get GL.viewport
+  GL.Vertex3 px py pz <- liftIO $ GL.unProject
+                         (GL.Vertex3 (fromIntegral winX) (fromIntegral winY) (fromIntegral 0))
+                         view'
+                         proj'
+                         vp
+  GL.Vertex3 vx vy vz <- liftIO $ GL.unProject
+                         (GL.Vertex3 (fromIntegral winX) (fromIntegral winY) (fromIntegral 1))
+                         view'
+                         proj'
+                         vp
+  return $ (fmap double2Float (V3 px py pz), fmap double2Float (V3 vx vy vz))
+  
+
+rayPlaneInter :: (V3 GL.GLfloat, V3 GL.GLfloat) -> V3 GL.GLfloat
+rayPlaneInter (p, v) = 
+  let n = V3 0 1 0
+      denom = n `dot` v
+  in if (abs denom) < 0.0001
+     then V3 0 0 0
+     else let t = - (dot n p) / denom
+         in if t < 0.0001
+            then V3 1 1 1
+            else p + (t *^ v)
+
+rayPlaneInter' :: (V3 GL.GLfloat, V3 GL.GLfloat) -> V3 GL.GLfloat
+rayPlaneInter' (p@(V3 _ py _), v@(V3 _ vy _)) = 
+  let t = - (py / vy)
+  in p + (t *^ v)
+            
+
+_rayMousePos :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat)
+_rayMousePos = (fmap rayPlaneInter') . mouseRay
