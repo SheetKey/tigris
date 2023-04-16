@@ -56,8 +56,9 @@ main = initAndRun "Game Demo" gameLoop'''
 --tile4 = Tile 4 1 2 2 2 1
 
 
-testFuncMap :: MonadIO m => FuncMap (V3 GL.GLfloat) m ()
-testFuncMap = M.fromList [ (1, liftIO . print)
+testFuncMap :: MonadIO m => FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m ()
+testFuncMap = M.fromList [ (1, \_ b -> liftIO $ print b)
+                         --, (2, \a b -> 
                          ]
 
 
