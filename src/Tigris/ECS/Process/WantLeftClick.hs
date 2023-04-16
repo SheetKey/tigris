@@ -39,7 +39,7 @@ getFunc i m = case (m M.!? i) of
 
 _useLeftClick :: MonadIO m
               => ((), SDL.InputMotion)
-              -> ReaderT' (FuncMap (V3 GL.GLfloat) m ()) m ((), SDL.InputMotion)
+              -> ReaderT' (FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m ()) m ((), SDL.InputMotion)
 _useLeftClick ((), last) = do
   funMap <- ask
   MouseLeftClick click <- lift $ get global
@@ -49,18 +49,21 @@ _useLeftClick ((), last) = do
     -- If previously pressed and no further input, mouse is being held down.
     (SDL.Pressed, Nothing) -> do
       SDL.P (SDL.V2 (CInt x) (CInt y)) <- SDL.getAbsoluteMouseLocation
-      pos <- lift $ _inGameMousePos (x, y)
-      lift $ cmapM_ $ \(WantLeftClick i, ety :: Entity) -> (getFunc i funMap) (unEntity ety) pos
+      pos1 <- lift $ _inGameMousePos (x, y)
+      pos2 <- lift $ _rayMousePos (x, y)
+      lift $ cmapM_ $ \(WantLeftClick i, ety :: Entity) ->
+        (getFunc i funMap) (unEntity ety) (pos1, pos2)
       return ((), SDL.Pressed)
     -- On release, release.
-    (_, Just (SDL.Released, _)) -> return ((), SDL.Released)
+    (_, Just (SDL.Released, _, _)) -> return ((), SDL.Released)
     -- On press, handle press.
-    (_, Just (SDL.Pressed, pos)) -> do
-      lift $ cmapM_ $ \(WantLeftClick i, ety :: Entity) -> (getFunc i funMap) (unEntity ety) pos
+    (_, Just (SDL.Pressed, pos1, pos2)) -> do
+      lift $ cmapM_ $ \(WantLeftClick i, ety :: Entity) ->
+        (getFunc i funMap) (unEntity ety) (pos1, pos2)
       return ((), SDL.Pressed)
 
-useLeftClickR :: MonadIO m => ClSFSR (FuncMap (V3 GL.GLfloat) m ()) m cl () ()
+useLeftClickR :: MonadIO m => ClSFSR (FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m ()) m cl () ()
 useLeftClickR = feedback SDL.Released $ arrMCl _useLeftClick
 
-useLeftClick :: MonadIO m => FuncMap (V3 GL.GLfloat) m () -> ClSFS m cl () ()
+useLeftClick :: MonadIO m => FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m () -> ClSFS m cl () ()
 useLeftClick = runReaderS_ useLeftClickR

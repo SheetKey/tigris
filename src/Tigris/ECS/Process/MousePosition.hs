@@ -46,6 +46,14 @@ _mouseZCoord (mx, my) = do
 mouseZCoord :: MonadIO m => ClSFS m cl (Int32, Int32) (V3 GL.GLfloat)
 mouseZCoord = arrMCl _mouseZCoord
 
+_planeMouseZCoord :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat)
+_planeMouseZCoord (mx, my) = do
+  Window win <- get global
+  V2 _ (CInt height) <- SDL.get $ SDL.windowSize win
+  let winY = abs (height - my)
+  return $ V3 (fromIntegral mx) (fromIntegral winY) 0.9998
+  
+
 _screenToGameCoord :: MonadIO m => V3 GL.GLfloat -> SystemT' m (V3 GL.GLfloat)
 _screenToGameCoord (V3 x y z) = do
   View view <- get global
@@ -70,7 +78,18 @@ _inGameMousePos = _mouseZCoord >=> _screenToGameCoord
 inGameMousePos :: MonadIO m => ClSFS m cl (Int32, Int32) (V3 GL.GLfloat)
 inGameMousePos = arrMCl _inGameMousePos
 
+_planeInGameMousePos :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat)
+_planeInGameMousePos = _planeMouseZCoord >=> _screenToGameCoord
+
+planeInGameMousePos :: MonadIO m => ClSFS m cl (Int32, Int32) (V3 GL.GLfloat)
+planeInGameMousePos = arrMCl _planeInGameMousePos
+
 _mousePos :: MonadIO m => SystemT' m (V3 GL.GLfloat)
 _mousePos = do
   SDL.P (SDL.V2 (CInt _mx) (CInt _my)) <- SDL.getAbsoluteMouseLocation
   _inGameMousePos (_mx, _my)
+
+_planeMousePos :: MonadIO m => SystemT' m (V3 GL.GLfloat)
+_planeMousePos = do
+  SDL.P (SDL.V2 (CInt _mx) (CInt _my)) <- SDL.getAbsoluteMouseLocation
+  _planeInGameMousePos (_mx, _my)
