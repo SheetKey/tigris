@@ -41,4 +41,6 @@ makeWorld "World" [ ''Player
                   , ''RotationMat
                   , ''MouseLeftClick
                   , ''WantLeftClick
+                  , ''Shoot
+                  , ''ProjStats
                   ]

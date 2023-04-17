@@ -212,6 +212,20 @@ instance Component MouseLeftClick where
 --   to hold these functions.
 --   The functions are not unique, so index them by integers stored
 --   in the 'WantLeftClick' type.
-data WantLeftClick = WantLeftClick Int
+newtype WantLeftClick = WantLeftClick Int
 instance Component WantLeftClick where
   type Storage WantLeftClick = Map WantLeftClick
+
+-- | Set this tag when an entity should should a projectile.
+newtype Shoot = Shoot (V3 GL.GLfloat)
+instance Component Shoot where
+  type Storage Shoot = Map Shoot
+
+-- | An entity holds the stats of the projectile it should spawn.
+data ProjStats = ProjStats
+  { damage :: Int
+  , accuracy :: Int
+  , speed :: Speed
+  }
+instance Component ProjStats where
+  type Storage ProjStats = Map ProjStats

@@ -85,6 +85,7 @@ library
                             , Tigris.ECS.Process.MouseAngle
                             , Tigris.ECS.Process.MousePosition
                             , Tigris.ECS.Process.WantLeftClick
+                            , Tigris.ECS.Process.Shoot
 
                             , Tigris.ECS.Load
                             , Tigris.ECS.Load.DB
