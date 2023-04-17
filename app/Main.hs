@@ -58,7 +58,7 @@ main = initAndRun "Game Demo" gameLoop'''
 
 testFuncMap :: MonadIO m => FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m ()
 testFuncMap = M.fromList [ (1, \_ b -> liftIO $ print b)
-                         --, (2, \a b -> 
+                         , (2, \a (_, b) -> set (Entity a) (Shoot b))
                          ]
 
 
@@ -68,6 +68,7 @@ clsfLoop =
   >>> useLeftClick testFuncMap
   >>> setPosition
   >>> follow
+  >>> shoot
   >>> Tigris.rotate
   >>> model
   >>> customView
@@ -164,7 +165,8 @@ player =
                 , Speed 250
                 , SpriteSheet 1 (4096-34) 0 0 (34 * 4) 34 34 1 2 0
                 , Velocity (Z, Z)
-                , WantLeftClick 1
+                , WantLeftClick 2
+                , ProjStats 5 1 (Speed 100)
                 )
 followPlayer :: Int -> SystemT' IO ()
 followPlayer _id =
