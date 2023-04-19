@@ -64,7 +64,8 @@ testFuncMap = M.fromList [ (1, \_ b -> liftIO $ print b)
 
 clsfLoop :: MonadIO m => ClSFS m (HoistClock IO (SystemT World m) (Millisecond 16)) () ()
 clsfLoop =
-  aalthandleEvent
+  --aalthandleEvent
+  eventHandler
   >>> useLeftClick testFuncMap
   >>> setPosition
   >>> follow
