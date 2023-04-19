@@ -99,6 +99,7 @@ library
                       
     build-depends:            base ^>=4.15.1.0
                             , rhine
+                            , dunai
                             , apecs
                             , vector
                             , sdl2

@@ -1,8 +1,15 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE Arrows #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Tigris.ECS.Process.Events where
+module Tigris.ECS.Process.Events
+  ( handleEvent
+  , althandleEvent
+  , aalthandleEvent
+  , eventHandler
+  ) where
 
 
 -- base
@@ -11,12 +18,15 @@ import Data.Int
 -- rhine
 import FRP.Rhine
 
+-- dunai
+import Control.Monad.Trans.MSF.List (mapMSF)
+
 -- apecs
 import Apecs
 import Apecs.System
 
 -- containers
-import Data.Sequence
+import Data.Sequence hiding (filter)
 
 -- mylib
 import Tigris.ECS.System
@@ -79,6 +89,71 @@ _handleKeycodeReleased KeycodeD = cmapIf (\(Player, Velocity (x,_)) -> x ==  One
   $ \(Player, Velocity (_,z)) -> Velocity (Z, z)
 _handleKeycodeReleased _ = return ()
 
+_handleKeycode :: MonadIO m => (Velocity -> Maybe Velocity) -> SystemT' m ()
+_handleKeycode f = cmap $ \(Player, oldv :: Velocity) -> case f oldv of
+  Just newv -> newv
+  Nothing -> oldv
+
+-- New type for keeping track of which keys are being held down.
+data WalkKey = W | A | S | D deriving Eq
+
+-- Using a clsf, I have access to 'feedback' providing internal state to recall which keys are currently held down.
+-- This address movement concerns: If I hold w key and press and release s key, SDL does not report that w is still being held down. 
+handleKeycodeP :: Monad m => ClSFS m cl (InputMotion, Keycode) (Velocity -> Maybe Velocity)
+handleKeycodeP = feedback [] $ arr $ \((im, kcode), held) ->
+  case im of
+    Pressed  ->
+      case kcode of
+        KeycodeW -> if W `elem` held then (\(Velocity (x,_)) -> Just $ Velocity (x, NOne), held) else (\(Velocity (x,_)) -> Just $ Velocity (x, NOne), W : held)
+        KeycodeA -> if A `elem` held then (\(Velocity (_,z)) -> Just $ Velocity (NOne, Z), held) else (\(Velocity (_,z)) -> Just $ Velocity (NOne, Z), A : held)
+        KeycodeS -> if S `elem` held then (\(Velocity (x,_)) -> Just $ Velocity (x, One), held) else (\(Velocity (x,_)) -> Just $ Velocity (x, One), S : held)
+        KeycodeD -> if D `elem` held then (\(Velocity (_,z)) -> Just $ Velocity (One, z), held) else (\(Velocity (_,z)) -> Just $ Velocity (One, z), D : held)
+        _        -> (\_ -> Nothing, held)
+    Released ->
+      case kcode of
+        KeycodeW -> (\(Velocity (x,z)) -> 
+                       if z == NOne
+                       then if S `elem` held
+                            then Just $ Velocity (x, One)
+                            else Just $ Velocity (x, Z)
+                       else Just $ Velocity (x,z)
+                    , filter (\a -> a /= W) held)
+        KeycodeA -> (\(Velocity (x,z)) ->
+                       if x == NOne
+                       then if D `elem` held
+                            then Just $ Velocity (One, z)
+                            else Just $ Velocity (Z, z)
+                       else Just $ Velocity (x,z)
+                    , filter (\a -> a /= A) held)
+        KeycodeS -> (\(Velocity (x,z)) ->
+                       if z == One
+                       then if W `elem` held
+                            then Just $ Velocity (x, NOne)
+                            else Just $ Velocity (x, Z)
+                       else Just $ Velocity (x,z)
+                    , filter (\a -> a /= S) held)
+        KeycodeD -> (\(Velocity (x,z)) ->
+                       if x == One
+                       then if A `elem` held
+                            then Just $ Velocity (NOne, z)
+                            else Just $ Velocity (Z, z)
+                       else Just $ Velocity (x,z)
+                    , filter (\a -> a /= D) held)
+        _        -> (\_ -> Nothing, held)
+
+-- apply the calculated velocity function to the current velocity
+applyKeycode :: MonadIO m => ClSFS m cl (Velocity -> Maybe Velocity) ()
+applyKeycode = arrMCl _handleKeycode
+
+-- combine clsfs
+handleKeycode :: MonadIO m => ClSFS m cl (InputMotion, Keycode) ()
+handleKeycode = handleKeycodeP >>> applyKeycode
+
+-- format input for 'handlKeycode'
+handleKeyboardEvent :: MonadIO m => ClSFS m cl KeyboardEventData ()
+handleKeyboardEvent = arr (\(KeyboardEventData _ im _ keysym) -> (im, keysymKeycode keysym))
+                      >>> handleKeycode
+
 _handleKeyboardEvent :: MonadIO m => KeyboardEventData -> SystemT' m ()
 --_handleKeyboardEvent (KeyboardEventData _ _ True _) = return ()
 _handleKeyboardEvent (KeyboardEventData _ Pressed  _ keysym) = _handleKeycodePressed $ keysymKeycode keysym
@@ -95,11 +170,38 @@ _handleMouseEvent _ _ _ = return ()
 _handleMouseButtonEvent :: MonadIO m => MouseButtonEventData -> SystemT' m ()
 _handleMouseButtonEvent (MouseButtonEventData _ pr _ lr _ pos) = _handleMouseEvent pr lr pos
 
+-- needed since wasd handling is now a clsf
+handleMouseButtonEvent :: MonadIO m => ClSFS m cl MouseButtonEventData ()
+handleMouseButtonEvent = arrMCl _handleMouseButtonEvent
+
 _handleEventPayload :: MonadIO m => EventPayload -> SystemT' m ()
 _handleEventPayload (WindowSizeChangedEvent e) = set global (WindowResized $ windowSizeChangedEventSize e)
 _handleEventPayload (KeyboardEvent e) = _handleKeyboardEvent e
 _handleEventPayload (MouseButtonEvent e) = _handleMouseButtonEvent e
 _handleEventPayload _ = return ()
+
+-- needed since handling keyboard events now uses clsf feedback
+handleEventPayload :: MonadIO m => ClSFS m cl EventPayload ()
+handleEventPayload = proc payload -> do
+  case payload of
+    WindowSizeChangedEvent e ->
+      (arrMCl $ \e -> set global (WindowResized $ windowSizeChangedEventSize e)) -< e
+    KeyboardEvent e -> handleKeyboardEvent -< e
+    MouseButtonEvent e -> handleMouseButtonEvent -< e
+    _ -> returnA -< ()
+
+-- needed since handling keyboard events now uses clsf feedback
+mEventHandler :: MonadIO m => ClSFS m cl (Maybe Event) ()
+mEventHandler = proc e -> do
+  case e of
+    Just event -> handleEventPayload -< eventPayload event
+    Nothing -> returnA -< ()
+
+eventHandler :: MonadIO m => ClSFS m cl () ()
+eventHandler = getEvents
+               >>> arr (\es -> eventPayload <$> es)
+               >>> mapMSF handleEventPayload
+               >>> arr (\_ -> ())
 
 _handleMEvent :: MonadIO m => Maybe Event -> SystemT' m ()
 _handleMEvent Nothing      = return ()
