@@ -73,6 +73,9 @@ _screenToGameCoord (V3 x y z) = do
 screenToGameCoord :: MonadIO m => ClSFS m cl (V3 GL.GLfloat) (V3 GL.GLfloat)
 screenToGameCoord = arrMCl _screenToGameCoord
 
+-- | This provides the mouse position in the world using gl depth buffers.
+-- I.e. this will give the mouse position on an object in the world.
+-- To get the mouse position on the xz plane, use '_rayMousePos'.
 _inGameMousePos :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat)
 _inGameMousePos = _mouseZCoord >=> _screenToGameCoord
 
@@ -142,6 +145,6 @@ rayPlaneInter' (p@(V3 _ py _), v@(V3 _ vy _)) =
   let t = - (py / vy)
   in p + (t *^ v)
             
-
+-- This is the best option for finding the mouse position in the xz plane.
 _rayMousePos :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat)
 _rayMousePos = (fmap rayPlaneInter') . mouseRay
