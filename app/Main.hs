@@ -57,8 +57,13 @@ main = initAndRun "Game Demo" gameLoop'''
 
 
 testFuncMap :: MonadIO m => FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m ()
-testFuncMap = M.fromList [ (1, \_ b -> liftIO $ print b)
-                         , (2, \a (_, b) -> set (Entity a) (Shoot b))
+testFuncMap = M.fromList [ (1, \_ xzPos -> liftIO $ print xzPos)
+                         , (2
+                           , \ety (_, xzPos) -> do
+                               Position (V4 _ pos _ _) <- get (Entity ety)
+                               ShootOffset offset <- get (Entity ety)
+                               set (Entity ety) (Shoot (pos + offset, xzPos))
+                           )
                          ]
 
 
@@ -168,7 +173,9 @@ player =
                 , SpriteSheet 1 (4096-34) 0 0 (34 * 4) 34 34 1 2 0
                 , PVelocity (Z, Z)
                 , WantLeftClick 2
-                , ProjStats 5 1 (Speed 100)
+                , ( ProjStats 5 1 (Speed 100)
+                  , ShootOffset (V3 0 0 0)
+                  )
                 )
 followPlayer :: Int -> SystemT' IO ()
 followPlayer _id =
