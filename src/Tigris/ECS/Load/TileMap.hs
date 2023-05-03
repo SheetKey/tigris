@@ -41,7 +41,7 @@ genNewGrid path = do
 tileToEnt :: MonadIO m => (Int, Int) -> TileDB -> SystemT' m ()
 tileToEnt (x, y) TileDB {..} = 
   let
-    p = fromIntegral <$> (V3 (64 * x) 0 (64 * (-y)))
+    p = fromIntegral <$> (V3 (64 * x) (-1) (64 * (-y)))
     pos = Position (V4 p p p p)
     _uv = mkUV hOffset' vOffset' frameWidth' frameHeight' borderWidth'
   in case rotation' of
