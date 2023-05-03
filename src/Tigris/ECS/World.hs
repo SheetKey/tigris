@@ -24,7 +24,7 @@ makeWorld "World" [ ''Player
                   , ''Model
                   , ''View
                   , ''Projection
-                  , ''Velocity
+                  , ''PVelocity
                   , ''Health
                   , ''RToMouse
                   , ''TileMapSize

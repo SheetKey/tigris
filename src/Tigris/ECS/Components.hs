@@ -37,7 +37,7 @@ sheetHeight = 4096
 --   for deleting all of an entities components.
 type All = ( Player
            , Rotation
-           , Velocity
+           , PVelocity
            , Health
            , ( RToMouse
              , TileMapSize

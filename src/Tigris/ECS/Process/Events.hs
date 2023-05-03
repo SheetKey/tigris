@@ -72,25 +72,25 @@ eventBuffer = timelessResamplingBuffer AsyncMealy {..} empty
       as' :> a -> return (Just a , as'  )
 
 _handleKeycodePressed :: MonadIO m => Keycode -> SystemT' m ()
-_handleKeycodePressed KeycodeW = cmap $ \(Player, Velocity (x,_)) -> Velocity (x, NOne)
-_handleKeycodePressed KeycodeA = cmap $ \(Player, Velocity (_,z)) -> Velocity (NOne, z)
-_handleKeycodePressed KeycodeS = cmap $ \(Player, Velocity (x,_)) -> Velocity (x, One)
-_handleKeycodePressed KeycodeD = cmap $ \(Player, Velocity (_,z)) -> Velocity (One, z)
+_handleKeycodePressed KeycodeW = cmap $ \(Player, PVelocity (x,_)) -> PVelocity (x, NOne)
+_handleKeycodePressed KeycodeA = cmap $ \(Player, PVelocity (_,z)) -> PVelocity (NOne, z)
+_handleKeycodePressed KeycodeS = cmap $ \(Player, PVelocity (x,_)) -> PVelocity (x, One)
+_handleKeycodePressed KeycodeD = cmap $ \(Player, PVelocity (_,z)) -> PVelocity (One, z)
 _handleKeycodePressed _ = return ()
 
 _handleKeycodeReleased :: MonadIO m => Keycode -> SystemT' m ()
-_handleKeycodeReleased KeycodeW = cmapIf (\(Player, Velocity (_,z)) -> z == NOne)
-  $ \(Player, Velocity (x,_)) -> Velocity (x, Z)
-_handleKeycodeReleased KeycodeA = cmapIf (\(Player, Velocity (x,_)) -> x == NOne)
-  $ \(Player, Velocity (_,z)) -> Velocity (Z, z)
-_handleKeycodeReleased KeycodeS = cmapIf (\(Player, Velocity (_,z)) -> z ==  One)
-  $ \(Player, Velocity (x,_)) -> Velocity (x, Z)
-_handleKeycodeReleased KeycodeD = cmapIf (\(Player, Velocity (x,_)) -> x ==  One)
-  $ \(Player, Velocity (_,z)) -> Velocity (Z, z)
+_handleKeycodeReleased KeycodeW = cmapIf (\(Player, PVelocity (_,z)) -> z == NOne)
+  $ \(Player, PVelocity (x,_)) -> PVelocity (x, Z)
+_handleKeycodeReleased KeycodeA = cmapIf (\(Player, PVelocity (x,_)) -> x == NOne)
+  $ \(Player, PVelocity (_,z)) -> PVelocity (Z, z)
+_handleKeycodeReleased KeycodeS = cmapIf (\(Player, PVelocity (_,z)) -> z ==  One)
+  $ \(Player, PVelocity (x,_)) -> PVelocity (x, Z)
+_handleKeycodeReleased KeycodeD = cmapIf (\(Player, PVelocity (x,_)) -> x ==  One)
+  $ \(Player, PVelocity (_,z)) -> PVelocity (Z, z)
 _handleKeycodeReleased _ = return ()
 
-_handleKeycode :: MonadIO m => (Velocity -> Maybe Velocity) -> SystemT' m ()
-_handleKeycode f = cmap $ \(Player, oldv :: Velocity) -> case f oldv of
+_handleKeycode :: MonadIO m => (PVelocity -> Maybe PVelocity) -> SystemT' m ()
+_handleKeycode f = cmap $ \(Player, oldv :: PVelocity) -> case f oldv of
   Just newv -> newv
   Nothing -> oldv
 
@@ -99,50 +99,50 @@ data WalkKey = W | A | S | D deriving Eq
 
 -- Using a clsf, I have access to 'feedback' providing internal state to recall which keys are currently held down.
 -- This address movement concerns: If I hold w key and press and release s key, SDL does not report that w is still being held down. 
-handleKeycodeP :: Monad m => ClSFS m cl (InputMotion, Keycode) (Velocity -> Maybe Velocity)
+handleKeycodeP :: Monad m => ClSFS m cl (InputMotion, Keycode) (PVelocity -> Maybe PVelocity)
 handleKeycodeP = feedback [] $ arr $ \((im, kcode), held) ->
   case im of
     Pressed  ->
       case kcode of
-        KeycodeW -> if W `elem` held then (\(Velocity (x,_)) -> Just $ Velocity (x, NOne), held) else (\(Velocity (x,_)) -> Just $ Velocity (x, NOne), W : held)
-        KeycodeA -> if A `elem` held then (\(Velocity (_,z)) -> Just $ Velocity (NOne, Z), held) else (\(Velocity (_,z)) -> Just $ Velocity (NOne, Z), A : held)
-        KeycodeS -> if S `elem` held then (\(Velocity (x,_)) -> Just $ Velocity (x, One), held) else (\(Velocity (x,_)) -> Just $ Velocity (x, One), S : held)
-        KeycodeD -> if D `elem` held then (\(Velocity (_,z)) -> Just $ Velocity (One, z), held) else (\(Velocity (_,z)) -> Just $ Velocity (One, z), D : held)
+        KeycodeW -> if W `elem` held then (\(PVelocity (x,_)) -> Just $ PVelocity (x, NOne), held) else (\(PVelocity (x,_)) -> Just $ PVelocity (x, NOne), W : held)
+        KeycodeA -> if A `elem` held then (\(PVelocity (_,z)) -> Just $ PVelocity (NOne, Z), held) else (\(PVelocity (_,z)) -> Just $ PVelocity (NOne, Z), A : held)
+        KeycodeS -> if S `elem` held then (\(PVelocity (x,_)) -> Just $ PVelocity (x, One), held) else (\(PVelocity (x,_)) -> Just $ PVelocity (x, One), S : held)
+        KeycodeD -> if D `elem` held then (\(PVelocity (_,z)) -> Just $ PVelocity (One, z), held) else (\(PVelocity (_,z)) -> Just $ PVelocity (One, z), D : held)
         _        -> (\_ -> Nothing, held)
     Released ->
       case kcode of
-        KeycodeW -> (\(Velocity (x,z)) -> 
+        KeycodeW -> (\(PVelocity (x,z)) -> 
                        if z == NOne
                        then if S `elem` held
-                            then Just $ Velocity (x, One)
-                            else Just $ Velocity (x, Z)
-                       else Just $ Velocity (x,z)
+                            then Just $ PVelocity (x, One)
+                            else Just $ PVelocity (x, Z)
+                       else Just $ PVelocity (x,z)
                     , filter (\a -> a /= W) held)
-        KeycodeA -> (\(Velocity (x,z)) ->
+        KeycodeA -> (\(PVelocity (x,z)) ->
                        if x == NOne
                        then if D `elem` held
-                            then Just $ Velocity (One, z)
-                            else Just $ Velocity (Z, z)
-                       else Just $ Velocity (x,z)
+                            then Just $ PVelocity (One, z)
+                            else Just $ PVelocity (Z, z)
+                       else Just $ PVelocity (x,z)
                     , filter (\a -> a /= A) held)
-        KeycodeS -> (\(Velocity (x,z)) ->
+        KeycodeS -> (\(PVelocity (x,z)) ->
                        if z == One
                        then if W `elem` held
-                            then Just $ Velocity (x, NOne)
-                            else Just $ Velocity (x, Z)
-                       else Just $ Velocity (x,z)
+                            then Just $ PVelocity (x, NOne)
+                            else Just $ PVelocity (x, Z)
+                       else Just $ PVelocity (x,z)
                     , filter (\a -> a /= S) held)
-        KeycodeD -> (\(Velocity (x,z)) ->
+        KeycodeD -> (\(PVelocity (x,z)) ->
                        if x == One
                        then if A `elem` held
-                            then Just $ Velocity (NOne, z)
-                            else Just $ Velocity (Z, z)
-                       else Just $ Velocity (x,z)
+                            then Just $ PVelocity (NOne, z)
+                            else Just $ PVelocity (Z, z)
+                       else Just $ PVelocity (x,z)
                     , filter (\a -> a /= D) held)
         _        -> (\_ -> Nothing, held)
 
 -- apply the calculated velocity function to the current velocity
-applyKeycode :: MonadIO m => ClSFS m cl (Velocity -> Maybe Velocity) ()
+applyKeycode :: MonadIO m => ClSFS m cl (PVelocity -> Maybe PVelocity) ()
 applyKeycode = arrMCl _handleKeycode
 
 -- combine clsfs
