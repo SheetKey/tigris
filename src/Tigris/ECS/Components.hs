@@ -82,7 +82,7 @@ instance Component Projection where
 -- | The position of entities in the "World Space."
 --   Used to create the model matrix for entities
 --   with this component. 
---   Stores the previous, next, next in x, and next in y positions.
+--   Stores the previous, next, next in x, and next in z positions.
 newtype Position = Position (V4 (V3 GL.GLfloat))
 instance Component Position where
   type Storage Position = Map Position
