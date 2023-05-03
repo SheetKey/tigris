@@ -37,6 +37,9 @@ getFunc i m = case (m M.!? i) of
                 Just f -> f
                 Nothing -> error $ "'FuncMap' does not contain key " ++ show i
 
+-- | This uses a 'FuncMap'. It provides the entity id and a tuple of
+-- the mouse position (found using gl depth buffer so will hit objects in the world)
+-- and the mouse position in the xz plane.
 _useLeftClick :: MonadIO m
               => ((), SDL.InputMotion)
               -> ReaderT' (FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m ()) m ((), SDL.InputMotion)
