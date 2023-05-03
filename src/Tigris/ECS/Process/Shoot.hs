@@ -8,7 +8,7 @@ import Tigris.ECS.System
 import Tigris.ECS.Components
 
 -- rhine
-import FRP.Rhine
+import FRP.Rhine hiding (normalize)
 
 -- apecs
 import Apecs
@@ -19,18 +19,21 @@ import qualified Graphics.Rendering.OpenGL as GL
 -- linear
 import Linear
 
-bullet :: MonadIO m => V3 GL.GLfloat -> ProjStats -> SystemT' m ()
-bullet dir (ProjStats {..}) = let p = V3 0 0 0 in newEntity_
+bullet :: MonadIO m => V3 GL.GLfloat -> Velocity -> ProjStats -> SystemT' m ()
+bullet p v (ProjStats {..}) = newEntity_
   ( Size (V4 (V3 (-8) 0 (-8)) (V3 8 0 (-8)) (V3 8 0 8) (V3 (-8) 0 8))
   , Position (V4 p p p p)
   , SpriteSheet 1 (4096) 0 0 (34 * 4) 34 34 1 2 0
   , speed
-  , Velocity $ V3 1 0 0
+  , v
   )
 
+velFromTo :: (V3 GL.GLfloat, V3 GL.GLfloat) -> Velocity
+velFromTo (from, to) = Velocity $ normalize $ to - from
+
 _shoot :: MonadIO m => SystemT' m ()
-_shoot = cmapM $ \(Shoot dir, ps@(ProjStats {..})) -> do
-  bullet dir ps
+_shoot = cmapM $ \(Shoot s@(pos, _), ps@(ProjStats {..})) -> do
+  bullet pos (velFromTo s) ps
   return $ Not @Shoot
 
 shoot :: MonadIO m => ClSFS m cl () ()

@@ -223,9 +223,19 @@ instance Component WantLeftClick where
   type Storage WantLeftClick = Map WantLeftClick
 
 -- | Set this tag when an entity should should a projectile.
-newtype Shoot = Shoot (V3 GL.GLfloat)
+-- holds the initial position of the projectile and
+-- a point that it should be shot at.
+newtype Shoot = Shoot (V3 GL.GLfloat, V3 GL.GLfloat)
 instance Component Shoot where
   type Storage Shoot = Map Shoot
+
+-- | An entity that can shoot a projectile must have this.
+-- When creating the 'Shoot' component, add this offset to
+-- the shooting entity's current position to determine the
+-- initial position of the projective.
+newtype ShootOffset = ShootOffset (V3 GL.GLfloat)
+instance Component ShootOffset where
+  type Storage ShootOffset = Map ShootOffset
 
 -- | An entity holds the stats of the projectile it should spawn.
 data ProjStats = ProjStats

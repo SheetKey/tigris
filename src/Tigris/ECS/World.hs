@@ -44,4 +44,5 @@ makeWorld "World" [ ''Player
                   , ''Shoot
                   , ''ProjStats
                   , ''Velocity
+                  , ''ShootOffset
                   ]
