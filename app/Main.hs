@@ -67,6 +67,7 @@ clsfLoop =
   --aalthandleEvent
   eventHandler
   >>> useLeftClick testFuncMap
+  >>> setPlayerVelocity
   >>> setPosition
   >>> follow
   >>> shoot
@@ -165,7 +166,7 @@ player =
                 , Position (V4 p p p p)
                 , Speed 250
                 , SpriteSheet 1 (4096-34) 0 0 (34 * 4) 34 34 1 2 0
-                , Velocity (Z, Z)
+                , PVelocity (Z, Z)
                 , WantLeftClick 2
                 , ProjStats 5 1 (Speed 100)
                 )
