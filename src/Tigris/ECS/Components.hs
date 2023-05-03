@@ -119,10 +119,16 @@ instance Component RToMouse where
 
 data VEnum = Z | One | NOne deriving (Eq)
 
--- | The velocity of an entity.
+-- | The input velocity of the player.
+--   This is necessary for properly handling player movement input keys.
 --   note that this is the x,z velocity, as in opengl,
 --   the y axis is vertical. The xz plane is horizontal
-newtype Velocity = Velocity (VEnum, VEnum) 
+newtype PVelocity = PVelocity (VEnum, VEnum) 
+instance Component PVelocity where
+  type Storage PVelocity = Unique PVelocity
+
+-- | The velocity of an entity. This quantity should be normed when it is set.
+newtype Velocity = Velocity (V3 GL.GLfloat)
 instance Component Velocity where
   type Storage Velocity = Map Velocity
 

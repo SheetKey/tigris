@@ -43,4 +43,5 @@ makeWorld "World" [ ''Player
                   , ''WantLeftClick
                   , ''Shoot
                   , ''ProjStats
+                  , ''Velocity
                   ]

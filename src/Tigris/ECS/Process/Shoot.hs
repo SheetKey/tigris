@@ -25,7 +25,7 @@ bullet dir (ProjStats {..}) = let p = V3 0 0 0 in newEntity_
   , Position (V4 p p p p)
   , SpriteSheet 1 (4096) 0 0 (34 * 4) 34 34 1 2 0
   , speed
-  , Velocity (One, One)
+  , Velocity $ V3 1 0 0
   )
 
 _shoot :: MonadIO m => SystemT' m ()
