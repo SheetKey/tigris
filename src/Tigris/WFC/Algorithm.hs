@@ -80,26 +80,39 @@ type WFCSystemT m a = SystemT WFCWorld m a
 newtype WFCException = WFCException String deriving (Show)
 instance Exception WFCException
 
+leastEntropyWith :: (MonadIO m, Num a, Ord a) => (V.Vector Tile -> a) -> WFCSystemT m [(Int, Int)]
+leastEntropyWith tileToOrd = do
+  RemainingGrid rgrid <- get global
+  case calcEntropy (tileToOrd <$> rgrid) of
+    Nothing -> throw $ WFCException "'leastEntropy' found no entropy."
+    Just en -> return $ fst en
+  where
+    calcEntropy =
+      M.foldrWithKey
+      (\key orderedVal acc -> if orderedVal == 0
+        then throw $ WFCException "Zero entropy found by 'leastEntropy'."
+        else case acc of
+               Nothing                  -> Just ([key], orderedVal)
+               Just (keyList, leastVal) -> case compare orderedVal leastVal of
+                                             GT -> acc
+                                             EQ -> Just (key : keyList, orderedVal)
+                                             LT -> Just ([key]        , orderedVal)
+      )
+      Nothing
+
+leastTileOptions :: MonadIO m => WFCSystemT m [(Int, Int)]
+leastTileOptions = leastEntropyWith V.length
+
+cellEntropy :: V.Vector Tile -> Float
+cellEntropy tiles = log weightSum - (weightLogWeightsSum / weightSum)
+  where
+    weights = (fromIntegral . weight) <$> tiles
+    weightSum = V.sum weights
+    weightLogWeights = (\w -> w * log w) <$> weights
+    weightLogWeightsSum = V.sum weightLogWeights
 
 leastEntropy :: MonadIO m => WFCSystemT m [(Int, Int)]
-leastEntropy = do
-  RemainingGrid rgrid <- get global
-  let rsizes = V.length <$> rgrid
-  case calcEnt rsizes of
-    Nothing -> throw $ WFCException "'leastEntroy' found no entroy."
-    Just en -> return $ fst en
-  where calcEnt =
-          M.foldrWithKey
-          (\ k a b -> case a of
-                        0 -> throw $ WFCException "Zero entropy found by 'leastEntropy'."
-                        _ -> case b of
-                               Nothing -> Just ([k], a)
-                               Just (bk, be) -> case compare a be of
-                                                  GT -> b
-                                                  EQ -> Just (k:bk, a)
-                                                  LT -> Just ([k], a)
-          )
-          Nothing
+leastEntropy = leastEntropyWith cellEntropy
 
 randomCell :: MonadIO m => [(Int, Int)] -> WFCSystemT m (Int, Int)
 randomCell [] = throw $ WFCException "'randomCell' recieved an empty list"
