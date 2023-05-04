@@ -55,14 +55,17 @@ main = initAndRun "Game Demo" gameLoop'''
 --tile3 = Tile 3 2 2 1 2 1
 --tile4 = Tile 4 1 2 2 2 1
 
+-- used in funmap: propably move into the library
+setYV3 :: GL.GLfloat -> V3 GL.GLfloat -> V3 GL.GLfloat
+setYV3 y (V3 x _ z) = V3 x y z
 
 testFuncMap :: MonadIO m => FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m ()
 testFuncMap = M.fromList [ (1, \_ xzPos -> liftIO $ print xzPos)
                          , (2
                            , \ety (_, xzPos) -> do
                                Position (V4 _ pos _ _) <- get (Entity ety)
-                               ShootOffset offset <- get (Entity ety)
-                               set (Entity ety) (Shoot (pos + offset, xzPos))
+                               ShootOffset (xzOffset, yOffset) <- get (Entity ety)
+                               set (Entity ety) (Shoot (setYV3 yOffset $ pos + xzOffset, setYV3 yOffset xzPos))
                            )
                          ]
 
@@ -174,7 +177,7 @@ player =
                 , PVelocity (Z, Z)
                 , WantLeftClick 2
                 , ( ProjStats 5 1 (Speed 100)
-                  , ShootOffset (V3 0 0 0)
+                  , ShootOffset ((V3 0 0 0), 16)
                   )
                 )
 followPlayer :: Int -> SystemT' IO ()
