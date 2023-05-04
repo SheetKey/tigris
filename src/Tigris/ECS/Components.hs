@@ -233,7 +233,10 @@ instance Component Shoot where
 -- When creating the 'Shoot' component, add this offset to
 -- the shooting entity's current position to determine the
 -- initial position of the projective.
-newtype ShootOffset = ShootOffset (V3 GL.GLfloat)
+-- This includes the xz offset followed by the y offset.
+-- The y offset will be added to the shoot offset and and
+-- the destination.
+newtype ShootOffset = ShootOffset (V3 GL.GLfloat, GL.GLfloat)
 instance Component ShootOffset where
   type Storage ShootOffset = Map ShootOffset
 
