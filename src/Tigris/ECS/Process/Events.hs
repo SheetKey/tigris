@@ -105,7 +105,7 @@ handleKeycodeP = feedback [] $ arr $ \((im, kcode), held) ->
     Pressed  ->
       case kcode of
         KeycodeW -> if W `elem` held then (\(PVelocity (x,_)) -> Just $ PVelocity (x, NOne), held) else (\(PVelocity (x,_)) -> Just $ PVelocity (x, NOne), W : held)
-        KeycodeA -> if A `elem` held then (\(PVelocity (_,z)) -> Just $ PVelocity (NOne, Z), held) else (\(PVelocity (_,z)) -> Just $ PVelocity (NOne, Z), A : held)
+        KeycodeA -> if A `elem` held then (\(PVelocity (_,z)) -> Just $ PVelocity (NOne, z), held) else (\(PVelocity (_,z)) -> Just $ PVelocity (NOne, z), A : held)
         KeycodeS -> if S `elem` held then (\(PVelocity (x,_)) -> Just $ PVelocity (x, One), held) else (\(PVelocity (x,_)) -> Just $ PVelocity (x, One), S : held)
         KeycodeD -> if D `elem` held then (\(PVelocity (_,z)) -> Just $ PVelocity (One, z), held) else (\(PVelocity (_,z)) -> Just $ PVelocity (One, z), D : held)
         _        -> (\_ -> Nothing, held)
