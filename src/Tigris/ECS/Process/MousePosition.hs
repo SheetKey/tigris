@@ -30,6 +30,9 @@ import Data.Int
 import Control.Monad ((>=>))
 import Foreign.C.Types
 
+-- containers
+import qualified Data.IntMap.Strict as M
+
 
 
 _mouseZCoord :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat)
@@ -61,7 +64,6 @@ _screenToGameCoord (V3 x y z) = do
   Projection proj <- get global
   view' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) view
   proj' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) proj
-  model :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix identity
   vp <- GL.get GL.viewport
   GL.Vertex3 x' y' z' <- liftIO $ GL.unProject
                                (GL.Vertex3 (float2Double x) (float2Double y) (float2Double z))
@@ -112,39 +114,32 @@ mouseRay (mx, my) = do
       winY = abs (height - my)
   View view <- get global
   Projection proj <- get global
-  view' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) view
-  proj' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) proj
-  model :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix identity
-  vp <- GL.get GL.viewport
-  GL.Vertex3 px py pz <- liftIO $ GL.unProject
-                         (GL.Vertex3 (fromIntegral winX) (fromIntegral winY) (fromIntegral 0))
-                         view'
-                         proj'
-                         vp
-  GL.Vertex3 vx vy vz <- liftIO $ GL.unProject
-                         (GL.Vertex3 (fromIntegral winX) (fromIntegral winY) (fromIntegral 1))
-                         view'
-                         proj'
-                         vp
-  return $ (fmap double2Float (V3 px py pz), fmap double2Float (V3 vx vy vz))
-  
+  maybeModel <- cfold (\_ (Player, Model model) -> Just model) Nothing
+  case maybeModel of
+    Just model -> do
+      view' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) (view !*! model)
+      proj' :: GL.GLmatrix GL.GLdouble <- liftIO $ toMatrix $ ((fmap . fmap) float2Double) proj
+      vp <- GL.get GL.viewport
+      GL.Vertex3 px py pz <- liftIO $ GL.unProject
+                             (GL.Vertex3 (fromIntegral winX) (fromIntegral winY) 0.0)
+                             view'
+                             proj'
+                             vp
+      GL.Vertex3 vx vy vz <- liftIO $ GL.unProject
+                             (GL.Vertex3 (fromIntegral winX) (fromIntegral winY) 1.0)
+                             view'
+                             proj'
+                             vp
+      return $ (fmap double2Float (V3 px py pz), fmap double2Float (V3 vx vy vz))
+    Nothing -> error "Multiple players found in 'mouseRay'."
 
 rayPlaneInter :: (V3 GL.GLfloat, V3 GL.GLfloat) -> V3 GL.GLfloat
-rayPlaneInter (p, v) = 
-  let n = V3 0 1 0
-      denom = n `dot` v
-  in if (abs denom) < 0.0001
-     then V3 0 0 0
-     else let t = - (dot n p) / denom
-         in if t < 0.0001
-            then V3 1 1 1
-            else p + (t *^ v)
-
-rayPlaneInter' :: (V3 GL.GLfloat, V3 GL.GLfloat) -> V3 GL.GLfloat
-rayPlaneInter' (p@(V3 _ py _), v@(V3 _ vy _)) = 
+rayPlaneInter (p@(V3 _ py _), v@(V3 _ vy _)) = 
   let t = - (py / vy)
   in p + (t *^ v)
             
 -- This is the best option for finding the mouse position in the xz plane.
+-- When used with mouseRay this gives the vector from the players position
+-- to the mouse
 _rayMousePos :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat)
-_rayMousePos = (fmap rayPlaneInter') . mouseRay
+_rayMousePos = (fmap rayPlaneInter) . mouseRay
