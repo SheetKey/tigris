@@ -60,12 +60,26 @@ setYV3 :: GL.GLfloat -> V3 GL.GLfloat -> V3 GL.GLfloat
 setYV3 y (V3 x _ z) = V3 x y z
 
 testFuncMap :: MonadIO m => FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m ()
-testFuncMap = M.fromList [ (1, \_ xzPos -> liftIO $ print xzPos)
+testFuncMap = M.fromList [ (1, \_ playerToMouse -> liftIO $ print playerToMouse)
                          , (2
-                           , \ety (_, xzPos) -> do
+                           , \ety (_, playerToMouse) -> do
                                Position (V4 _ pos _ _) <- get (Entity ety)
                                ShootOffset (xzOffset, yOffset) <- get (Entity ety)
-                               set (Entity ety) (Shoot (setYV3 yOffset $ pos + xzOffset, setYV3 yOffset xzPos))
+                               let projectilePos = pos + xzOffset
+                               set
+                                 (Entity ety)
+                                 (Shoot ( setYV3 yOffset projectilePos
+                                        , setYV3 yOffset $ projectilePos + playerToMouse))
+                           )
+                         , (3
+                           , \ety (worldPos, _) -> do
+                               Position (V4 _ pos _ _) <- get (Entity ety)
+                               ShootOffset (xzOffset, yOffset) <- get (Entity ety)
+                               let projectilePos = pos + xzOffset
+                               set
+                                 (Entity ety)
+                                 (Shoot ( setYV3 yOffset projectilePos
+                                        , setYV3 yOffset $ worldPos))
                            )
                          ]
 
@@ -175,8 +189,8 @@ player =
                 , Speed 250
                 , SpriteSheet 1 (4096-34) 0 0 (34 * 4) 34 34 1 2 0
                 , PVelocity (Z, Z)
-                , WantLeftClick 2
-                , ( ProjStats 5 1 (Speed 100)
+                , WantLeftClick 3
+                , ( ProjStats 5 1 (Speed 300)
                   , ShootOffset ((V3 0 0 0), 16)
                   )
                 )
@@ -187,6 +201,14 @@ followPlayer _id =
              , Follows _id (V3 32 0 0)
              , Rotation 0 0 0 (2, 2) 
              , RToMouse
+             )
+
+staticPositionEntity :: SystemT' IO ()
+staticPositionEntity =
+  let p = V3 1000 0 (-1000)
+  in newEntity_ ( Size (V4 (V3 (-8) 16 0) (V3 8 16 0) (V3 8 0 0) (V3 (-8) 0 0))
+             , SpriteSheet 1 (4096) 0 0 (34 * 4) 34 34 1 2 0
+             , Position (V4 p p p p)
              )
 
 tree :: Position -> SystemT' IO ()
@@ -223,6 +245,7 @@ mkGameLoop loop world = do
   Entity _id <- player
   followPlayer _id
   trees
+  staticPositionEntity
 
   _projection $ V2 800 600
 
