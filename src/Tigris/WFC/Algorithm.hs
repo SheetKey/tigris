@@ -25,6 +25,7 @@ import Apecs.Stores
 -- base
 import Control.Monad.IO.Class
 import Control.Exception 
+import Data.Foldable (foldr')
 
 -- random
 import System.Random (randomRIO, getStdGen)
@@ -116,19 +117,32 @@ randomCell l = do
   choice <- randomRIO (0, leng - 1)
   return $ l !! choice
     
-weightedChoice :: MonadIO m => (Int, Int) -> WFCSystemT m ()
+weightedChoice :: MonadIO m => (Int, Int) -> WFCSystemT m ((Int, Int), Tile)
 weightedChoice cell = do
   RemainingGrid rgrid <- get global
   let tiles = rgrid M.! cell
       weightList :: [(Double, Tile)]
       weightList = [ (fromIntegral $ weight tile, tile) | tile <- V.toList tiles ]
       tileRVar = weightedCategorical weightList
-  thing <- fmap (runState (sampleStateRVar tileRVar)) getStdGen
-  --return (cell, fst thing)
-  modify global $ \(Grid grid) -> Grid $ M.insert cell (fst thing) grid
+  (tile, _) <- fmap (runState (sampleStateRVar tileRVar)) getStdGen
+  modify global $ \(Grid grid) -> Grid $ M.insert cell tile grid
   modify global $ \(RemainingGrid nrgrid) -> RemainingGrid $ M.delete cell nrgrid
-  return ()
+  return (cell, tile)
 
+applyInRadius :: MonadIO m => Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> ((Int, Int), Tile) -> WFCSystemT m ()
+applyInRadius radius f ((cellX, cellY), tile) = do
+  RemainingGrid rgrid <- get global
+  let cellRadius = [ (cellX + x, cellY + y) | x <- [(-radius)..radius]
+                                            , y <- [(-radius)..radius]
+                                            , (x * x) + (y * y) <= radius * radius
+                                            ]
+      rgrid' = foldr' (\cell grid -> case grid M.!? cell of
+                                       Just tiles -> M.insert cell (f tile tiles) grid
+                                       Nothing    -> grid
+                      )
+               rgrid
+               cellRadius
+  set global $ RemainingGrid rgrid'
 
 remainingGrid :: MonadIO m => [(Int, Int)] -> WFCSystemT m ()
 remainingGrid [] = return ()
@@ -183,19 +197,22 @@ remainingGrid (c@(x,y):cs) = do
       
     _ -> throw $ WFCException "'remainingGrid' error"
 
-wave :: MonadIO m => WFCSystemT m Grid
-wave = do
-  RemainingGrid rgrid <- get global
-  if M.null rgrid
-    then get global
-    else do cs <- leastEntropy
-            c <- randomCell cs
-            weightedChoice c
-            remainingGrid [c]
-            wave
+wave :: MonadIO m => Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> WFCSystemT m Grid
+wave radius f = go
+  where
+    go = do 
+      RemainingGrid rgrid <- get global
+      if M.null rgrid
+        then get global
+        else do cs <- leastEntropy
+                c <- randomCell cs
+                result <- weightedChoice c
+                applyInRadius radius f result
+                remainingGrid [c]
+                wave radius f
 
-_wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> IO Grid
-_wfc tiles size@(a,b) mgrid = do
+_wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> IO Grid
+_wfc tiles size@(a,b) mgrid radius f = do
   w <- initWFCWorld
   runWith w $ do
     setReadOnly global $ MapSize size
@@ -207,11 +224,11 @@ _wfc tiles size@(a,b) mgrid = do
       Just grid -> do set global grid
                       let gridKeys (Grid g) = M.keys g
                       remainingGrid $ gridKeys grid
-    wave
+    wave radius f
     
-wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> IO Grid
-wfc tiles size mgrid = do
-  r :: Either WFCException Grid <- try $ _wfc tiles size mgrid
+wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> IO Grid
+wfc tiles size mgrid radius f = do
+  r :: Either WFCException Grid <- try $ _wfc tiles size mgrid radius f
   case r of
-    Left _ -> wfc tiles size mgrid
+    Left _ -> wfc tiles size mgrid radius f
     Right grid -> return grid
