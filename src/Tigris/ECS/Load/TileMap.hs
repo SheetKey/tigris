@@ -27,16 +27,19 @@ import Apecs
 -- linear
 import Linear
 
+-- vector
+import qualified Data.Vector as V
+
 tileDBtoTile :: TileDB -> Tile
 tileDBtoTile (TileDB _id n e s w weight _ _ _ _ _ _ _ _) = Tile _id n e s w weight
 
-genNewGrid :: String -> IO Grid
-genNewGrid path = do
+genNewGrid :: String -> Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> IO Grid
+genNewGrid path radius f = do
   conn <- open path
   tiledbs <- rowToVectorIO conn
   close conn
   let tiles = tileDBtoTile <$> tiledbs
-  wfc tiles (16, 16) Nothing
+  wfc tiles (16, 16) Nothing radius f
 
 tileToEnt :: MonadIO m => (Int, Int) -> TileDB -> SystemT' m ()
 tileToEnt (x, y) TileDB {..} = 
@@ -64,8 +67,8 @@ loadGrid path (Grid g) = do
   mapM_ mkEnt grid
   liftIO $ close conn
 
-loadNewGrid :: MonadIO m => String -> SystemT' m ()
-loadNewGrid p = do
+loadNewGrid :: MonadIO m => String -> Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> SystemT' m ()
+loadNewGrid p radius f= do
   path <- liftIO $ getDataFileName p
-  grid <- liftIO $ genNewGrid path
+  grid <- liftIO $ genNewGrid path radius f
   loadGrid path grid
