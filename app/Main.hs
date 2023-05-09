@@ -34,7 +34,7 @@ import Control.Concurrent
 import Control.Monad (forM, forM_)
 
 -- text
-import Data.Text hiding (zip)
+import Data.Text hiding (zip, elem)
 
 -- rhine
 import FRP.Rhine hiding (get)
@@ -226,6 +226,13 @@ trees = do
       tList = (flip fmap) randList $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
   forM_ tList tree 
                    
+adjustWeights :: Int -> Tile -> Tile
+adjustWeights t s = case t `elem` [1, 12] of
+  True -> s
+  False -> 
+    case (tileId s) `elem` [1, 12] of
+      True  -> s { weight = 8 * weight s }
+      False -> s
   
 mkGameLoop :: SystemT' IO () -> World -> SystemT' IO ()
 mkGameLoop loop world = do
@@ -240,7 +247,8 @@ mkGameLoop loop world = do
     GL.uniform locTexture GL.$= GL.TextureUnit 0
     GL.currentProgram GL.$= Nothing
 
-  loadNewGrid "data/sheet-1.db"
+  loadNewGrid "data/sheet-1.db" 1
+    (\tile tiles -> fmap (adjustWeights $ tileId tile) tiles)
 
   Entity _id <- player
   followPlayer _id
