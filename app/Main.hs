@@ -226,8 +226,8 @@ trees = do
       tList = (flip fmap) randList $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
   forM_ tList tree 
                    
-adjustWeights :: Int -> Tile -> Tile
-adjustWeights t s = case t `elem` [1, 12] of
+adjustWeights :: Int -> (Int, Int) -> Tile -> Tile
+adjustWeights t _ s = case t `elem` [1, 12] of
   True -> s
   False -> 
     case (tileId s) `elem` [1, 12] of
@@ -247,8 +247,8 @@ mkGameLoop loop world = do
     GL.uniform locTexture GL.$= GL.TextureUnit 0
     GL.currentProgram GL.$= Nothing
 
-  loadNewGrid "data/sheet-1.db" 1
-    (\tile tiles -> fmap (adjustWeights $ tileId tile) tiles)
+  loadNewGrid "data/sheet-1.db" 2
+    (\tile cell tiles -> fmap (adjustWeights (tileId tile) cell) tiles)
 
   Entity _id <- player
   followPlayer _id
