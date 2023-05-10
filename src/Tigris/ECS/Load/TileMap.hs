@@ -33,7 +33,7 @@ import qualified Data.Vector as V
 tileDBtoTile :: TileDB -> Tile
 tileDBtoTile (TileDB _id n e s w weight _ _ _ _ _ _ _ _) = Tile _id n e s w weight
 
-genNewGrid :: String -> Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> IO Grid
+genNewGrid :: String -> Int -> (Tile -> (Int, Int) -> V.Vector Tile -> V.Vector Tile) -> IO Grid
 genNewGrid path radius f = do
   conn <- open path
   tiledbs <- rowToVectorIO conn
@@ -67,7 +67,7 @@ loadGrid path (Grid g) = do
   mapM_ mkEnt grid
   liftIO $ close conn
 
-loadNewGrid :: MonadIO m => String -> Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> SystemT' m ()
+loadNewGrid :: MonadIO m => String -> Int -> (Tile -> (Int, Int) -> V.Vector Tile -> V.Vector Tile) -> SystemT' m ()
 loadNewGrid p radius f= do
   path <- liftIO $ getDataFileName p
   grid <- liftIO $ genNewGrid path radius f

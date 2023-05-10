@@ -129,19 +129,21 @@ weightedChoice cell = do
   modify global $ \(RemainingGrid nrgrid) -> RemainingGrid $ M.delete cell nrgrid
   return (cell, tile)
 
-applyInRadius :: MonadIO m => Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> ((Int, Int), Tile) -> WFCSystemT m ()
+applyInRadius :: MonadIO m => Int -> (Tile -> (Int, Int) -> V.Vector Tile -> V.Vector Tile) -> ((Int, Int), Tile) -> WFCSystemT m ()
 applyInRadius radius f ((cellX, cellY), tile) = do
   RemainingGrid rgrid <- get global
-  let cellRadius = [ (cellX + x, cellY + y) | x <- [(-radius)..radius]
-                                            , y <- [(-radius)..radius]
-                                            , (x * x) + (y * y) <= radius * radius
-                                            ]
-      rgrid' = foldr' (\cell grid -> case grid M.!? cell of
-                                       Just tiles -> M.insert cell (f tile tiles) grid
-                                       Nothing    -> grid
+  let cellOffsets = [ (x, y) | x <- [(-radius)..radius]
+                             , y <- [(-radius)..radius]
+                             , (x * x) + (y * y) <= radius * radius
+                             ]
+      rgrid' = foldr' (\offset@(offX, offY) grid ->
+                         let cell = (cellX + offX, cellY + offY)
+                         in case grid M.!? cell of
+                              Just tiles -> M.insert cell (f tile offset tiles) grid
+                              Nothing    -> grid
                       )
                rgrid
-               cellRadius
+               cellOffsets
   set global $ RemainingGrid rgrid'
 
 remainingGrid :: MonadIO m => [(Int, Int)] -> WFCSystemT m ()
@@ -197,7 +199,7 @@ remainingGrid (c@(x,y):cs) = do
       
     _ -> throw $ WFCException "'remainingGrid' error"
 
-wave :: MonadIO m => Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> WFCSystemT m Grid
+wave :: MonadIO m => Int -> (Tile -> (Int, Int) -> V.Vector Tile -> V.Vector Tile) -> WFCSystemT m Grid
 wave radius f = go
   where
     go = do 
@@ -211,7 +213,7 @@ wave radius f = go
                 remainingGrid [c]
                 wave radius f
 
-_wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> IO Grid
+_wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> Int -> (Tile -> (Int, Int) -> V.Vector Tile -> V.Vector Tile) -> IO Grid
 _wfc tiles size@(a,b) mgrid radius f = do
   w <- initWFCWorld
   runWith w $ do
@@ -226,7 +228,7 @@ _wfc tiles size@(a,b) mgrid radius f = do
                       remainingGrid $ gridKeys grid
     wave radius f
     
-wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> Int -> (Tile -> V.Vector Tile -> V.Vector Tile) -> IO Grid
+wfc :: V.Vector Tile -> (Int, Int) -> Maybe Grid -> Int -> (Tile -> (Int, Int) -> V.Vector Tile -> V.Vector Tile) -> IO Grid
 wfc tiles size mgrid radius f = do
   r :: Either WFCException Grid <- try $ _wfc tiles size mgrid radius f
   case r of
