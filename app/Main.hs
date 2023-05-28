@@ -191,10 +191,10 @@ player =
                 , Speed 250
                 , SpriteSheet 1 (4096-34) 0 0 (34 * 4) 34 34 1 2 0
                 , PVelocity (Z, Z)
-                , WantLeftClick 3
+                , WantLeftClick 2
                 , ( ProjStats 5 1 (Speed 300)
                   , ShootOffset ((V3 0 0 0), 16)
-                  , HitStatic []
+                  , HitStatic Stop []
                   , Circ 16
                   )
                 )
