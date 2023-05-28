@@ -91,8 +91,10 @@ clsfLoop =
   >>> useLeftClick testFuncMap
   >>> setPlayerVelocity
   >>> setPosition
-  >>> follow
   >>> shoot
+  >>> staticCollisions 64
+  >>> hitStatic
+  >>> follow
   >>> Tigris.rotate
   >>> model
   >>> customView
@@ -192,6 +194,8 @@ player =
                 , WantLeftClick 3
                 , ( ProjStats 5 1 (Speed 300)
                   , ShootOffset ((V3 0 0 0), 16)
+                  , HitStatic []
+                  , Circ 16
                   )
                 )
 followPlayer :: Int -> SystemT' IO ()
@@ -211,12 +215,16 @@ staticPositionEntity =
              , Position (V4 p p p p)
              )
 
-tree :: Position -> SystemT' IO ()
-tree pos =
-  newEntity_ (Size (V4 (V3 (-115.5) 264 0) (V3 115.5 264 0) (V3 115.5 0 0) (V3 (-115.5) 0 0))
-             , SpriteSheet 1 4096 1190 4096 1190 238 272 1 1000000000 0
-             , pos
-             )
+tree :: Position -> SystemT' IO ((GL.GLfloat, GL.GLfloat), Int)
+tree pos@(Position (V4 _ (V3 x _ z) _ _)) = do
+  Entity ety <- newEntity
+                (Size (V4 (V3 (-115.5) 264 0) (V3 115.5 264 0) (V3 115.5 0 0) (V3 (-115.5) 0 0))
+                , SpriteSheet 1 4096 1190 4096 1190 238 272 1 1000000000 0
+                , pos
+                , StaticCollider
+                , Circ 16
+                )
+  return ((x, z), ety)
 
 trees :: SystemT' IO ()
 trees = do
@@ -224,7 +232,8 @@ trees = do
   randListZ <- forM [1 .. 10] $ \_ -> randomRIO (-1024, 0)
   let randList = zip randListX randListZ
       tList = (flip fmap) randList $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
-  forM_ tList tree 
+  collisionList <- forM tList tree 
+  set global $ StaticCollisionTree $ fromList2 collisionList
                    
 adjustWeights :: Int -> (Int, Int) -> Tile -> Tile
 adjustWeights t _ s = case t `elem` [1, 12] of
