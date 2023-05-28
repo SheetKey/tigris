@@ -234,8 +234,12 @@ data StaticCollider = StaticCollider
 instance Component StaticCollider where
   type Storage StaticCollider = Map StaticCollider
 
+-- | What happens when an entity collides with a static entity.
+data OnStaticHit = Stop -- ^ Stop the entities movement.
+                 | Delete -- ^ Deletes the entity on collision.
+
 -- | List of entity id of static objects the entity containing this component has hit.
-newtype HitStatic = HitStatic [Int]
+data HitStatic = HitStatic OnStaticHit [Int]
 instance Component HitStatic where
   type Storage HitStatic = Map HitStatic
 

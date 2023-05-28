@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Tigris.ECS.Process.HitStatic where
 
@@ -48,7 +49,7 @@ hitBoxCollision (V3 x1 _ z1) (Rect l1 w1) (V3 x2 _ z2) (Circ r2)    =
              (x - x2) * (x - x2)
              + (z - z2) * (z - z2)
   in dist < r2
-hitBoxCollision (V3 x1 _ z1) (Circ r1)    (V3 x2 _ z2) (Rect l2 w2) =
+hitBoxCollision (V3 x1 _ z1) (Circ r1) (V3 x2 _ z2) (Rect l2 w2) =
   let minx2 = x2 - (w2 / 2)
       maxx2 = x2 + (w2 / 2)
       minz2 = z2 - (l2 / 2)
@@ -59,7 +60,7 @@ hitBoxCollision (V3 x1 _ z1) (Circ r1)    (V3 x2 _ z2) (Rect l2 w2) =
              (x - x1) * (x - x1)
              + (z - z1) * (z - z1)
   in dist < r1
-hitBoxCollision (V3 x1 _ z1) (Circ r1)    (V3 x2 _ z2) (Circ r2)    =
+hitBoxCollision (V3 x1 _ z1) (Circ r1) (V3 x2 _ z2) (Circ r2) =
   let dist = sqrt $
              (x1 - x2) * (x1 - x2)
              + (z1 - z2) * (z1 - z2) 
@@ -68,16 +69,26 @@ hitBoxCollision (V3 x1 _ z1) (Circ r1)    (V3 x2 _ z2) (Circ r2)    =
 _hitStatic :: MonadIO m => SystemT' m ()
 _hitStatic = do
   s :: Storage (StaticCollider, Position, HitBox) <- getStore
-  cmapM_ $ \(HitStatic hits, Position (V4 last next nextX nextZ), hb :: HitBox, entity :: Entity) -> do
+  cmapM_ $ \( HitStatic onStaticCollision hits
+            , Position (V4 last next nextX nextZ)
+            , hb :: HitBox, entity :: Entity) -> do
     forM_ hits $ \ety -> do
       (_, Position (V4 _ pos _ _), shb :: HitBox) <- lift $ explGet s $ ety
       let hitEty = hitBoxCollision pos shb
       if hitEty next hb
-        then case (hitEty nextX hb, hitEty nextZ hb) of
-               (True, _) -> set entity (HitStatic [], Position $ V4 last nextX nextX nextZ)
-               (_, True) -> set entity (HitStatic [], Position $ V4 last nextZ nextX nextZ)
-               _         -> set entity (HitStatic [], Position $ V4 last last  nextX nextZ)
-        else set entity (HitStatic [])
+        then case (onStaticCollision, hitEty nextX hb, hitEty nextZ hb) of
+               (Stop, False, _) ->
+                 set entity (HitStatic Stop [], Position $ V4 last nextX nextX nextZ)
+               (Stop, _, False) ->
+                 set entity (HitStatic Stop [], Position $ V4 last nextZ nextX nextZ)
+               _                -> case onStaticCollision of
+                                    Stop ->
+                                      set entity (HitStatic Stop [], Position $ V4 last last nextX nextZ)
+                                    Delete ->
+                                      destroy entity (Proxy @All)
+        else case onStaticCollision of
+               Stop   -> set entity (HitStatic Stop [])
+               Delete -> set entity (HitStatic Delete [])
 
 hitStatic :: MonadIO m => ClSFS m cl () ()
 hitStatic = constMCl _hitStatic
