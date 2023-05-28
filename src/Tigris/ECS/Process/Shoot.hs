@@ -26,6 +26,8 @@ bullet p v (ProjStats {..}) = newEntity_
   , SpriteSheet 1 (4096) 0 0 (34 * 4) 34 34 1 2 0
   , speed
   , v
+  , HitStatic Delete []
+  , Circ 8
   )
 
 velFromTo :: (V3 GL.GLfloat, V3 GL.GLfloat) -> Velocity
