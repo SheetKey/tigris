@@ -45,4 +45,8 @@ makeWorld "World" [ ''Player
                   , ''ProjStats
                   , ''Velocity
                   , ''ShootOffset
+                  , ''StaticCollisionTree
+                  , ''StaticCollider
+                  , ''HitStatic
+                  , ''HitBox
                   ]

@@ -25,3 +25,5 @@ import Tigris.ECS.Process.MousePosition as X
 import Tigris.ECS.Process.WantLeftClick as X
 import Tigris.ECS.Process.Shoot as X
 import Tigris.ECS.Process.PVelocity as X
+import Tigris.ECS.Process.StaticCollisionTree as X
+import Tigris.ECS.Process.HitStatic as X

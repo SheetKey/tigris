@@ -8,6 +8,7 @@ module Tigris.ECS.Components where
 
 -- mylib
 import Tigris.ECS.Stores
+import Tigris.Collision
 
 -- base
 import Data.Int
@@ -199,6 +200,28 @@ instance Component ColliderCell where
 newtype Collisions = Collisions (Int, Int)
 instance Component Collisions where
   type Storage Collisions = BTQGlobal Collisions
+
+-- | A global kdtree keeping the locations of static collision objects, i.e.
+-- entities with the 'StaticCollider' tag.
+newtype StaticCollisionTree = StaticCollisionTree (KDTreeMap (GL.GLfloat, GL.GLfloat) Int)
+instance Component StaticCollisionTree where
+  type Storage StaticCollisionTree = TMVGlobal StaticCollisionTree
+
+-- | Tags entities who act as static collision objects.
+data StaticCollider = StaticCollider
+instance Component StaticCollider where
+  type Storage StaticCollider = Map StaticCollider
+
+-- | List of entity id of static objects the entity containing this component has hit.
+newtype HitStatic = HitStatic [Int]
+instance Component HitStatic where
+  type Storage HitStatic = Map HitStatic
+
+-- | The hitbox of an entity. Centered at the (0,0,0) and transformed by the entity position.
+data HitBox = Rect GL.GLfloat GL.GLfloat -- ^ A rectangle given by length (z axis) and width (x axis).
+            | Circ GL.GLfloat            -- ^ A circle with a given radius.
+instance Component HitBox where
+  type Storage HitBox = Map HitBox
 
 -- | Holds global left click information.
 newtype MouseLeftClick = MouseLeftClick (Maybe (SDL.InputMotion, V3 GL.GLfloat, V3 GL.GLfloat))

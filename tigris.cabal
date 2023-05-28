@@ -87,6 +87,8 @@ library
                             , Tigris.ECS.Process.MousePosition
                             , Tigris.ECS.Process.WantLeftClick
                             , Tigris.ECS.Process.Shoot
+                            , Tigris.ECS.Process.StaticCollisionTree
+                            , Tigris.ECS.Process.HitStatic
 
                             , Tigris.ECS.Load
                             , Tigris.ECS.Load.DB
