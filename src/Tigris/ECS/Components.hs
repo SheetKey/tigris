@@ -38,15 +38,37 @@ sheetHeight = 4096
 --   for deleting all of an entities components.
 type All = ( Player
            , Rotation
+           , Position
+           , Model
+           --, View
+           --, Projection
            , PVelocity
-           , Health
-           , ( RToMouse
-             , TileMapSize
-             , Window
-             , WindowResized
+           , ( Health
+             , RToMouse
+             --, TileMapSize
+             --, Window
+             --, WindowResized
              , Speed
-             , ( ColliderCell
-               , Collisions
+             , ColliderCell
+             , ( SpriteSheet
+               --, Collisions
+               --, GLBuffers
+               , UV
+               , Size
+               , Follows
+               , RotationMat
+               , ( Shoot
+                 --MouseLeftClick
+                 , WantLeftClick
+                 , ProjStats
+                 , Velocity
+                 , ShootOffset
+                 --, StaticCollisionTree
+                 , ( StaticCollider
+                   , HitStatic
+                   , HitBox
+                   )
+                 )
                )
              )
            )
