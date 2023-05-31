@@ -3,3 +3,4 @@ module Tigris.Collision
   ) where
 
 import Tigris.Collision.KDTreeMap as X
+import Tigris.Collision.DynamicAABBTree as X

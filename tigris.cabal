@@ -47,6 +47,7 @@ library
 
                             , Tigris.Collision
                             , Tigris.Collision.KDTreeMap
+                            , Tigris.Collision.DynamicAABBTree
 
                             , Tigris.SDL
                             , Tigris.SDL.Window
@@ -105,6 +106,8 @@ library
                             , dunai
                             , apecs
                             , vector
+                            , fixed-vector
+                            , primitive
                             , sdl2
                             , OpenGL
                             , time
