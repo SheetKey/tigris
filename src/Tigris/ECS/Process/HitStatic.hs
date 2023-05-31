@@ -45,10 +45,8 @@ hitBoxCollision (V3 x1 _ z1) (Rect l1 w1) (V3 x2 _ z2) (Circ r2)    =
       maxz1 = z1 + (l1 / 2)
       x = max minx1 (min x2 maxx1)
       z = max minz1 (min z2 maxz1)
-      dist = sqrt $
-             (x - x2) * (x - x2)
-             + (z - z2) * (z - z2)
-  in dist < r2
+      dist = (x - x2) * (x - x2) + (z - z2) * (z - z2)
+  in dist < r2 * r2
 hitBoxCollision (V3 x1 _ z1) (Circ r1) (V3 x2 _ z2) (Rect l2 w2) =
   let minx2 = x2 - (w2 / 2)
       maxx2 = x2 + (w2 / 2)
@@ -56,15 +54,11 @@ hitBoxCollision (V3 x1 _ z1) (Circ r1) (V3 x2 _ z2) (Rect l2 w2) =
       maxz2 = z2 + (l2 / 2)
       x = max minx2 (min x1 maxx2)
       z = max minz2 (min z1 maxz2)
-      dist = sqrt $
-             (x - x1) * (x - x1)
-             + (z - z1) * (z - z1)
-  in dist < r1
+      dist = (x - x1) * (x - x1) + (z - z1) * (z - z1)
+  in dist < r1 * r1
 hitBoxCollision (V3 x1 _ z1) (Circ r1) (V3 x2 _ z2) (Circ r2) =
-  let dist = sqrt $
-             (x1 - x2) * (x1 - x2)
-             + (z1 - z2) * (z1 - z2) 
-  in dist < r1 + r2
+  let dist = (x1 - x2) * (x1 - x2) + (z1 - z2) * (z1 - z2) 
+  in dist < (r1 + r2) * (r1 + r2)
 
 _hitStatic :: MonadIO m => SystemT' m ()
 _hitStatic = do

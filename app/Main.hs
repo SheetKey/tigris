@@ -153,7 +153,7 @@ gameLoop''' world = mkGameLoop
   (flow $ ((clsfLoop >>> altDraw)
             @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16)))
    ||@ (concurrentlySystem world) @||
-   (projection @@ WindowResizeClock))
+   (orthoProjection @@ WindowResizeClock))
   world
                     
 
