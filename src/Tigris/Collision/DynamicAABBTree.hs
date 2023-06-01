@@ -18,7 +18,7 @@ import qualified Graphics.Rendering.OpenGL as GL
 import qualified Data.Vector.Fixed.Boxed as V
 import qualified Data.Vector.Fixed.Mutable as V
 import qualified Data.Vector.Fixed.Cont as V hiding (generate, concat)
-import qualified Data.Vector.Fixed as V hiding (generate)
+import qualified Data.Vector.Fixed as V (concat)
 
 -- containers
 import Data.IntMap.Strict as IM
@@ -184,7 +184,7 @@ allocateNode daabbTree =
   where
     help leftright daabbTree = do
       let nodeIndex = nextFreeNodeIndex daabbTree
-          allocatedNodeNextNodeIndex = nextNodeIndex $ (nodes daabbTree) V.! nodeIndex
+          allocatedNodeNextNodeIndex = nextNodeIndex $ (nodes daabbTree) `V.unsafeIndex` nodeIndex
       nodesM <- V.thaw $ nodes daabbTree
       V.unsafeWrite nodesM nodeIndex $ Node
         { aabb            = emptyAABB
@@ -205,3 +205,209 @@ allocateNode daabbTree =
           , nextFreeNodeIndex  = allocatedNodeNextNodeIndex
           }
         )
+
+deallocateNode
+  :: ( PrimMonad m
+     , KnownNat nodeCapacity
+     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
+     , V.ArityPeano (V.Peano nodeCapacity)
+     )
+  => Int -> DAABBTree nodeCapacity growthSize -> m (DAABBTree nodeCapacity growthSize)
+deallocateNode nodeIndex DAABBTree {..} = do
+  nodesM <- V.thaw $ nodes
+  V.unsafeWrite nodesM nodeIndex $ Node
+    { aabb            = emptyAABB
+    , object          = nullNode
+    , parentNodeIndex = nullNode
+    , nextNodeIndex   = nextFreeNodeIndex 
+    , leftNodeIndex   = nullNode 
+    , rightNodeIndex  = nullNode
+    }
+  nodes' <- V.freeze nodesM
+  return $ DAABBTree
+    { nodes = nodes'
+    , nextFreeNodeIndex = nodeIndex
+    , allocatedNodeCount = allocatedNodeCount - 1
+    , ..
+    }
+
+fixUpwardsTree
+  :: ( PrimMonad m
+     , KnownNat nodeCapacity
+     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
+     , V.ArityPeano (V.Peano nodeCapacity)
+     )
+  => Int -> DAABBTree nodeCapacity growthSize -> m (DAABBTree nodeCapacity growthSize)
+fixUpwardsTree treeNodeIndex DAABBTree {..} = 
+  if treeNodeIndex /= nullNode
+  then let treeNode = nodes `V.unsafeIndex` treeNodeIndex
+       in case (leftNodeIndex treeNode /= nullNode, rightNodeIndex treeNode /= nullNode) of
+            (True, True) -> do
+              let leftNode = nodes `V.unsafeIndex` leftNodeIndex treeNode
+                  rightNode = nodes `V.unsafeIndex` rightNodeIndex treeNode
+                  treeNodeParentNodeIndex = parentNodeIndex treeNode
+              nodesM <- V.thaw nodes
+              V.unsafeWrite nodesM treeNodeIndex $ Node
+                { aabb            = aabbUnion (aabb leftNode) (aabb rightNode)
+                , object          = object treeNode
+                , parentNodeIndex = parentNodeIndex treeNode
+                , nextNodeIndex   = treeNodeParentNodeIndex
+                , leftNodeIndex   = leftNodeIndex treeNode
+                , rightNodeIndex  = rightNodeIndex treeNode
+                }
+              nodes' <- V.freeze nodesM
+              fixUpwardsTree (parentNodeIndex treeNode) $ DAABBTree { nodes = nodes', ..}
+            _ -> error "'fixUpwardsTree' assertions failed."
+  else return DAABBTree {..}
+
+insertLeaf
+  :: forall m nodeCapacity growthSize.
+     ( PrimMonad m
+     , KnownNat nodeCapacity
+     , KnownNat growthSize
+     , KnownNat (nodeCapacity + growthSize)
+     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
+     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
+     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.ArityPeano (V.Peano growthSize)
+     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
+     , V.Peano ((nodeCapacity + growthSize) + 1)
+       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     )
+  => Int
+  -> DAABBTree nodeCapacity growthSize
+  -> m (DAABBTree nodeCapacity growthSize)
+insertLeaf leafNodeIndex daabbTree =
+  let leafNode = (nodes daabbTree) `V.unsafeIndex` leafNodeIndex
+  in case ( parentNodeIndex leafNode == nullNode
+          , leftNodeIndex leafNode == nullNode
+          , rightNodeIndex leafNode == nullNode
+          ) of 
+       (True, True, True) ->
+         if (rootNodeIndex daabbTree) == nullNode
+         then return $ DAABBTree
+              { objectNodeIndexMap = objectNodeIndexMap daabbTree
+              , nodes              = nodes daabbTree
+              , rootNodeIndex      = leafNodeIndex
+              , allocatedNodeCount = allocatedNodeCount daabbTree
+              , nextFreeNodeIndex  = nextFreeNodeIndex daabbTree
+              }
+         else do
+           let treeNodeIndex = rootNodeIndex daabbTree
+           findAndAttach leafNodeIndex treeNodeIndex daabbTree
+       _ -> error "'insertLeaf' assertions failed."
+  where
+    findAndAttach leafNodeIndex treeNodeIndex daabbTree =
+      let treeNode = nodes daabbTree `V.unsafeIndex` treeNodeIndex
+      in if not (isLeaf treeNode)
+      then 
+        let leftNodeIndex' = leftNodeIndex treeNode
+            rightNodeIndex' = rightNodeIndex treeNode
+            leftNode = nodes daabbTree `V.unsafeIndex` leftNodeIndex'
+            rightNode = nodes daabbTree `V.unsafeIndex` rightNodeIndex'
+            leafNode = nodes daabbTree `V.unsafeIndex` leafNodeIndex
+            leftNodeAABB = aabb leftNode
+            rightNodeAABB = aabb rightNode
+            leafNodeAABB = aabb leafNode
+            combinedAABB = aabbUnion (aabb treeNode) (leafNodeAABB)
+            combinedAABBSA = aabbArea combinedAABB
+            treeNodeAABBSA = aabbArea $ aabb treeNode
+            newParentNodeCost = 2 * combinedAABBSA
+            minimumPushDownCost = 2 * (combinedAABBSA - treeNodeAABBSA)
+            costLeft = let cost = minimumPushDownCost
+                                  + aabbArea (aabbUnion leafNodeAABB leftNodeAABB)
+                       in if isLeaf leftNode
+                       then cost
+                       else cost - aabbArea leftNodeAABB
+            costRight = let cost = minimumPushDownCost
+                                   + aabbArea (aabbUnion leafNodeAABB rightNodeAABB)
+                        in if isLeaf rightNode
+                           then cost
+                           else cost - aabbArea rightNodeAABB
+        in if newParentNodeCost < costLeft && newParentNodeCost < costRight
+           then attachLeaf leafNodeIndex treeNodeIndex daabbTree
+           else if costLeft < costRight
+                then findAndAttach leafNodeIndex leftNodeIndex' daabbTree
+                else findAndAttach leafNodeIndex rightNodeIndex' daabbTree
+      else attachLeaf leafNodeIndex treeNodeIndex daabbTree
+    attachLeaf leafNodeIndex leafSiblingIndex daabbTree = do
+      let leafSiblingNode = (nodes daabbTree) `V.unsafeIndex` leafSiblingIndex
+          oldParentIndex = parentNodeIndex leafSiblingNode
+      leftright <- allocateNode daabbTree
+      case leftright of
+        Left  (newParentIndex, daabbTree') ->
+          help leafNodeIndex leafSiblingIndex oldParentIndex newParentIndex daabbTree'
+        Right (newParentIndex, daabbTree') -> error "'allocateNode' should never return 'Right' in 'attachLeaf'."
+    help leafNodeIndex leafSiblingIndex oldParentIndex newParentIndex DAABBTree {..} = do
+      let newParentNode = nodes `V.unsafeIndex` newParentIndex
+          leafNode = nodes `V.unsafeIndex` leafNodeIndex
+          leafSiblingNode = nodes `V.unsafeIndex` leafSiblingIndex
+      nodesM <- V.thaw nodes
+      V.unsafeWrite nodesM newParentIndex $ Node
+        { aabb            = aabbUnion
+                            (aabb $ nodes `V.unsafeIndex` leafNodeIndex)
+                            (aabb $ nodes `V.unsafeIndex` leafSiblingIndex)
+        , object          = object newParentNode
+        , parentNodeIndex = oldParentIndex
+        , nextNodeIndex   = nextNodeIndex newParentNode
+        , leftNodeIndex   = leafSiblingIndex
+        , rightNodeIndex  = leafNodeIndex
+        }
+      V.unsafeWrite nodesM leafNodeIndex $ Node
+        { aabb            = aabb leafNode
+        , object          = object leafNode
+        , parentNodeIndex = newParentIndex
+        , nextNodeIndex   = nextNodeIndex leafNode
+        , leftNodeIndex   = leftNodeIndex leafNode
+        , rightNodeIndex  = rightNodeIndex leafNode
+        }
+      V.unsafeWrite nodesM leafSiblingIndex $ Node
+        { aabb            = aabb leafSiblingNode
+        , object          = object leafSiblingNode
+        , parentNodeIndex = newParentIndex
+        , nextNodeIndex   = nextNodeIndex leafSiblingNode
+        , leftNodeIndex   = leftNodeIndex leafSiblingNode
+        , rightNodeIndex  = rightNodeIndex leafSiblingNode
+        }
+      if oldParentIndex == nullNode
+        then
+        do
+          nodes' <- V.freeze nodesM
+          return $ DAABBTree
+            { nodes              = nodes'
+            , rootNodeIndex      = newParentIndex
+            , ..
+            }
+        else let oldParentNode = nodes `V.unsafeIndex` oldParentIndex
+             in if (leftNodeIndex oldParentNode) == leafSiblingIndex
+                then
+                  do
+                    V.unsafeWrite nodesM oldParentIndex $ Node
+                      { aabb            = aabb oldParentNode
+                      , object          = object oldParentNode
+                      , parentNodeIndex = parentNodeIndex oldParentNode
+                      , nextNodeIndex   = nextNodeIndex oldParentNode
+                      , leftNodeIndex   = newParentIndex
+                      , rightNodeIndex  = rightNodeIndex oldParentNode
+                      }
+                    nodes' <- V.freeze nodesM
+                    fixUpwardsTree newParentIndex $ DAABBTree
+                      { nodes = nodes'
+                      , ..
+                      }
+                else 
+                  do
+                    V.unsafeWrite nodesM oldParentIndex $ Node
+                      { aabb            = aabb oldParentNode
+                      , object          = object oldParentNode
+                      , parentNodeIndex = parentNodeIndex oldParentNode
+                      , nextNodeIndex   = nextNodeIndex oldParentNode
+                      , leftNodeIndex   = leftNodeIndex oldParentNode
+                      , rightNodeIndex  = newParentIndex
+                      }
+                    nodes' <- V.freeze nodesM
+                    fixUpwardsTree newParentIndex $ DAABBTree
+                      { nodes = nodes'
+                      , ..
+                      }
