@@ -5,8 +5,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
-module Tigris.Collision.DynamicAABBTree where
+module Tigris.Collision.DynamicAABBTree
+  ( AABB (..)
+  , Node (..)
+  , DAABBTree (..)
+  , insertObject
+  , removeObject
+  , updateObject
+  , initDAABBTree
+  , emptyAABB
+  , aabbUnion
+  , aabbArea
+  , computePairs
+  ) where
 
 -- linear
 import Linear
@@ -34,6 +47,7 @@ data AABB = AABB
   { lowerBound :: V3 GL.GLfloat
   , upperBound :: V3 GL.GLfloat
   }
+  deriving (Eq, Show)
 
 data Node = Node
   { aabb            :: AABB
@@ -42,7 +56,9 @@ data Node = Node
   , nextNodeIndex   :: Int
   , leftNodeIndex   :: Int
   , rightNodeIndex  :: Int
+  , childrenCrossed :: Bool
   }
+  deriving (Eq, Show)
 
 data DAABBTree (nodeCapacity :: Nat) (growthSize :: Nat) = DAABBTree
   { objectNodeIndexMap :: IM.IntMap Int
@@ -51,6 +67,20 @@ data DAABBTree (nodeCapacity :: Nat) (growthSize :: Nat) = DAABBTree
   , allocatedNodeCount :: Int
   , nextFreeNodeIndex  :: Int
   }
+
+instance (V.Arity nodeCapacity) => Show (DAABBTree nodeCapacity growthSize) where
+  show DAABBTree {..} = "objectNodeIndexMap: "
+                        ++ show objectNodeIndexMap
+                        ++ " nodes: "
+                        ++ show nodes
+                        ++ " rootNodeIndex: "
+                        ++ show rootNodeIndex
+                        ++ " allocatedNodeCount: "
+                        ++ show allocatedNodeCount
+                        ++ " nextFreeNodeIndex: "
+                        ++ show nextFreeNodeIndex
+
+type ColliderPairList = [(Int, Int)]
 
 emptyAABB :: AABB
 emptyAABB = AABB (V3 0 0 0) (V3 0 0 0)
@@ -64,6 +94,17 @@ aabbUnion (AABB lb1 ub1) (AABB lb2 ub2) = AABB (min lb1 lb2) (max ub1 ub2)
 aabbArea :: AABB -> GL.GLfloat
 aabbArea AABB {..} = 2 * (dx * dy + dy * dz + dz * dx)
   where (V3 dx dy dz) = upperBound - lowerBound
+
+aabbCollides :: AABB -> AABB -> Bool
+aabbCollides
+  (AABB (V3 minX1 minY1 minZ1) (V3 maxX1 maxY1 maxZ1))
+  (AABB (V3 minX2 minY2 minZ2) (V3 maxX2 maxY2 maxZ2)) =
+  minX1 <= maxX2
+  && maxX1 >= maxX2
+  && minY1 <= maxY2
+  && maxY1 >= minY2
+  && minZ1 <= maxZ2
+  && maxZ1 >= minZ2
 
 nullNode :: Int
 nullNode = -1
@@ -84,6 +125,7 @@ initNodes offset = do
     , nextNodeIndex   = offset + i + 1
     , leftNodeIndex   = nullNode
     , rightNodeIndex  = nullNode
+    , childrenCrossed = False
     }
   let l = V.lengthM nodesM
   V.unsafeWrite nodesM (offset + l - 1) $ Node
@@ -93,6 +135,7 @@ initNodes offset = do
     , nextNodeIndex   = nullNode
     , leftNodeIndex   = nullNode
     , rightNodeIndex  = nullNode
+    , childrenCrossed = False
     }
   V.freeze nodesM
 
@@ -193,6 +236,7 @@ allocateNode daabbTree =
         , nextNodeIndex   = allocatedNodeNextNodeIndex
         , leftNodeIndex   = nullNode
         , rightNodeIndex  = nullNode
+        , childrenCrossed = False
         }
       nodes' <- V.freeze nodesM
       return $ leftright
@@ -222,6 +266,7 @@ deallocateNode nodeIndex DAABBTree {..} = do
     , nextNodeIndex   = nextFreeNodeIndex 
     , leftNodeIndex   = nullNode 
     , rightNodeIndex  = nullNode
+    , childrenCrossed = False
     }
   nodes' <- V.freeze nodesM
   return $ DAABBTree
@@ -254,6 +299,7 @@ fixUpwardsTree treeNodeIndex DAABBTree {..} =
                 , nextNodeIndex   = treeNodeParentNodeIndex
                 , leftNodeIndex   = leftNodeIndex treeNode
                 , rightNodeIndex  = rightNodeIndex treeNode
+                , childrenCrossed = False
                 }
               nodes' <- V.freeze nodesM
               fixUpwardsTree (parentNodeIndex treeNode) $ DAABBTree { nodes = nodes', ..}
@@ -353,6 +399,7 @@ insertLeaf leafNodeIndex daabbTree =
         , nextNodeIndex   = nextNodeIndex newParentNode
         , leftNodeIndex   = leafSiblingIndex
         , rightNodeIndex  = leafNodeIndex
+        , childrenCrossed = False
         }
       V.unsafeWrite nodesM leafNodeIndex $ Node
         { aabb            = aabb leafNode
@@ -361,6 +408,7 @@ insertLeaf leafNodeIndex daabbTree =
         , nextNodeIndex   = nextNodeIndex leafNode
         , leftNodeIndex   = leftNodeIndex leafNode
         , rightNodeIndex  = rightNodeIndex leafNode
+        , childrenCrossed = False
         }
       V.unsafeWrite nodesM leafSiblingIndex $ Node
         { aabb            = aabb leafSiblingNode
@@ -369,6 +417,7 @@ insertLeaf leafNodeIndex daabbTree =
         , nextNodeIndex   = nextNodeIndex leafSiblingNode
         , leftNodeIndex   = leftNodeIndex leafSiblingNode
         , rightNodeIndex  = rightNodeIndex leafSiblingNode
+        , childrenCrossed = False
         }
       if oldParentIndex == nullNode
         then
@@ -390,6 +439,7 @@ insertLeaf leafNodeIndex daabbTree =
                       , nextNodeIndex   = nextNodeIndex oldParentNode
                       , leftNodeIndex   = newParentIndex
                       , rightNodeIndex  = rightNodeIndex oldParentNode
+                      , childrenCrossed = False
                       }
                     nodes' <- V.freeze nodesM
                     fixUpwardsTree newParentIndex $ DAABBTree
@@ -405,9 +455,317 @@ insertLeaf leafNodeIndex daabbTree =
                       , nextNodeIndex   = nextNodeIndex oldParentNode
                       , leftNodeIndex   = leftNodeIndex oldParentNode
                       , rightNodeIndex  = newParentIndex
+                      , childrenCrossed = False
                       }
                     nodes' <- V.freeze nodesM
                     fixUpwardsTree newParentIndex $ DAABBTree
                       { nodes = nodes'
                       , ..
                       }
+
+removeLeaf
+  :: ( PrimMonad m
+     , KnownNat nodeCapacity
+     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
+     , V.ArityPeano (V.Peano nodeCapacity)
+     )
+  => Int
+  -> DAABBTree nodeCapacity growthSize
+  -> m (DAABBTree nodeCapacity growthSize)
+removeLeaf leafNodeIndex daabbTree = 
+  if leafNodeIndex == rootNodeIndex daabbTree
+  then return $ daabbTree { rootNodeIndex = nullNode }
+  else let leafNode = nodes daabbTree `V.unsafeIndex` leafNodeIndex
+           leafParentNodeIndex = parentNodeIndex leafNode
+           leafParentNode = nodes daabbTree `V.unsafeIndex` leafParentNodeIndex
+           grandParentNodeIndex = parentNodeIndex leafParentNode
+           siblingNodeIndex = if leftNodeIndex leafParentNode == leafNodeIndex
+                              then rightNodeIndex leafParentNode
+                              else leftNodeIndex leafParentNode
+       in if siblingNodeIndex == nullNode
+          then error "we must have a sibling"
+          else let siblingNode = nodes daabbTree `V.unsafeIndex` siblingNodeIndex
+               in if grandParentNodeIndex /= nullNode
+                  then let grandParentNode = nodes daabbTree `V.unsafeIndex` grandParentNodeIndex
+                       in if leftNodeIndex grandParentNode == leafParentNodeIndex 
+                          then
+                            do
+                              nodesM <- V.thaw $ nodes daabbTree
+                              V.unsafeWrite nodesM grandParentNodeIndex $
+                                grandParentNode { leftNodeIndex = siblingNodeIndex }
+                              V.unsafeWrite nodesM siblingNodeIndex $
+                                siblingNode { parentNodeIndex = grandParentNodeIndex }
+                              nodes' <- V.freeze nodesM
+                              daabbTree' <- deallocateNode leafParentNodeIndex $
+                                daabbTree { nodes = nodes' }
+                              daabbTree'' <- fixUpwardsTree grandParentNodeIndex daabbTree'
+                              let leafNode'' = nodes daabbTree'' `V.unsafeIndex` leafNodeIndex
+                              nodesM'' <- V.thaw $ nodes daabbTree''
+                              V.unsafeWrite nodesM'' leafNodeIndex $
+                                leafNode'' { parentNodeIndex = nullNode }
+                              nodes'' <- V.freeze nodesM''
+                              return daabbTree'' { nodes = nodes'' }
+                          else 
+                            do
+                              nodesM <- V.thaw $ nodes daabbTree
+                              V.unsafeWrite nodesM grandParentNodeIndex $
+                                grandParentNode { rightNodeIndex = siblingNodeIndex }
+                              V.unsafeWrite nodesM siblingNodeIndex $
+                                siblingNode { parentNodeIndex = grandParentNodeIndex }
+                              nodes' <- V.freeze nodesM
+                              daabbTree' <- deallocateNode leafParentNodeIndex $
+                                daabbTree { nodes = nodes' }
+                              daabbTree'' <- fixUpwardsTree grandParentNodeIndex daabbTree'
+                              let leafNode'' = nodes daabbTree'' `V.unsafeIndex` leafNodeIndex
+                              nodesM'' <- V.thaw $ nodes daabbTree''
+                              V.unsafeWrite nodesM'' leafNodeIndex $
+                                leafNode'' { parentNodeIndex = nullNode }
+                              nodes'' <- V.freeze nodesM''
+                              return daabbTree'' { nodes = nodes'' }
+                  else
+                    do
+                      nodesM <- V.thaw $ nodes daabbTree
+                      V.unsafeWrite nodesM siblingNodeIndex $
+                        siblingNode { parentNodeIndex = nullNode }
+                      nodes' <- V.freeze nodesM
+                      daabbTree' <- deallocateNode leafParentNodeIndex $
+                        daabbTree { nodes = nodes', rootNodeIndex = siblingNodeIndex }
+                      let leafNode' = nodes daabbTree' `V.unsafeIndex` leafNodeIndex
+                      nodesM' <- V.thaw $ nodes daabbTree'
+                      V.unsafeWrite nodesM' leafNodeIndex $
+                        leafNode' { parentNodeIndex = nullNode }
+                      nodes'' <- V.freeze nodesM'
+                      return daabbTree' { nodes = nodes'' }
+
+updateLeaf
+  :: ( PrimMonad m
+     , KnownNat nodeCapacity
+     , KnownNat growthSize
+     , KnownNat (nodeCapacity + growthSize)
+     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
+     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
+     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.ArityPeano (V.Peano growthSize)
+     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
+     , V.Peano ((nodeCapacity + growthSize) + 1)
+       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     )
+  => Int
+  -> AABB
+  -> DAABBTree nodeCapacity growthSize
+  -> m (DAABBTree nodeCapacity growthSize)
+updateLeaf leafNodeIndex newAABB daabbTree = do
+  let leafNode = nodes daabbTree `V.unsafeIndex` leafNodeIndex
+      node = leafNode { aabb = newAABB }
+  daabbTree' <- removeLeaf leafNodeIndex daabbTree
+  nodesM <- V.thaw $ nodes daabbTree'
+  V.unsafeWrite nodesM leafNodeIndex node
+  insertLeaf leafNodeIndex daabbTree'
+
+insertObject
+  :: ( PrimMonad m
+     , KnownNat nodeCapacity
+     , KnownNat growthSize
+     , KnownNat (nodeCapacity + growthSize)
+     , KnownNat (nodeCapacity + growthSize + growthSize)
+     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
+     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
+     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.ArityPeano (V.Peano growthSize)
+     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.ArityPeano (V.Add
+                      (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+                      (V.Peano growthSize))
+     , V.ArityPeano (V.Add
+                      (V.Add
+                        (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+                        (V.Peano growthSize))
+                      (V.Peano growthSize))
+     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
+     , V.Peano ((nodeCapacity + growthSize) + 1)
+       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.Peano ((nodeCapacity + growthSize) + growthSize)
+       ~ V.Add (V.Add (V.Peano nodeCapacity) (V.Peano growthSize)) (V.Peano growthSize)
+     , V.Peano (((nodeCapacity + growthSize) + growthSize) + 1)
+       ~ V.S (V.Add (V.Add (V.Peano nodeCapacity) (V.Peano growthSize)) (V.Peano growthSize))
+     )
+  => Int
+  -> AABB
+  -> DAABBTree nodeCapacity growthSize
+  -> m (Either
+        (DAABBTree nodeCapacity growthSize)
+        (DAABBTree (nodeCapacity + growthSize) growthSize))
+insertObject objectId objectAABB daabbTree = do
+  leftright <- allocateNode daabbTree
+  case leftright of
+    Left  (nodeIndex, daabbTree') -> Left  <$> help nodeIndex daabbTree'
+    Right (nodeIndex, daabbTree') -> Right <$> help nodeIndex daabbTree'
+  where
+    help
+      :: ( PrimMonad m
+     , KnownNat nodeCapacity
+     , KnownNat growthSize
+     , KnownNat (nodeCapacity + growthSize)
+     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
+     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
+     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.ArityPeano (V.Peano growthSize)
+     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.ArityPeano (V.Add
+                      (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+                      (V.Peano growthSize))
+     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
+     , V.Peano ((nodeCapacity + growthSize) + 1)
+       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     )
+      => Int
+      -> DAABBTree nodeCapacity growthSize
+      -> m (DAABBTree nodeCapacity growthSize)
+    help nodeIndex daabbTree = do
+      let node = nodes daabbTree `V.unsafeIndex` nodeIndex
+          node' = node { aabb = objectAABB, object = objectId }
+          objectNodeIndexMap' = IM.insert objectId nodeIndex $ objectNodeIndexMap daabbTree
+      nodesM <- V.thaw $ nodes daabbTree
+      V.unsafeWrite nodesM nodeIndex node'
+      nodes' <- V.freeze nodesM
+      insertLeaf nodeIndex $ daabbTree { nodes = nodes', objectNodeIndexMap = objectNodeIndexMap' }
+
+removeObject
+  :: ( PrimMonad m
+     , KnownNat nodeCapacity
+     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
+     , V.ArityPeano (V.Peano nodeCapacity)
+     )
+  => Int
+  -> DAABBTree nodeCapacity growthSize
+  -> m (DAABBTree nodeCapacity growthSize)
+removeObject objectId daabbTree = 
+  case IM.lookup objectId (objectNodeIndexMap daabbTree) of
+    Nothing        -> return daabbTree
+    Just nodeIndex -> do
+      daabbTree' <- deallocateNode nodeIndex =<< removeLeaf nodeIndex daabbTree
+      let objectNodeIndexMap' = IM.delete nodeIndex (objectNodeIndexMap daabbTree')
+      return $ daabbTree' { objectNodeIndexMap = objectNodeIndexMap' }
+
+updateObject
+  :: ( PrimMonad m
+     , KnownNat nodeCapacity
+     , KnownNat growthSize
+     , KnownNat (nodeCapacity + growthSize)
+     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
+     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
+     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.ArityPeano (V.Peano growthSize)
+     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
+     , V.Peano ((nodeCapacity + growthSize) + 1)
+       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     )
+  => Int
+  -> AABB
+  -> DAABBTree nodeCapacity growthSize
+  -> m (DAABBTree nodeCapacity growthSize)
+updateObject objectId newAABB daabbTree =
+  case IM.lookup objectId (objectNodeIndexMap daabbTree) of
+    Nothing        -> error "Object not in 'objectNodeIndexMap'."
+    Just nodeIndex -> updateLeaf nodeIndex newAABB daabbTree
+
+clearChildrenCrossFlagHelper
+  :: ( PrimMonad m
+     , V.Arity nodeCapacity
+     )
+  => Int
+  -> DAABBTree nodeCapacity growthSize
+  -> m (DAABBTree nodeCapacity growthSize)
+clearChildrenCrossFlagHelper nodeIndex DAABBTree {..} = do
+  let node = nodes `V.unsafeIndex` nodeIndex
+  nodesM <- V.thaw nodes
+  V.unsafeWrite nodesM nodeIndex $ node { childrenCrossed = False }
+  nodes' <- V.freeze nodesM
+  if isLeaf node
+    then return DAABBTree { nodes = nodes', .. }
+    else do
+    daabbTree' <- clearChildrenCrossFlagHelper (leftNodeIndex node)
+                  DAABBTree { nodes = nodes', .. }
+    clearChildrenCrossFlagHelper (rightNodeIndex node) DAABBTree { nodes = nodes', .. }
+
+crossChildren
+  :: ( PrimMonad m
+     , V.Arity nodeCapacity
+     )
+  => Int
+  -> ColliderPairList
+  -> DAABBTree nodeCapacity growthSize
+  -> m (DAABBTree nodeCapacity growthSize, ColliderPairList)
+crossChildren nodeIndex cpList daabbTree = 
+  let node = nodes daabbTree `V.unsafeIndex` nodeIndex
+  in if childrenCrossed node
+     then return (daabbTree, cpList)
+     else
+       do
+         (daabbTree', cpList') <- computePairsHelper
+                                  (leftNodeIndex node) (rightNodeIndex node) cpList daabbTree
+         nodesM <- V.thaw $ nodes daabbTree'
+         V.unsafeWrite nodesM nodeIndex $ node { childrenCrossed = True }
+         nodes' <- V.freeze nodesM
+         return $ (daabbTree' { nodes = nodes' }, cpList')
+
+computePairsHelper
+  :: ( PrimMonad m
+     , V.Arity nodeCapacity
+     )
+  => Int
+  -> Int
+  -> ColliderPairList
+  -> DAABBTree nodeCapacity growthSize
+  -> m (DAABBTree nodeCapacity growthSize, ColliderPairList)
+computePairsHelper nodeIndex1 nodeIndex2 cpList daabbTree =
+  let node1 = nodes daabbTree `V.unsafeIndex` nodeIndex1
+      node2 = nodes daabbTree `V.unsafeIndex` nodeIndex2
+  in if isLeaf node1
+     then if isLeaf node2
+          then if aabbCollides (aabb node1) (aabb node1)
+               then return (daabbTree, (nodeIndex1, nodeIndex2) : cpList)
+               else return (daabbTree, cpList)
+          else
+            do
+              (daabbTree', cpList') <- crossChildren nodeIndex2 cpList daabbTree
+              (daabbTree'', cpList'') <- computePairsHelper
+                                         nodeIndex1 (leftNodeIndex node2) cpList' daabbTree'
+              computePairsHelper nodeIndex1 (rightNodeIndex node2) cpList'' daabbTree''
+     else if isLeaf node2
+          then
+            do
+              (daabbTree', cpList') <- crossChildren nodeIndex1 cpList daabbTree
+              (daabbTree'', cpList'') <- computePairsHelper
+                                         (leftNodeIndex node1) nodeIndex2 cpList' daabbTree'
+              computePairsHelper (rightNodeIndex node1) nodeIndex2 cpList'' daabbTree''
+          else
+            do
+              (daabbTree', cpList') <- crossChildren nodeIndex1 cpList daabbTree
+              (daabbTree'', cpList'') <- crossChildren nodeIndex2 cpList' daabbTree'
+              (daabbTree''', cpList''') <- computePairsHelper
+                (leftNodeIndex node1) (leftNodeIndex node2) cpList'' daabbTree''
+              (daabbTree'''', cpList'''') <- computePairsHelper
+                (leftNodeIndex node1) (rightNodeIndex node2) cpList''' daabbTree'''
+              (daabbTree''''', cpList''''') <- computePairsHelper
+                (rightNodeIndex node1) (leftNodeIndex node2) cpList'''' daabbTree''''
+              computePairsHelper
+                (rightNodeIndex node1) (rightNodeIndex node2) cpList''''' daabbTree'''''
+
+computePairs
+  :: ( PrimMonad m
+     , V.Arity nodeCapacity
+     )
+  => DAABBTree nodeCapacity growthSize
+  -> m (DAABBTree nodeCapacity growthSize, ColliderPairList)
+computePairs daabbTree =
+  if rootNodeIndex daabbTree == nullNode
+     || isLeaf (nodes daabbTree `V.unsafeIndex` rootNodeIndex daabbTree)
+  then return (daabbTree, [])
+  else
+    do
+      daabbTree' <- clearChildrenCrossFlagHelper (rootNodeIndex daabbTree) daabbTree
+      let rootNode = nodes daabbTree' `V.unsafeIndex` rootNodeIndex daabbTree
+      computePairsHelper (leftNodeIndex rootNode) (rightNodeIndex rootNode) [] daabbTree'
