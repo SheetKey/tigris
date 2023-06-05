@@ -46,6 +46,7 @@ library
                             , Tigris.Init
 
                             , Tigris.Collision
+                            , Tigris.Collision.AABB
                             , Tigris.Collision.KDTreeMap
                             , Tigris.Collision.DynamicAABBTree
                             , Tigris.Collision.DynamicAABBTreeFixed
