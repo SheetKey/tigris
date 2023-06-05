@@ -7,8 +7,8 @@ The component types and instances used in the ECS.
 module Tigris.ECS.Components where
 
 -- mylib
-import Tigris.Graphics
 import Tigris.ECS.Stores
+import Tigris.Collision
 
 -- base
 import Data.Int
@@ -20,25 +20,55 @@ import Apecs.Stores
 -- sdl
 import qualified SDL
 
+-- opengl
+import qualified Graphics.Rendering.OpenGL as GL
+
+-- linear
+import Linear
+
+
+sheetWidth :: Int
+sheetWidth = 4096
+
+sheetHeight :: Int
+sheetHeight = 4096
+
+
 -- | A collection of all components used as convenience
 --   for deleting all of an entities components.
 type All = ( Player
-           , Position
            , Rotation
-           , Destination
-           , Camera
-           , Velocity
-           , Health
-           , Texture
-           , ( SpriteSheet
+           , Position
+           , Model
+           --, View
+           --, Projection
+           , PVelocity
+           , ( Health
              , RToMouse
-             , TileMapSize
-             , Window
-             , Renderer
-             , WindowResized
+             --, TileMapSize
+             --, Window
+             --, WindowResized
              , Speed
-             , ( ColliderCell
-               , Collisions
+             , ColliderCell
+             , ( SpriteSheet
+               --, Collisions
+               --, GLBuffers
+               , UV
+               , Size
+               , Follows
+               , RotationMat
+               , ( Shoot
+                 --MouseLeftClick
+                 , WantLeftClick
+                 , ProjStats
+                 , Velocity
+                 , ShootOffset
+                 --, StaticCollisionTree
+                 , ( StaticCollider
+                   , HitStatic
+                   , HitBox
+                   )
+                 )
                )
              )
            )
@@ -49,26 +79,60 @@ data Player = Player
 instance Component Player where
   type Storage Player = Unique Player
 
--- This is the real position (destination rect).
--- The source rect is created from the sprite sheet.
--- | The position of entities relative to
---   the tileset. Stores the previous position at index 0,
---   the next position at index 1,
---   the next position only moving in the x direction at index 2,
---   and the next position only moving in the y direction at index 3.
---   This allows for position rollbacks on collision to avoid clipping.
-newtype Position = Position (V4 ((Rectangle CInt)))
+-- | The local space of an object. Centered at (0,0,0)
+--   This will be transformed by model, view, and projection
+--   matrices in order to be rendered.
+newtype Size = Size (V4 (V3 GL.GLfloat))
+instance Component Size where
+  type Storage Size = Map Size
+
+-- | The model matrix. Transforms the entity size to its
+--   position in the world.
+newtype Model = Model (M44 GL.GLfloat)
+instance Component Model where
+  type Storage Model = Map Model
+
+-- | The view matrix. Functions as the "camera."
+newtype View = View (M44 GL.GLfloat)
+instance Component View where
+  type Storage View = TMVGlobal View
+
+-- | The projection matrix. 
+newtype Projection = Projection (M44 GL.GLfloat)
+instance Component Projection where
+  type Storage Projection = TMVGlobal Projection
+
+-- | The position of entities in the "World Space."
+--   Used to create the model matrix for entities
+--   with this component. 
+--   Stores the previous, next, next in x, and next in z positions.
+newtype Position = Position (V4 (V3 GL.GLfloat))
 instance Component Position where
   type Storage Position = Map Position
 
+-- | An entity can "follow" another entity.
+--   For example, an equipped weapon will follow the player.
+--   Has the id of the entity being followed and a
+--   position offset.
+data Follows = Follows Int (V3 GL.GLfloat)
+instance Component Follows where
+  type Storage Follows = Map Follows
+
+data Plane = XY | YZ | XZ
+
 -- | Entities may have a rotational component.
 data Rotation = Rotation
-  { angle :: CDouble           -- ^ The angle of rotation.
-  , rotPntFrac :: (CInt, CInt) -- ^ Values to be used to determine the center of rotation. `(2, 2)` centers rotation by setting the rotation point to `(V2 (w `div` 2) (h `div` 2))` where `w` and `h` are the width and height of the destination rectangle.
-  , flipXY :: V2 Bool          -- ^ Whether or not to flip in the x and y directions.
+  { xyangle :: GL.GLfloat    -- ^ The angle of rotation. 
+  , yzangle :: GL.GLfloat    -- ^ The angle of rotation.
+  , xzangle :: GL.GLfloat    -- ^ The angle of rotation.
+  , rotPntFrac :: (Int, Int) -- ^ Values to be used to determine the center of rotation. `(2, 2)` centers rotation by setting the rotation point to `(V2 (w `div` 2) (h `div` 2))` where `w` and `h` are the width and height of the destination rectangle.
   }
 instance Component Rotation where
   type Storage Rotation = Map Rotation
+
+data RotationMat = RotationMat (M44 GL.GLfloat)
+instance Component RotationMat where
+  type Storage RotationMat = Map RotationMat
 
 -- | Whether or not entities with a rotation
 --   component should be rotated towards the mouse.
@@ -76,27 +140,23 @@ data RToMouse = RToMouse
 instance Component RToMouse where
   type Storage RToMouse = Map RToMouse
 
--- | The destination rectangle, i.e., where an
---   entity will be rendered to the screen.
-newtype Destination = Destination (Rectangle CInt)
-instance Component Destination where
-  type Storage Destination = Map Destination
+data VEnum = Z | One | NOne deriving (Eq)
 
--- | Used to create the `Destination` rectangle
---   for entities with a position component.
-newtype Camera = Camera (Rectangle CInt)
-instance Component Camera where
-  type Storage Camera = TMVGlobal Camera
+-- | The input velocity of the player.
+--   This is necessary for properly handling player movement input keys.
+--   note that this is the x,z velocity, as in opengl,
+--   the y axis is vertical. The xz plane is horizontal
+newtype PVelocity = PVelocity (VEnum, VEnum) 
+instance Component PVelocity where
+  type Storage PVelocity = Unique PVelocity
 
--- | The velocity of an entity.
---   The x and y compnenets should only ever
---   be 0, 1, or -1.
-newtype Velocity = Velocity (V2 CInt) 
+-- | The velocity of an entity. This quantity should be normed when it is set.
+newtype Velocity = Velocity (V3 GL.GLfloat)
 instance Component Velocity where
   type Storage Velocity = Map Velocity
 
 -- | The speed of movement, multiplies the `NormVelocity`.
-newtype Speed = Speed Double
+newtype Speed = Speed GL.GLfloat
 instance Component Speed where
   type Storage Speed = Map Speed
 
@@ -105,35 +165,30 @@ newtype Health = Health Integer
 instance Component Health where
   type Storage Health = Map Health
 
--- | The SDL `Texture` of an entity.
-newtype Texture = Texture SDL.Texture
-instance Component Texture where
-  type Storage Texture = Map Texture
-
--- | Some entities will share a texture,
---   so to prevent the same texture from being loaded
---   multiple times, use a global map containing
---   all loaded textures.
---   Entities will store a map key to access their
---   needed texture.
-newtype TextureMap = TextureMap (IM.IntMap SDL.Texture)
+-- | OpenGL texture coordinates.
+newtype UV = UV (V4 (V2 GL.GLfloat))
+instance Component UV where
+  type Storage UV = Map UV
 
 -- | Determines what portion of the
 --   `Texture` will be rendered.
 data SpriteSheet = SpriteSheet
-  { rowIndex :: CInt    -- ^ Indexed starting at 0. Rows are different states, i.e., for a player they might include idle, walking, running, etc.
-  , colIndex :: CInt    -- ^ Indexed starting at 0. Columns are different frames of a single animation state.
-  , maxColIndex :: CInt -- ^ The maximum column index should be equal to the number of frames in the row minus 1.
-  , frameWidth :: CInt  -- ^ The pixel width of a single frame.
-  , frameHeight :: CInt -- ^ The pixel height of a single frame.
-  , waitTime :: Double  -- ^ Difference in time to wait before changing frames.
-  , accTime :: Double   -- ^ An internal time accumulator that should be initialized as 0.
+  { texId       :: Int -- ^ Texture uniform id.
+  , rowIndex    :: Int -- ^ The current row index. Should be the top left coord of the current cell. (In pixels.)
+  , colIndex    :: Int -- ^ The current col index. Should be the top left coord of the current cell. (In pixels.)
+  , colMin      :: Int -- ^ This entity's min top left col.
+  , colMax      :: Int -- ^ This entity's max top left col.
+  , frameWidth  :: Int -- ^ The pixel width of a single frame.
+  , frameHeight :: Int -- ^ The pixel height of a single frame.
+  , borderWidth :: Int -- ^ The width of the border around the sprite in the texture atlas.
+  , waitTime    :: Double -- ^ Difference in time to wait before changing frames.
+  , accTime     :: Double  -- ^ An internal time accumulator that should be initialized as 0.
   }
 instance Component SpriteSheet where
   type Storage SpriteSheet = Map SpriteSheet
 
 -- | The size of the tilemap in pixels. Used for bounding the `Camera`.
-newtype TileMapSize = TileMapSize (V2 CInt)
+newtype TileMapSize = TileMapSize (V2 Int)
 instance Component TileMapSize where
   type Storage TileMapSize = ReadOnly (TMVGlobal TileMapSize)
 
@@ -142,10 +197,10 @@ newtype Window = Window SDL.Window
 instance Component Window where
   type Storage Window = ReadOnly (TMVGlobal Window)
 
--- | The SDL `Renderer`.
-newtype Renderer = Renderer SDL.Renderer
-instance Component Renderer where
-  type Storage Renderer = ReadOnly (TMVGlobal Renderer)
+-- | OpenGL buffers and shader program
+newtype GLBuffers = GLBuffers (GL.VertexArrayObject, GL.BufferObject, GL.BufferObject, GL.Program)
+instance Component GLBuffers where
+  type Storage GLBuffers = ReadOnly (TMVGlobal GLBuffers)
 
 -- | Used for the `WindowResizedClock`. 
 newtype WindowResized = WindowResized (V2 Int32)
@@ -153,7 +208,7 @@ instance Component WindowResized where
   type Storage WindowResized = BTMVGlobal WindowResized
 
 -- | Use for bitwise comparison to determine if two entities might collide.
-newtype ColliderCell = ColliderCell CInt
+newtype ColliderCell = ColliderCell Int
 instance Component ColliderCell where
   type Storage ColliderCell = Map ColliderCell
 
@@ -167,3 +222,78 @@ instance Component ColliderCell where
 newtype Collisions = Collisions (Int, Int)
 instance Component Collisions where
   type Storage Collisions = BTQGlobal Collisions
+
+-- | A global kdtree keeping the locations of static collision objects, i.e.
+-- entities with the 'StaticCollider' tag.
+newtype StaticCollisionTree = StaticCollisionTree (KDTreeMap (GL.GLfloat, GL.GLfloat) Int)
+instance Component StaticCollisionTree where
+  type Storage StaticCollisionTree = TMVGlobal StaticCollisionTree
+
+-- | Tags entities who act as static collision objects.
+data StaticCollider = StaticCollider
+instance Component StaticCollider where
+  type Storage StaticCollider = Map StaticCollider
+
+-- | What happens when an entity collides with a static entity.
+data OnStaticHit = Stop -- ^ Stop the entities movement.
+                 | Delete -- ^ Deletes the entity on collision.
+
+-- | List of entity id of static objects the entity containing this component has hit.
+data HitStatic = HitStatic OnStaticHit [Int]
+instance Component HitStatic where
+  type Storage HitStatic = Map HitStatic
+
+-- | The hitbox of an entity. Centered at the (0,0,0) and transformed by the entity position.
+data HitBox = Rect GL.GLfloat GL.GLfloat -- ^ A rectangle given by length (z axis) and width (x axis).
+            | Circ GL.GLfloat            -- ^ A circle with a given radius.
+instance Component HitBox where
+  type Storage HitBox = Map HitBox
+
+-- | Holds global left click information.
+newtype MouseLeftClick = MouseLeftClick (Maybe (SDL.InputMotion, V3 GL.GLfloat, V3 GL.GLfloat))
+instance Semigroup MouseLeftClick where
+  _ <> _ = error "Semigroup instance for 'MouseLeftClick' should not be used."
+instance Monoid MouseLeftClick where
+  mempty = MouseLeftClick Nothing
+instance Component MouseLeftClick where
+  type Storage MouseLeftClick = TQGlobal MouseLeftClick
+
+-- | Entities may want access to the global leftclick values.
+--   This type should hold two functions, one of type
+--   'V3 GL.GLfloat -> SystemT' m Bool' and one of type
+--   '(SDL.InputMotion, V3 GL.GLfloat) -> SystemT' m ()',
+--   but this is not possible due to circular dependencies.
+--   Thus two arrays should be created before starting the main loop
+--   to hold these functions.
+--   The functions are not unique, so index them by integers stored
+--   in the 'WantLeftClick' type.
+newtype WantLeftClick = WantLeftClick Int
+instance Component WantLeftClick where
+  type Storage WantLeftClick = Map WantLeftClick
+
+-- | Set this tag when an entity should should a projectile.
+-- holds the initial position of the projectile and
+-- a point that it should be shot at.
+newtype Shoot = Shoot (V3 GL.GLfloat, V3 GL.GLfloat)
+instance Component Shoot where
+  type Storage Shoot = Map Shoot
+
+-- | An entity that can shoot a projectile must have this.
+-- When creating the 'Shoot' component, add this offset to
+-- the shooting entity's current position to determine the
+-- initial position of the projective.
+-- This includes the xz offset followed by the y offset.
+-- The y offset will be added to the shoot offset and and
+-- the destination.
+newtype ShootOffset = ShootOffset (V3 GL.GLfloat, GL.GLfloat)
+instance Component ShootOffset where
+  type Storage ShootOffset = Map ShootOffset
+
+-- | An entity holds the stats of the projectile it should spawn.
+data ProjStats = ProjStats
+  { damage :: Int
+  , accuracy :: Int
+  , speed :: Speed
+  }
+instance Component ProjStats where
+  type Storage ProjStats = Map ProjStats

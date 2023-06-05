@@ -19,20 +19,34 @@ import Tigris.ECS.Components
 -- | Creates all things that are
 --   necessary.
 makeWorld "World" [ ''Player
-                  , ''Position
                   , ''Rotation
-                  , ''Destination
-                  , ''Camera
-                  , ''Velocity
+                  , ''Position
+                  , ''Model
+                  , ''View
+                  , ''Projection
+                  , ''PVelocity
                   , ''Health
-                  , ''Texture
-                  , ''SpriteSheet
                   , ''RToMouse
                   , ''TileMapSize
                   , ''Window
-                  , ''Renderer
                   , ''WindowResized
                   , ''Speed
                   , ''ColliderCell
                   , ''Collisions
+                  , ''GLBuffers
+                  , ''SpriteSheet
+                  , ''UV
+                  , ''Size
+                  , ''Follows
+                  , ''RotationMat
+                  , ''MouseLeftClick
+                  , ''WantLeftClick
+                  , ''Shoot
+                  , ''ProjStats
+                  , ''Velocity
+                  , ''ShootOffset
+                  , ''StaticCollisionTree
+                  , ''StaticCollider
+                  , ''HitStatic
+                  , ''HitBox
                   ]

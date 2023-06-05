@@ -6,40 +6,35 @@ module Tigris.ECS.Process.Position where
 -- mylib
 import Tigris.ECS.System
 import Tigris.ECS.Components
-import Tigris.Graphics
 
 -- rhine
-import FRP.Rhine
+import FRP.Rhine hiding ((^+^))
 
 -- apecs
 import Apecs
 
--- sdl
-import qualified SDL
+-- opengl
+import qualified Graphics.Rendering.OpenGL as GL
 
-nextPosition :: Rectangle CInt -> V2 Double -> Double -> Double -> Rectangle CInt
-nextPosition p v s dT = modPntV (truncate . (*s) . (*dT) <$> v) p
+-- linear
+import Linear
 
-normVelocity :: V2 CInt -> V2 Double
-normVelocity = SDL.normalize . (fmap fromIntegral)
+nextPosition :: V3 GL.GLfloat -> V3 GL.GLfloat -> GL.GLfloat -> Double -> V3 GL.GLfloat
+nextPosition p v s dT = p ^+^ ( v ^* (s * realToFrac dT) ) 
 
-setX0 :: V2 CInt -> V2 CInt
-setX0 (V2 _ y) = V2 0 y
+setX0 :: V3 GL.GLfloat -> V3 GL.GLfloat
+setX0 (V3 _ y z) = V3 0 y z
 
-setY0 :: V2 CInt -> V2 CInt
-setY0 (V2 x _) = V2 x 0
-  
--- old
--- _setPosition :: MonadIO m => Double -> SystemT' m ()
--- _setPosition dT = cmap $ \(Position p, NormVelocity v, Speed s) -> Position $ nextPosition p v s dT
+setZ0 :: V3 GL.GLfloat -> V3 GL.GLfloat
+setZ0 (V3 x y _) = V3 x y 0
 
 _setPosition :: MonadIO m => Double -> SystemT' m ()
 _setPosition dT = cmap $ \(Position (V4 _ n _ _), Velocity v, Speed s) ->
   Position $ V4
   n
-  (nextPosition n (normVelocity v) s dT)
-  (nextPosition n (normVelocity $ setY0 v) s dT)
-  (nextPosition n (normVelocity $ setX0 v) s dT)
+  (nextPosition n v s dT)
+  (nextPosition n (setZ0 v) s dT)
+  (nextPosition n (setX0 v) s dT)
 
 setPosition :: (MonadIO m, (Diff (Time cl)) ~ Double) => ClSFS m cl () ()
 setPosition = sinceLastS >>> arrMCl _setPosition

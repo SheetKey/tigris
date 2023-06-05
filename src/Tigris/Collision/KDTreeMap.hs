@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -25,6 +26,14 @@ class (Ord n, Num n) => IsPoint p n where
   getY :: p n -> n
   flipP :: p n -> p n
   distSqr :: p n -> p n -> n
+
+instance (Ord n, Num n) => IsPoint ((,) n) n where
+  getX = fst
+  getY = snd
+  flipP (x, y) = (y, x)
+  distSqr (x1, y1) (x2, y2) = let x = x1 - x2
+                                  y = y1 - y2
+                              in (x * x) + (y * y)
 
 empty :: KDTreeMap k v
 empty = Tip
