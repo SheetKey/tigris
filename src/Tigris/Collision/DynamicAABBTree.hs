@@ -1,10 +1,14 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Tigris.Collision.DynamicAABBTree
-  ( insertObject
+  ( initDAABBTree
+  , insertObject
   , removeObject
   , updateObject
   ) where
+
+-- tigris
+import Tigris.Collision.AABB
 
 -- linear
 import Linear hiding (rotate)
@@ -24,14 +28,8 @@ import Control.Monad.ST
 import Data.STRef
 import Control.Monad (when)
 
-data AABB = AABB
-  { lowerBound :: V3 GL.GLfloat
-  , upperBound :: V3 GL.GLfloat
-  }
-  deriving (Eq, Show)
-
-data Node = Node
-  { aabb            :: AABB
+data Node v a = Node 
+  { aabb            :: AABB v a 
   , parentNodeIndex :: Int
   , nextNodeIndex   :: Int
   , leftNodeIndex   :: Int
@@ -41,32 +39,20 @@ data Node = Node
   , isLeaf          :: Bool
   }
 
-data CandidateNode = CandidateNode
-  { index           :: Int
-  , inheritanceCost :: GL.GLfloat
-  }
-instance Eq CandidateNode where
-  cn1 == cn2 = (inheritanceCost cn1) == (inheritanceCost cn2)
-instance Ord CandidateNode where
-  cn1 <= cn2 = (inheritanceCost cn1) <= (inheritanceCost cn2)
-
-data DAABBTree = DAABBTree
+data DAABBTree v a = DAABBTree
   { rootNodeIndex     :: Int
-  , nodes             :: V.Vector Node
+  , nodes             :: V.Vector (Node v a)
   , nodeCount         :: Int
   , nodeCapacity      :: Int
   , growthSize        :: Int
   , nextFreeNodeIndex :: Int
-  , aabbFatExtension  :: GL.GLfloat
+  , aabbFatExtension  :: a
   }
 
 nullNode :: Int
 nullNode = -1
 
-nullAABB :: AABB
-nullAABB = AABB (V3 0 0 0) (V3 0 0 0)
-
-nullTreeNode :: Node
+nullTreeNode :: BB v a => Node v a
 nullTreeNode = Node
            { aabb            = nullAABB
            , parentNodeIndex = nullNode
@@ -78,34 +64,12 @@ nullTreeNode = Node
            , isLeaf          = False
            }
 
-nullNodes :: Int -> V.Vector Node
+nullNodes :: BB v a => Int -> V.Vector (Node v a)
 nullNodes nodeCapacity = V.generate nodeCapacity $ \i -> if i /= nodeCapacity - 1
   then nullTreeNode { nextNodeIndex = i + 1 }
   else nullTreeNode
 
-fattenAABB :: GL.GLfloat -> AABB -> AABB
-fattenAABB fat (AABB lowerBound upperBound) =
-  AABB (((-) fat) <$> lowerBound) ((+ fat) <$> upperBound)
-
-contains :: AABB -> AABB -> Bool
-contains
-  (AABB (V3 lx1 ly1 lz1) (V3 ux1 uy1 uz1))
-  (AABB (V3 lx2 ly2 lz2) (V3 ux2 uy2 uz2)) =
-  lx1 <= lx2 
-  && ly1 <= ly2
-  && lz1 <= lz2
-  && ux1 >= ux2
-  && uy1 >= uy2
-  && uz1 >= uz2
-
-area :: AABB -> GL.GLfloat
-area AABB {..} = 2 * (dx * dy + dy * dz + dz * dx)
-  where (V3 dx dy dz) = upperBound - lowerBound
-
-combine :: AABB -> AABB -> AABB
-combine (AABB lb1 ub1) (AABB lb2 ub2) = AABB (min lb1 lb2) (max ub1 ub2)
-
-growNodes :: Int -> Int -> Int -> V.Vector Node -> V.Vector Node
+growNodes :: BB v a => Int -> Int -> Int -> V.Vector (Node v a) -> V.Vector (Node v a)
 growNodes nodeCount nodeCapacity growthSize nodes = runST $ do
   nodesM <- (flip MV.unsafeGrow) growthSize =<< V.thaw nodes
   MV.iforM_ nodesM $ \i node -> if i < nodeCount
@@ -114,7 +78,7 @@ growNodes nodeCount nodeCapacity growthSize nodes = runST $ do
   MV.unsafeWrite nodesM (nodeCapacity - 1) nullTreeNode
   V.unsafeFreeze nodesM
 
-initDAABBTree :: Int -> Int -> GL.GLfloat -> DAABBTree
+initDAABBTree :: BB v a => Int -> Int -> a -> DAABBTree v a
 initDAABBTree nodeCapacity growthSize aabbFatExtension = DAABBTree
   { rootNodeIndex     = 0
   , nodeCount         = 0
@@ -128,7 +92,7 @@ initDAABBTree nodeCapacity growthSize aabbFatExtension = DAABBTree
 assert :: Bool -> String -> a -> a
 assert tf str a = if tf then a else error str
 
-allocateNode :: DAABBTree -> (Int, DAABBTree)
+allocateNode :: BB v a => DAABBTree v a -> (Int, DAABBTree v a)
 allocateNode daabbTree = if nextFreeNodeIndex daabbTree == nullNode
   -- 'nodes' is full and needs expanding
   then assert (nodeCount daabbTree == nodeCapacity daabbTree)
@@ -163,7 +127,7 @@ allocateNode daabbTree = if nextFreeNodeIndex daabbTree == nullNode
            }
          )
 
-freeNode :: Int -> DAABBTree -> DAABBTree
+freeNode :: Int -> DAABBTree v a -> DAABBTree v a
 freeNode nodeIndex daabbTree =
   assert (0 <= nodeIndex && nodeIndex < nodeCapacity daabbTree)
   "'nodeIndex' outside of bounds." $
@@ -177,7 +141,7 @@ freeNode nodeIndex daabbTree =
      , nodeCount = nodeCount daabbTree - 1
      }
     
-insertObject :: Int -> AABB -> DAABBTree -> (Int, DAABBTree)
+insertObject :: BB v a => Int -> AABB v a -> DAABBTree v a -> (Int, DAABBTree v a)
 insertObject objId objaabb daabbTree =
   let (objIndex, daabbTree') = allocateNode daabbTree
       objNode = nodes daabbTree' V.! objIndex
@@ -191,7 +155,7 @@ insertObject objId objaabb daabbTree =
      , insertLeaf objIndex (daabbTree' { nodes = nodes' })
      )
 
-removeObject :: Int -> DAABBTree -> DAABBTree
+removeObject :: Int -> DAABBTree v a -> DAABBTree v a
 removeObject objIndex daabbTree =
   assert (0 <= objIndex && objIndex < nodeCapacity daabbTree)
   "'objIndex' not within vector bounds." $
@@ -199,7 +163,7 @@ removeObject objIndex daabbTree =
   "'objIndex' is not a leaf." $
   freeNode objIndex $ removeLeaf objIndex daabbTree
 
-updateObject :: Int -> AABB -> DAABBTree -> DAABBTree
+updateObject :: BB v a => Int -> AABB v a -> DAABBTree v a-> DAABBTree v a
 updateObject objIndex objAABB daabbTree = 
   assert (0 <= objIndex && objIndex < nodeCapacity daabbTree)
   "'objIndex' outside vector bounds." $
@@ -223,7 +187,7 @@ updateObject objIndex objAABB daabbTree =
                             (nodes daabbTree')
                in insertLeaf objIndex (daabbTree' { nodes = nodes' })
 
-insertLeaf :: Int -> DAABBTree -> DAABBTree
+insertLeaf :: BB v a => Int -> DAABBTree v a-> DAABBTree v a
 insertLeaf leafIndex daabbTree =
   if (rootNodeIndex daabbTree) == nullNode
   then daabbTree
@@ -351,10 +315,10 @@ insertLeaf leafIndex daabbTree =
       nodes' <- V.unsafeFreeze nodesM
       return $ daabbTree'' { nodes = nodes' }
 
-removeLeaf :: Int -> DAABBTree -> DAABBTree
+removeLeaf :: Int -> DAABBTree v a -> DAABBTree v a
 removeLeaf leafIndex daabbTree = undefined
 
-rotate :: Int -> MV.MVector s Node -> ST s ()
+rotate :: BB v a => Int -> MV.MVector s (Node v a) -> ST s ()
 rotate iA nodesM = do
   nodeA <- MV.unsafeRead nodesM iA
   if height nodeA < 2
