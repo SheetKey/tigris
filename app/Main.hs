@@ -45,8 +45,7 @@ import System.Random (randomRIO)
 
 
 main :: IO ()
---main = initAndRun "Game Demo" gameLoop'''
-main = daabbTreeTest
+main = initAndRun "Game Demo" gameLoop'''
 --main = do 
 --  g <- wfc (VV.fromList [tile1, tile2, tile3, tile4]) (2, 2) Nothing
 --  print g
@@ -56,26 +55,26 @@ main = daabbTreeTest
 --tile3 = Tile 3 2 2 1 2 1
 --tile4 = Tile 4 1 2 2 2 1
   
-daabbTreeTest :: IO ()
-daabbTreeTest = do
-  daabbTree :: DAABBTree 10 5 <- initDAABBTree
-  putStrLn "daabbTree:"
-  print daabbTree
-  Left in1 <- insertObject 1 (AABB (V3 0 0 (-2)) (V3 2 0 0)) daabbTree
-  Left in2 <- insertObject 2 (AABB (V3 (-2) 0 (-2)) (V3 1 0 1)) in1
-  Left in3 <- insertObject 3 (AABB (V3 0 0 1) (V3 4 0 3)) in2
-  Left daabbTree' <- insertObject 4 (AABB (V3 0 0 0) (V3 1 0 1)) in3
-  putStrLn "daabbTree':"
-  print daabbTree'
-  daabbTree'' <- updateObject 1 (AABB (V3 0 0 0) (V3 1 0 1)) daabbTree'
-  putStrLn "daabbTree'':"
-  print daabbTree''
-  daabbTree''' <- removeObject 1 daabbTree''
-  putStrLn "daabbTree''':"
-  print daabbTree'''
-  (daabbTree'''', cpList) <- computePairs daabbTree'''
-  putStrLn "daabbTree''' pairs: "
-  print cpList
+--daabbTreeTest :: IO ()
+--daabbTreeTest = do
+--  daabbTree :: DAABBTree 10 5 <- initDAABBTree
+--  putStrLn "daabbTree:"
+--  print daabbTree
+--  Left in1 <- insertObject 1 (AABB (V3 0 0 (-2)) (V3 2 0 0)) daabbTree
+--  Left in2 <- insertObject 2 (AABB (V3 (-2) 0 (-2)) (V3 1 0 1)) in1
+--  Left in3 <- insertObject 3 (AABB (V3 0 0 1) (V3 4 0 3)) in2
+--  Left daabbTree' <- insertObject 4 (AABB (V3 0 0 0) (V3 1 0 1)) in3
+--  putStrLn "daabbTree':"
+--  print daabbTree'
+--  daabbTree'' <- updateObject 1 (AABB (V3 0 0 0) (V3 1 0 1)) daabbTree'
+--  putStrLn "daabbTree'':"
+--  print daabbTree''
+--  daabbTree''' <- removeObject 1 daabbTree''
+--  putStrLn "daabbTree''':"
+--  print daabbTree'''
+--  (daabbTree'''', cpList) <- computePairs daabbTree'''
+--  putStrLn "daabbTree''' pairs: "
+--  print cpList
   
 
 -- used in funmap: propably move into the library
