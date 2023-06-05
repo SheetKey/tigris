@@ -29,9 +29,9 @@ normVelocity (NOne, Z)    = V3 (-1)           0 0
 normVelocity (NOne, One)  = V3 (- (sqrt 2)/2) 0 ((sqrt 2)/2)
 normVelocity (NOne, NOne) = V3 (- (sqrt 2)/2) 0 (- (sqrt 2)/2)
 
-_setPlayerVelocity :: MonadIO m => Double -> SystemT' m ()
-_setPlayerVelocity dT = cmap $ \(PVelocity v) ->
+_setPlayerVelocity :: MonadIO m => SystemT' m ()
+_setPlayerVelocity = cmap $ \(PVelocity v) ->
   Velocity $ normVelocity v
 
-setPlayerVelocity :: (MonadIO m, (Diff (Time cl)) ~ Double) => ClSFS m cl () ()
-setPlayerVelocity = sinceLastS >>> arrMCl _setPlayerVelocity
+setPlayerVelocity :: MonadIO m => ClSFS m cl () ()
+setPlayerVelocity = constMCl _setPlayerVelocity

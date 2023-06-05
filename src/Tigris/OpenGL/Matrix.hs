@@ -8,7 +8,6 @@ import Foreign.Ptr
 import Linear.V3
 import Linear.V4
 import Linear.Matrix
-import Linear.Vector
 import Linear.Epsilon
 import Linear.Projection
 

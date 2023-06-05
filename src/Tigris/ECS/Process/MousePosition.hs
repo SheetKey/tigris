@@ -30,11 +30,6 @@ import Data.Int
 import Control.Monad ((>=>))
 import Foreign.C.Types
 
--- containers
-import qualified Data.IntMap.Strict as M
-
-
-
 _mouseZCoord :: MonadIO m => (Int32, Int32) -> SystemT' m (V3 GL.GLfloat)
 _mouseZCoord (mx, my) = do
   Window win <- get global
@@ -43,7 +38,7 @@ _mouseZCoord (mx, my) = do
       winY = abs (height - my)
   z <- liftIO $ alloca $ \ptr -> do
     let pdata = GL.PixelData GL.DepthComponent GL.Float ptr
-    GL.readPixels (GL.Position (fromIntegral winX) (fromIntegral winY)) (GL.Size 1 1) pdata
+    GL.readPixels (GL.Position winX winY) (GL.Size 1 1) pdata
     peek ptr
   return $ V3 (fromIntegral winX) (fromIntegral winY) z
         

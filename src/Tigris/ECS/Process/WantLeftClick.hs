@@ -32,7 +32,7 @@ import Foreign.C.Types (CInt (..))
 type FuncMap a m b = M.IntMap (Int -> a -> SystemT' m b)
 
   
-getFunc :: MonadIO m => Int -> FuncMap a m b -> (Int -> a -> SystemT' m b)
+getFunc :: Int -> FuncMap a m b -> (Int -> a -> SystemT' m b)
 getFunc i m = case (m M.!? i) of
                 Just f -> f
                 Nothing -> error $ "'FuncMap' does not contain key " ++ show i
@@ -43,10 +43,10 @@ getFunc i m = case (m M.!? i) of
 _useLeftClick :: MonadIO m
               => ((), SDL.InputMotion)
               -> ReaderT' (FuncMap (V3 GL.GLfloat, V3 GL.GLfloat) m ()) m ((), SDL.InputMotion)
-_useLeftClick ((), last) = do
+_useLeftClick ((), pressedOrReleased) = do
   funMap <- ask
   MouseLeftClick click <- lift $ get global
-  case (last, click) of
+  case (pressedOrReleased, click) of
     -- If previously released and currently released do nothing.
     (SDL.Released, Nothing) -> return ((), SDL.Released)
     -- If previously pressed and no further input, mouse is being held down.

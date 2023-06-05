@@ -10,12 +10,6 @@ module Tigris.Collision.DynamicAABBTree
 -- tigris
 import Tigris.Collision.AABB
 
--- linear
-import Linear hiding (rotate)
-
--- opengl
-import qualified Graphics.Rendering.OpenGL as GL
-
 -- vector
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
@@ -47,6 +41,7 @@ data DAABBTree v a = DAABBTree
   , growthSize        :: Int
   , nextFreeNodeIndex :: Int
   , aabbFatExtension  :: a
+  , objectIndexMap    :: IM.IntMap Int
   }
 
 nullNode :: Int
@@ -87,6 +82,7 @@ initDAABBTree nodeCapacity growthSize aabbFatExtension = DAABBTree
   , nextFreeNodeIndex = 0
   , nodes             = nullNodes nodeCapacity
   , aabbFatExtension  = aabbFatExtension
+  , objectIndexMap    = IM.empty
   }
 
 assert :: Bool -> String -> a -> a
@@ -152,19 +148,25 @@ insertObject objId objaabb daabbTree =
                  , isLeaf = True }
       nodes' = V.modify (\v -> MV.unsafeWrite v objIndex objNode') (nodes daabbTree')
   in ( objIndex
-     , insertLeaf objIndex (daabbTree' { nodes = nodes' })
+     , insertLeaf objIndex $ daabbTree'
+       { nodes = nodes'
+       , objectIndexMap = IM.insert objId objIndex $ objectIndexMap daabbTree' 
+       }
      )
 
 removeObject :: Int -> DAABBTree v a -> DAABBTree v a
-removeObject objIndex daabbTree =
-  assert (0 <= objIndex && objIndex < nodeCapacity daabbTree)
-  "'objIndex' not within vector bounds." $
-  assert (isLeaf $ nodes daabbTree V.! objIndex)
-  "'objIndex' is not a leaf." $
-  freeNode objIndex $ removeLeaf objIndex daabbTree
+removeObject objId daabbTree =
+  let objIndex = objectIndexMap daabbTree IM.! objId
+  in assert (0 <= objIndex && objIndex < nodeCapacity daabbTree)
+     "'objIndex' not within vector bounds." $
+     assert (isLeaf $ nodes daabbTree V.! objIndex)
+     "'objIndex' is not a leaf." $
+     let objIndex = objectIndexMap daabbTree IM.! objId
+     in freeNode objIndex $ removeLeaf objIndex $ daabbTree
+     { objectIndexMap = IM.delete objId (objectIndexMap daabbTree) }
 
 updateObject :: BB v a => Int -> AABB v a -> DAABBTree v a-> DAABBTree v a
-updateObject objIndex objAABB daabbTree = 
+updateObject objId objAABB daabbTree = 
   assert (0 <= objIndex && objIndex < nodeCapacity daabbTree)
   "'objIndex' outside vector bounds." $
   assert (isLeaf $ nodes daabbTree V.! objIndex)
@@ -175,6 +177,7 @@ updateObject objIndex objAABB daabbTree =
        else reinsert
   else reinsert
   where
+    objIndex = objectIndexMap daabbTree IM.! objId
     r = aabbFatExtension daabbTree
     fatAABB = fattenAABB r objAABB
     hugeAABB = fattenAABB (4 * r) fatAABB

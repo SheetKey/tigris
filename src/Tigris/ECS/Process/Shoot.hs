@@ -34,7 +34,7 @@ velFromTo :: (V3 GL.GLfloat, V3 GL.GLfloat) -> Velocity
 velFromTo (from, to) = Velocity $ normalize $ to - from
 
 _shoot :: MonadIO m => SystemT' m ()
-_shoot = cmapM $ \(Shoot s@(pos, _), ps@(ProjStats {..})) -> do
+_shoot = cmapM $ \(Shoot s@(pos, _), ps) -> do
   bullet pos (velFromTo s) ps
   return $ Not @Shoot
 

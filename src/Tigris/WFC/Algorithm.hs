@@ -96,9 +96,6 @@ leastEntropyWith tileToOrd = do
       )
       Nothing
 
-leastTileOptions :: MonadIO m => WFCSystemT m [(Int, Int)]
-leastTileOptions = leastEntropyWith V.length
-
 cellEntropy :: V.Vector Tile -> Float
 cellEntropy tiles = log weightSum - (weightLogWeightsSum / weightSum)
   where

@@ -4,7 +4,7 @@
 module Tigris.ECS.Process.HitStatic where
 
 -- rhine
-import FRP.Rhine
+import FRP.Rhine hiding (next)
 
 -- apecs
 import Apecs
@@ -13,7 +13,6 @@ import Apecs.Core
 -- mylib
 import Tigris.ECS.Components
 import Tigris.ECS.System
-import Tigris.Collision.KDTreeMap
 
 -- linear
 import Linear
@@ -64,7 +63,7 @@ _hitStatic :: MonadIO m => SystemT' m ()
 _hitStatic = do
   s :: Storage (StaticCollider, Position, HitBox) <- getStore
   cmapM_ $ \( HitStatic onStaticCollision hits
-            , Position (V4 last next nextX nextZ)
+            , Position (V4 lastPos next nextX nextZ)
             , hb :: HitBox, entity :: Entity) -> do
     forM_ hits $ \ety -> do
       (_, Position (V4 _ pos _ _), shb :: HitBox) <- lift $ explGet s $ ety
@@ -72,12 +71,12 @@ _hitStatic = do
       if hitEty next hb
         then case (onStaticCollision, hitEty nextX hb, hitEty nextZ hb) of
                (Stop, False, _) ->
-                 set entity (HitStatic Stop [], Position $ V4 last nextX nextX nextZ)
+                 set entity (HitStatic Stop [], Position $ V4 lastPos nextX nextX nextZ)
                (Stop, _, False) ->
-                 set entity (HitStatic Stop [], Position $ V4 last nextZ nextX nextZ)
+                 set entity (HitStatic Stop [], Position $ V4 lastPos nextZ nextX nextZ)
                _                -> case onStaticCollision of
                                     Stop ->
-                                      set entity (HitStatic Stop [], Position $ V4 last last nextX nextZ)
+                                      set entity (HitStatic Stop [], Position $ V4 lastPos lastPos nextX nextZ)
                                     Delete ->
                                       destroy entity (Proxy @All)
         else case onStaticCollision of

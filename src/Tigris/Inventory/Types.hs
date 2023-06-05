@@ -38,23 +38,24 @@ newEmptyContainer :: ItemId -> ContainerType -> MaxItems -> ItemWeight -> Contai
 newEmptyContainer x y z j = Container x y z j Nothing
 
 fillContainer :: Item -> Container -> Container
+fillContainer cn@(Coin _ _ x) c@(Container {containerType = MoneyPouch, maxItems}) =
+  if x <= maxItems then c { item = Just cn } else c
 fillContainer _ c@(Container _ _ _ _ (Just _)) = c
 fillContainer g@(Gun S _ _) c@(Container {containerType = SHolster}) = c { item = Just g }
 fillContainer g@(Gun M _ _) c@(Container {containerType = MHolster}) = c { item = Just g }
 fillContainer g@(Gun L _ _) c@(Container {containerType = LHolster}) = c { item = Just g }
-fillContainer cn@(Coin _ _ x) c@(Container {containerType = MoneyPouch, maxItems}) =
-  if x <= maxItems then c { item = Just cn } else c
+fillContainer _ c = c
 
 emptyContainer :: Container -> (Container, Maybe Item)
 emptyContainer c@(Container { item }) = (c { item = Nothing }, item)
 
 canContainerHold :: Item -> Container -> Bool
-canContainerHold g@(Gun S _ _) c@(Container { containerType = SHolster, item = Nothing }) = True 
-canContainerHold g@(Gun M _ _) c@(Container { containerType = MHolster, item = Nothing }) = True
-canContainerHold g@(Gun L _ _) c@(Container { containerType = LHolster, item = Nothing }) = True
-canContainerHold cn@(Coin _ _ x) c@(Container { containerType = MoneyPouch, maxItems, item = Nothing }) =
+canContainerHold (Gun S _ _) (Container { containerType = SHolster, item = Nothing }) = True 
+canContainerHold (Gun M _ _) (Container { containerType = MHolster, item = Nothing }) = True
+canContainerHold (Gun L _ _) (Container { containerType = LHolster, item = Nothing }) = True
+canContainerHold (Coin _ _ x) (Container { containerType = MoneyPouch, maxItems, item = Nothing }) =
   x <= maxItems
-canContainerHold cn@(Coin _ _ x) c@(Container { containerType = MoneyPouch, maxItems, item = Just (Coin _ _ y) }) =
+canContainerHold (Coin _ _ x) (Container { containerType = MoneyPouch, maxItems, item = Just (Coin _ _ y) }) =
   x + y <= maxItems
 canContainerHold _ _ = False
   
@@ -68,7 +69,6 @@ itemType (Coin _ _ _) = MoneyPouch
 fillInventory :: Item -> Inventory -> (Inventory, Maybe Item)
 fillInventory i inv =
   let
-    iType = itemType i
     ind = V.findIndices (canContainerHold i) inv
   in case ind V.!? 0 of
        Nothing -> (inv, Just i)

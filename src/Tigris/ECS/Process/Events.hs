@@ -11,7 +11,6 @@ module Tigris.ECS.Process.Events
   , eventHandler
   ) where
 
-
 -- base
 import Data.Int
 

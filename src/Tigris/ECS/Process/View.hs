@@ -17,6 +17,7 @@ import Linear
 -- opengl
 import qualified Graphics.Rendering.OpenGL as GL
 
+cameraOffset :: V3 GL.GLfloat
 cameraOffset = V3 0 400 300
 
 _view :: MonadIO m => SystemT' m ()

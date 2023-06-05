@@ -3,7 +3,6 @@ module Tigris.ECS.Process.MouseAngle where
 -- tigris
 import Tigris.ECS.Components
 import Tigris.ECS.System
-import Tigris.ECS.Process.MousePosition
 
 -- apecs
 import Apecs

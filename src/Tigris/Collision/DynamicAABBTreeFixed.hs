@@ -100,7 +100,7 @@ aabbCollides
   (AABB (V3 minX1 minY1 minZ1) (V3 maxX1 maxY1 maxZ1))
   (AABB (V3 minX2 minY2 minZ2) (V3 maxX2 maxY2 maxZ2)) =
   minX1 <= maxX2
-  && maxX1 >= maxX2
+  && maxX1 >= minX2
   && minY1 <= maxY2
   && maxY1 >= minY2
   && minZ1 <= maxZ2
@@ -110,11 +110,9 @@ nullNode :: Int
 nullNode = -1
 
 initNodes
-  :: forall m nodeCapacity growthSize.
+  :: forall m nodeCapacity.
      ( PrimMonad m
-     , KnownNat nodeCapacity
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.Arity nodeCapacity
      )
   => Int -> m (V.Vec nodeCapacity Node)
 initNodes offset = do
@@ -142,9 +140,7 @@ initNodes offset = do
 _initDAABBTree
   :: forall m nodeCapacity growthSize.
      ( PrimMonad m
-     , KnownNat nodeCapacity
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.Arity nodeCapacity
      )
   => Int -> m (DAABBTree nodeCapacity growthSize)
 _initDAABBTree offset = do
@@ -160,9 +156,7 @@ _initDAABBTree offset = do
 initDAABBTree
   :: forall m nodeCapacity growthSize.
      ( PrimMonad m
-     , KnownNat nodeCapacity
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.Arity nodeCapacity
      )
   => m (DAABBTree nodeCapacity growthSize)
 initDAABBTree = _initDAABBTree 0
@@ -170,17 +164,10 @@ initDAABBTree = _initDAABBTree 0
 resizeDAABBTree
   :: forall m nodeCapacity growthSize.
      ( PrimMonad m
-     , KnownNat nodeCapacity
-     , KnownNat growthSize
-     , KnownNat (nodeCapacity + growthSize)
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
-     , V.ArityPeano (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano growthSize)
-     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
-     , V.Peano ((nodeCapacity + growthSize) + 1)
-       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.Arity nodeCapacity
+     , V.Arity growthSize
+     , V.Arity (nodeCapacity + growthSize)
+     , V.Add (V.Peano nodeCapacity) (V.Peano growthSize) ~ V.Peano (nodeCapacity + growthSize)
      )
   => DAABBTree nodeCapacity growthSize
   -> m (DAABBTree (nodeCapacity + growthSize) growthSize)
@@ -198,17 +185,10 @@ resizeDAABBTree daabbTree = do
 allocateNode
   :: forall m nodeCapacity growthSize.
      ( PrimMonad m
-     , KnownNat nodeCapacity
-     , KnownNat growthSize
-     , KnownNat (nodeCapacity + growthSize)
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
-     , V.ArityPeano (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano growthSize)
-     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
-     , V.Peano ((nodeCapacity + growthSize) + 1)
-       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.Arity nodeCapacity
+     , V.Arity growthSize
+     , V.Arity (nodeCapacity + growthSize)
+     , V.Add (V.Peano nodeCapacity) (V.Peano growthSize) ~ V.Peano (nodeCapacity + growthSize)
      )
   => DAABBTree nodeCapacity growthSize
   -> m (Either
@@ -252,9 +232,7 @@ allocateNode daabbTree =
 
 deallocateNode
   :: ( PrimMonad m
-     , KnownNat nodeCapacity
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.Arity nodeCapacity
      )
   => Int -> DAABBTree nodeCapacity growthSize -> m (DAABBTree nodeCapacity growthSize)
 deallocateNode nodeIndex DAABBTree {..} = do
@@ -278,9 +256,7 @@ deallocateNode nodeIndex DAABBTree {..} = do
 
 fixUpwardsTree
   :: ( PrimMonad m
-     , KnownNat nodeCapacity
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.Arity nodeCapacity
      )
   => Int -> DAABBTree nodeCapacity growthSize -> m (DAABBTree nodeCapacity growthSize)
 fixUpwardsTree treeNodeIndex DAABBTree {..} = 
@@ -309,17 +285,10 @@ fixUpwardsTree treeNodeIndex DAABBTree {..} =
 insertLeaf
   :: forall m nodeCapacity growthSize.
      ( PrimMonad m
-     , KnownNat nodeCapacity
-     , KnownNat growthSize
-     , KnownNat (nodeCapacity + growthSize)
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
-     , V.ArityPeano (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano growthSize)
-     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
-     , V.Peano ((nodeCapacity + growthSize) + 1)
-       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.Arity nodeCapacity
+     , V.Arity growthSize
+     , V.Arity (nodeCapacity + growthSize)
+     , V.Add (V.Peano nodeCapacity) (V.Peano growthSize) ~ V.Peano (nodeCapacity + growthSize)
      )
   => Int
   -> DAABBTree nodeCapacity growthSize
@@ -384,7 +353,7 @@ insertLeaf leafNodeIndex daabbTree =
       case leftright of
         Left  (newParentIndex, daabbTree') ->
           help leafNodeIndex leafSiblingIndex oldParentIndex newParentIndex daabbTree'
-        Right (newParentIndex, daabbTree') -> error "'allocateNode' should never return 'Right' in 'attachLeaf'."
+        Right _ -> error "'allocateNode' should never return 'Right' in 'attachLeaf'."
     help leafNodeIndex leafSiblingIndex oldParentIndex newParentIndex DAABBTree {..} = do
       let newParentNode = nodes `V.unsafeIndex` newParentIndex
           leafNode = nodes `V.unsafeIndex` leafNodeIndex
@@ -465,9 +434,7 @@ insertLeaf leafNodeIndex daabbTree =
 
 removeLeaf
   :: ( PrimMonad m
-     , KnownNat nodeCapacity
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.Arity nodeCapacity
      )
   => Int
   -> DAABBTree nodeCapacity growthSize
@@ -539,17 +506,10 @@ removeLeaf leafNodeIndex daabbTree =
 
 updateLeaf
   :: ( PrimMonad m
-     , KnownNat nodeCapacity
-     , KnownNat growthSize
-     , KnownNat (nodeCapacity + growthSize)
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
-     , V.ArityPeano (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano growthSize)
-     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
-     , V.Peano ((nodeCapacity + growthSize) + 1)
-       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.Arity nodeCapacity
+     , V.Arity growthSize
+     , V.Arity (nodeCapacity + growthSize)
+     , V.Add (V.Peano nodeCapacity) (V.Peano growthSize) ~ V.Peano (nodeCapacity + growthSize)
      )
   => Int
   -> AABB
@@ -565,30 +525,13 @@ updateLeaf leafNodeIndex newAABB daabbTree = do
 
 insertObject
   :: ( PrimMonad m
-     , KnownNat nodeCapacity
-     , KnownNat growthSize
-     , KnownNat (nodeCapacity + growthSize)
-     , KnownNat (nodeCapacity + growthSize + growthSize)
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
-     , V.ArityPeano (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano growthSize)
-     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-     , V.ArityPeano (V.Add
-                      (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-                      (V.Peano growthSize))
-     , V.ArityPeano (V.Add
-                      (V.Add
-                        (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-                        (V.Peano growthSize))
-                      (V.Peano growthSize))
-     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
-     , V.Peano ((nodeCapacity + growthSize) + 1)
-       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-     , V.Peano ((nodeCapacity + growthSize) + growthSize)
-       ~ V.Add (V.Add (V.Peano nodeCapacity) (V.Peano growthSize)) (V.Peano growthSize)
-     , V.Peano (((nodeCapacity + growthSize) + growthSize) + 1)
-       ~ V.S (V.Add (V.Add (V.Peano nodeCapacity) (V.Peano growthSize)) (V.Peano growthSize))
+     , V.Arity nodeCapacity
+     , V.Arity growthSize
+     , V.Arity (nodeCapacity + growthSize)
+     , V.Arity (nodeCapacity + growthSize + growthSize)
+     , V.Add (V.Peano nodeCapacity) (V.Peano growthSize) ~ V.Peano (nodeCapacity + growthSize)
+     , V.Add (V.Peano (nodeCapacity + growthSize)) (V.Peano growthSize)
+       ~ V.Peano ((nodeCapacity + growthSize) + growthSize)
      )
   => Int
   -> AABB
@@ -604,21 +547,11 @@ insertObject objectId objectAABB daabbTree = do
   where
     help
       :: ( PrimMonad m
-     , KnownNat nodeCapacity
-     , KnownNat growthSize
-     , KnownNat (nodeCapacity + growthSize)
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
-     , V.ArityPeano (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano growthSize)
-     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-     , V.ArityPeano (V.Add
-                      (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-                      (V.Peano growthSize))
-     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
-     , V.Peano ((nodeCapacity + growthSize) + 1)
-       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-     )
+         , V.Arity nodeCapacity
+         , V.Arity growthSize
+         , V.Arity (nodeCapacity + growthSize)
+         , V.Add (V.Peano nodeCapacity) (V.Peano growthSize) ~ V.Peano (nodeCapacity + growthSize)
+         )
       => Int
       -> DAABBTree nodeCapacity growthSize
       -> m (DAABBTree nodeCapacity growthSize)
@@ -633,9 +566,7 @@ insertObject objectId objectAABB daabbTree = do
 
 removeObject
   :: ( PrimMonad m
-     , KnownNat nodeCapacity
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano nodeCapacity)
+     , V.Arity nodeCapacity
      )
   => Int
   -> DAABBTree nodeCapacity growthSize
@@ -650,17 +581,10 @@ removeObject objectId daabbTree =
 
 updateObject
   :: ( PrimMonad m
-     , KnownNat nodeCapacity
-     , KnownNat growthSize
-     , KnownNat (nodeCapacity + growthSize)
-     , V.Peano (nodeCapacity + 1) ~ V.S (V.Peano nodeCapacity)
-     , V.Peano (growthSize + 1) ~ V.S (V.Peano growthSize)
-     , V.ArityPeano (V.Peano nodeCapacity)
-     , V.ArityPeano (V.Peano growthSize)
-     , V.ArityPeano (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
-     , V.Peano (nodeCapacity + growthSize) ~ V.Add (V.Peano nodeCapacity) (V.Peano growthSize)
-     , V.Peano ((nodeCapacity + growthSize) + 1)
-       ~ V.S (V.Add (V.Peano nodeCapacity) (V.Peano growthSize))
+     , V.Arity nodeCapacity
+     , V.Arity growthSize
+     , V.Arity (nodeCapacity + growthSize)
+     , V.Add (V.Peano nodeCapacity) (V.Peano growthSize) ~ V.Peano (nodeCapacity + growthSize)
      )
   => Int
   -> AABB
@@ -688,7 +612,7 @@ clearChildrenCrossFlagHelper nodeIndex DAABBTree {..} = do
     else do
     daabbTree' <- clearChildrenCrossFlagHelper (leftNodeIndex node)
                   DAABBTree { nodes = nodes', .. }
-    clearChildrenCrossFlagHelper (rightNodeIndex node) DAABBTree { nodes = nodes', .. }
+    clearChildrenCrossFlagHelper (rightNodeIndex node) daabbTree'
 
 crossChildren
   :: ( PrimMonad m
