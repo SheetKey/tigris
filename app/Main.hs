@@ -4,7 +4,6 @@
 
 module Main where
 
-
 -- tigris
 import Tigris
 
@@ -42,7 +41,8 @@ import FRP.Rhine hiding (get)
 -- random
 import System.Random (randomRIO)
 
-
+-- pretty-simple
+import Text.Pretty.Simple (pPrint)
 
 main :: IO ()
 main = daabbTreeTest
@@ -69,27 +69,27 @@ daabbTreeTest = do
       daabbTreeRemoved = removeObject 3 daabbTreeUpdated
   putStrLn "daabbTree: "
   _ <- return $ validate daabbTree
-  print daabbTree
+  pPrint daabbTree
   putStrLn " "
 
   putStrLn "daabbTree2Inserted: "
   _ <- return $ validate daabbTree2Inserted
-  print daabbTree2Inserted
+  pPrint daabbTree2Inserted
   putStrLn " "
   
   putStrLn "daabbTreeResized: "
   _ <- return $ validate daabbTreeResized
-  print daabbTreeResized
+  pPrint daabbTreeResized
   putStrLn " "
 
   putStrLn "daabbTreeUpdated: "
   _ <- return $ validate daabbTreeUpdated
-  print daabbTreeUpdated
+  pPrint daabbTreeUpdated
   putStrLn " "
 
   putStrLn "daabbTreeRemoved: "
   _ <- return $ validate daabbTreeRemoved
-  print daabbTreeRemoved
+  pPrint daabbTreeRemoved
   putStrLn " "
 
 -- used in funmap: propably move into the library
