@@ -49,6 +49,7 @@ library
                             , Tigris.Collision.AABB
                             , Tigris.Collision.KDTreeMap
                             , Tigris.Collision.DynamicAABBTree
+                            , Tigris.Collision.DynamicAABBTreePure
                             , Tigris.Collision.DynamicAABBTreeFixed
 
                             , Tigris.SDL
@@ -114,6 +115,7 @@ library
                             , OpenGL
                             , time
                             , containers
+                            , pqueue
                             , stm
                             , text
                             , transformers
