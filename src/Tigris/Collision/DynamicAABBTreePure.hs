@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Tigris.Collision.DynamicAABBTreePure
@@ -14,7 +15,6 @@ import Tigris.Collision.AABB
 
 -- vector
 import qualified Data.Vector as V
-import qualified Data.Vector.Mutable as MV
 
 -- containers
 import Data.IntMap.Strict as IM
@@ -27,7 +27,6 @@ import Control.Monad.ST
 import Data.STRef
 import Control.Monad (when)
 import Data.Functor.Identity
-import Debug.Trace
 
 data Node v a = Node 
   { aabb            :: AABB v a 
@@ -97,6 +96,7 @@ growNodes DAABBTree {..} =
      { nodes = nodes V.++ addedNodes
      , nextFreeNodeIndex = nodeCount
      , nodeCapacity = nodeCapacity + growthSize
+     , ..
      }
 
 allocateNode :: BB v a => DAABBTree v a -> (Int, DAABBTree v a)
@@ -193,8 +193,8 @@ data Candidate a = Candidate
 instance Ord a => Ord (Candidate a) where
   Candidate _ c1 <= Candidate _ c2 = c1 <= c2
 
-findBestSibling :: BB v a => AABB v a -> a -> Int -> DAABBTree v a -> Int
-findBestSibling aabbL areaL leafIndex DAABBTree {..} =
+findBestSibling :: BB v a => AABB v a -> a -> DAABBTree v a -> Int
+findBestSibling aabbL areaL DAABBTree {..} =
     let initBestCost = area $ combine (aabb $ nodes V.! rootNodeIndex) aabbL
         initCandidate = Candidate rootNodeIndex (initBestCost - area (aabb $ nodes V.! rootNodeIndex))
     in go (H.singleton initCandidate) rootNodeIndex initBestCost
@@ -299,7 +299,7 @@ insertLeaf leafIndex daabbTree = if rootNodeIndex daabbTree == nullNode
           }
   else let aabbL = aabb $ nodes daabbTree V.! leafIndex
            areaL = area aabbL
-           sibling = findBestSibling aabbL areaL leafIndex daabbTree
+           sibling = findBestSibling aabbL areaL daabbTree
        in fixTree $ findNewParent aabbL leafIndex sibling daabbTree
   
 
@@ -440,60 +440,65 @@ rotElse iA nA iB nB iC nC DAABBTree {..} =
       -- cost of swapping C and E
       aabbCD = combine (aabb nC) (aabb nD)
       costCE = areaC + area aabbCD
-  in case minimum [baseCost, costBF, costBG, costCD, costCE] of
-       baseCost -> DAABBTree {..}
-       costBF -> let heightC = 1 + max (height nB) (height nG)
-                     heightA = 1 + max heightC (height nF)
-                     nA' = nA { leftNodeIndex = iF, height = heightA }
-                     nC' = nC { leftNodeIndex = iB, aabb = aabbBG, height = heightC }
-                     nB' = nB { parentNodeIndex = iC }
-                     nF' = nF { parentNodeIndex = iA }
-                     nodes' = nodes V.//
-                              [ (iA, nA')
-                              , (iC, nC')
-                              , (iB, nB')
-                              , (iF, nF')
-                              ]
-                 in DAABBTree { nodes = nodes', .. }
-       costBG -> let heightC = 1 + max (height nB) (height nF)
-                     heightA = 1 + max heightC (height nG)
-                     nA' = nA { leftNodeIndex = iG, height = heightA }
-                     nC' = nC { rightNodeIndex = iB, aabb = aabbBF, height = heightC }
-                     nB' = nB { parentNodeIndex = iC }
-                     nG' = nG { parentNodeIndex = iA }
-                     nodes' = nodes V.//
-                              [ (iA, nA')
-                              , (iC, nC')
-                              , (iB, nB')
-                              , (iG, nG')
-                              ]
-                 in DAABBTree { nodes = nodes', .. }
-       costCD -> let heightB = 1 + max (height nC) (height nE)
-                     heightA = 1 + max heightB (height nD)
-                     nA' = nA { rightNodeIndex = iD, height = heightA }
-                     nB' = nB { leftNodeIndex = iC, aabb = aabbCE, height = heightB }
-                     nC' = nC { parentNodeIndex = iB }
-                     nD' = nD { parentNodeIndex = iA }
-                     nodes' = nodes V.//
-                              [ (iA, nA')
-                              , (iB, nB')
-                              , (iC, nC')
-                              , (iD, nD')
-                              ]
-                 in DAABBTree { nodes = nodes', .. }
-       costCE -> let heightB = 1 + max (height nC) (height nD)
-                     heightA = 1 + max heightB (height nE)
-                     nA' = nA { rightNodeIndex = iE, height = heightA }
-                     nB' = nB { rightNodeIndex = iC, aabb = aabbCD, height = heightB }
-                     nC' = nC { parentNodeIndex = iB }
-                     nE' = nE { parentNodeIndex = iA }
-                     nodes' = nodes V.//
-                              [ (iA, nA')
-                              , (iB, nB')
-                              , (iC, nC')
-                              , (iE, nE')
-                              ]
-                 in DAABBTree { nodes = nodes', .. }
+      minCost = minimum [baseCost, costBF, costBG, costCD, costCE]
+  in if | minCost == baseCost -> DAABBTree {..}
+        | minCost == costBF ->
+            let heightC = 1 + max (height nB) (height nG)
+                heightA = 1 + max heightC (height nF)
+                nA' = nA { leftNodeIndex = iF, height = heightA }
+                nC' = nC { leftNodeIndex = iB, aabb = aabbBG, height = heightC }
+                nB' = nB { parentNodeIndex = iC }
+                nF' = nF { parentNodeIndex = iA }
+                nodes' = nodes V.//
+                         [ (iA, nA')
+                         , (iC, nC')
+                         , (iB, nB')
+                         , (iF, nF')
+                         ]
+            in DAABBTree { nodes = nodes', .. }
+        | minCost == costBG ->
+            let heightC = 1 + max (height nB) (height nF)
+                heightA = 1 + max heightC (height nG)
+                nA' = nA { leftNodeIndex = iG, height = heightA }
+                nC' = nC { rightNodeIndex = iB, aabb = aabbBF, height = heightC }
+                nB' = nB { parentNodeIndex = iC }
+                nG' = nG { parentNodeIndex = iA }
+                nodes' = nodes V.//
+                         [ (iA, nA')
+                         , (iC, nC')
+                         , (iB, nB')
+                         , (iG, nG')
+                         ]
+            in DAABBTree { nodes = nodes', .. }
+        | minCost == costCD ->
+            let heightB = 1 + max (height nC) (height nE)
+                heightA = 1 + max heightB (height nD)
+                nA' = nA { rightNodeIndex = iD, height = heightA }
+                nB' = nB { leftNodeIndex = iC, aabb = aabbCE, height = heightB }
+                nC' = nC { parentNodeIndex = iB }
+                nD' = nD { parentNodeIndex = iA }
+                nodes' = nodes V.//
+                         [ (iA, nA')
+                         , (iB, nB')
+                         , (iC, nC')
+                         , (iD, nD')
+                         ]
+            in DAABBTree { nodes = nodes', .. }
+        | minCost == costCE ->
+            let heightB = 1 + max (height nC) (height nD)
+                heightA = 1 + max heightB (height nE)
+                nA' = nA { rightNodeIndex = iE, height = heightA }
+                nB' = nB { rightNodeIndex = iC, aabb = aabbCD, height = heightB }
+                nC' = nC { parentNodeIndex = iB }
+                nE' = nE { parentNodeIndex = iA }
+                nodes' = nodes V.//
+                         [ (iA, nA')
+                         , (iB, nB')
+                         , (iC, nC')
+                         , (iE, nE')
+                         ]
+            in DAABBTree { nodes = nodes', .. }
+        | otherwise -> error "this cannot happen"
 
 rotate :: BB v a => Int -> DAABBTree v a -> DAABBTree v a
 rotate iA DAABBTree {..} =

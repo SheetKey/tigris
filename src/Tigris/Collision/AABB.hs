@@ -27,7 +27,7 @@ class (Ord a, Num a, Eq (v a)) => BB v a where
 instance (Ord a, Num a) => BB V3 a where
   nullAABB = AABB (V3 0 0 0) (V3 0 0 0)
   fattenAABB fat AABB {..} =
-    AABB (((-) fat) <$> lowerBound) ((+ fat) <$> upperBound)
+    AABB ((subtract fat) <$> lowerBound) ((+ fat) <$> upperBound)
   contains (AABB (V3 lx1 ly1 lz1) (V3 ux1 uy1 uz1)) (AABB (V3 lx2 ly2 lz2) (V3 ux2 uy2 uz2)) =
     lx1 <= lx2 
     && ly1 <= ly2
@@ -37,12 +37,17 @@ instance (Ord a, Num a) => BB V3 a where
     && uz1 >= uz2
   area (AABB lowerBound upperBound) = 2 * (dx * dy + dy * dz + dz * dx)
     where (V3 dx dy dz) = upperBound - lowerBound
-  combine (AABB lb1 ub1) (AABB lb2 ub2) = AABB (min lb1 lb2) (max ub1 ub2)
+  combine
+    (AABB (V3 lx1 ly1 lz1) (V3 ux1 uy1 uz1))
+    (AABB (V3 lx2 ly2 lz2) (V3 ux2 uy2 uz2))
+    = AABB
+      (V3 (min lx1 lx2) (min ly1 ly2) (min lz1 lz2))
+      (V3 (max ux1 ux2) (max uy1 uy2) (max uz1 uz2))
 
 instance (Ord a, Num a) => BB V2 a where
   nullAABB = AABB (V2 0 0) (V2 0 0)
   fattenAABB fat AABB {..} =
-    AABB (((-) fat) <$> lowerBound) ((+ fat) <$> upperBound)
+    AABB ((subtract fat) <$> lowerBound) ((+ fat) <$> upperBound)
   contains (AABB (V2 lx1 ly1) (V2 ux1 uy1)) (AABB (V2 lx2 ly2) (V2 ux2 uy2)) =
     lx1 <= lx2 
     && ly1 <= ly2
@@ -50,5 +55,9 @@ instance (Ord a, Num a) => BB V2 a where
     && uy1 >= uy2
   area AABB {..} = dx * dy
     where (V2 dx dy) = upperBound - lowerBound
-  combine (AABB lb1 ub1) (AABB lb2 ub2) = AABB (min lb1 lb2) (max ub1 ub2)
-  
+  combine 
+    (AABB (V2 lx1 ly1) (V2 ux1 uy1))
+    (AABB (V2 lx2 ly2) (V2 ux2 uy2))
+    = AABB
+      (V2 (min lx1 lx2) (min ly1 ly2))
+      (V2 (max ux1 ux2) (max uy1 uy2))
