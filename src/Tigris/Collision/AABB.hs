@@ -17,7 +17,7 @@ data AABB (v :: Type -> Type) a = AABB
   }
   deriving (Eq, Show)
 
-class (Ord a, Num a) => BB v a where
+class (Ord a, Num a, Eq (v a)) => BB v a where
   nullAABB :: AABB v a
   fattenAABB :: a -> AABB v a -> AABB v a
   contains :: AABB v a -> AABB v a -> Bool
