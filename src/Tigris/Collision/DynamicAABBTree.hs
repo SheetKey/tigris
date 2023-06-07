@@ -5,6 +5,8 @@ module Tigris.Collision.DynamicAABBTree
   , insertObject
   , removeObject
   , updateObject
+  , validate
+  , DAABBTree
   ) where
 
 -- tigris
@@ -21,6 +23,8 @@ import Data.IntMap.Strict as IM
 import Control.Monad.ST
 import Data.STRef
 import Control.Monad (when)
+import Data.Functor.Identity
+import Debug.Trace
 
 data Node v a = Node 
   { aabb            :: AABB v a 
@@ -32,6 +36,7 @@ data Node v a = Node
   , object          :: Int
   , isLeaf          :: Bool
   }
+  deriving (Show)
 
 data DAABBTree v a = DAABBTree
   { rootNodeIndex     :: Int
@@ -43,6 +48,7 @@ data DAABBTree v a = DAABBTree
   , aabbFatExtension  :: a
   , objectIndexMap    :: IM.IntMap Int
   }
+  deriving (Show)
 
 nullNode :: Int
 nullNode = -1
@@ -70,7 +76,7 @@ growNodes nodeCount nodeCapacity growthSize nodes = runST $ do
   MV.iforM_ nodesM $ \i node -> if i < nodeCount
     then return ()
     else MV.unsafeWrite nodesM i $ nullTreeNode { nextNodeIndex = i + 1 }
-  MV.unsafeWrite nodesM (nodeCapacity - 1) nullTreeNode
+  MV.unsafeWrite nodesM (nodeCapacity + growthSize - 1) nullTreeNode
   V.unsafeFreeze nodesM
 
 initDAABBTree :: BB v a => Int -> Int -> a -> DAABBTree v a
@@ -91,18 +97,20 @@ assert tf str a = if tf then a else error str
 allocateNode :: BB v a => DAABBTree v a -> (Int, DAABBTree v a)
 allocateNode daabbTree = if nextFreeNodeIndex daabbTree == nullNode
   -- 'nodes' is full and needs expanding
-  then assert (nodeCount daabbTree == nodeCapacity daabbTree)
-       "'nodeCount /= nodeCapacity' when grwoing 'nodes'." $ 
-       let nodes' = growNodes
+  then let nodes' = growNodes
                     (nodeCount daabbTree)
                     (nodeCapacity daabbTree)
                     (growthSize daabbTree)
                     (nodes daabbTree)
-       in peel $ daabbTree { nodes = nodes', nextFreeNodeIndex = nodeCount daabbTree }
+       in peel $ daabbTree 
+          { nodes = nodes'
+          , nextFreeNodeIndex = nodeCount daabbTree
+          , nodeCapacity = nodeCapacity daabbTree + growthSize daabbTree
+          }
   else peel daabbTree
   where
     peel daabbTree = let nodeIndex = nextFreeNodeIndex daabbTree
-                         node = nodes daabbTree V.! nodeIndex
+                         node = trace ("allocateNode, nodeIndex " ++ show nodeIndex) nodes daabbTree V.! nodeIndex
                          node' = node
                            { object = nullNode
                            , parentNodeIndex = nullNode
@@ -125,10 +133,6 @@ allocateNode daabbTree = if nextFreeNodeIndex daabbTree == nullNode
 
 freeNode :: Int -> DAABBTree v a -> DAABBTree v a
 freeNode nodeIndex daabbTree =
-  assert (0 <= nodeIndex && nodeIndex < nodeCapacity daabbTree)
-  "'nodeIndex' outside of bounds." $
-  assert (0 < nodeCount daabbTree)
-  "'nodeCount' is not larger than 0." $
   let node = nodes daabbTree V.! nodeIndex
       node' = node { nextNodeIndex = nextFreeNodeIndex daabbTree, height = nullNode }
   in daabbTree
@@ -137,7 +141,7 @@ freeNode nodeIndex daabbTree =
      , nodeCount = nodeCount daabbTree - 1
      }
     
-insertObject :: BB v a => Int -> AABB v a -> DAABBTree v a -> (Int, DAABBTree v a)
+insertObject :: BB v a => Int -> AABB v a -> DAABBTree v a -> DAABBTree v a
 insertObject objId objaabb daabbTree =
   let (objIndex, daabbTree') = allocateNode daabbTree
       objNode = nodes daabbTree' V.! objIndex
@@ -147,30 +151,19 @@ insertObject objId objaabb daabbTree =
                  , object = objId
                  , isLeaf = True }
       nodes' = V.modify (\v -> MV.unsafeWrite v objIndex objNode') (nodes daabbTree')
-  in ( objIndex
-     , insertLeaf objIndex $ daabbTree'
-       { nodes = nodes'
-       , objectIndexMap = IM.insert objId objIndex $ objectIndexMap daabbTree' 
-       }
-     )
+  in insertLeaf objIndex $ daabbTree'
+     { nodes = nodes'
+     , objectIndexMap = IM.insert objId objIndex $ objectIndexMap daabbTree' 
+     }
 
-removeObject :: Int -> DAABBTree v a -> DAABBTree v a
+removeObject :: BB v a => Int -> DAABBTree v a -> DAABBTree v a
 removeObject objId daabbTree =
   let objIndex = objectIndexMap daabbTree IM.! objId
-  in assert (0 <= objIndex && objIndex < nodeCapacity daabbTree)
-     "'objIndex' not within vector bounds." $
-     assert (isLeaf $ nodes daabbTree V.! objIndex)
-     "'objIndex' is not a leaf." $
-     let objIndex = objectIndexMap daabbTree IM.! objId
-     in freeNode objIndex $ removeLeaf objIndex $ daabbTree
+  in freeNode objIndex $ removeLeaf objIndex $ daabbTree
      { objectIndexMap = IM.delete objId (objectIndexMap daabbTree) }
 
 updateObject :: BB v a => Int -> AABB v a -> DAABBTree v a-> DAABBTree v a
 updateObject objId objAABB daabbTree = 
-  assert (0 <= objIndex && objIndex < nodeCapacity daabbTree)
-  "'objIndex' outside vector bounds." $
-  assert (isLeaf $ nodes daabbTree V.! objIndex)
-  "'objIndex' is not a leaf." $
   if objNodeAABB `contains` objAABB
   then if hugeAABB `contains` objNodeAABB
        then daabbTree
@@ -205,13 +198,15 @@ insertLeaf leafIndex daabbTree =
       b <- act
       when b $ whileM act
     tNodes = nodes daabbTree
-    aabbL = aabb $ nodes daabbTree V.! leafIndex
+    aabbL = trace ("insertLeaf, leafIndex " ++ show leafIndex) aabb $ nodes daabbTree V.! leafIndex
     -- Stage 1: Find the best sibling.
-    sibling = runST $ do
+    sibling = if isLeaf $ tNodes V.! rootNodeIndex daabbTree
+              then rootNodeIndex daabbTree
+              else runST $ do
       indexM <- newSTRef $ rootNodeIndex daabbTree
       whileM $ do
         index <- readSTRef indexM
-        let idxNode = tNodes V.! index
+        let idxNode = trace ("insertLeaf, index " ++ show index) tNodes V.! index
             idxAABB = aabb idxNode
             idxArea = area idxAABB
             child1 = leftNodeIndex  idxNode
@@ -219,7 +214,7 @@ insertLeaf leafIndex daabbTree =
             cost = area $ combine idxAABB aabbL
             inheritanceCost = cost - idxArea
             childCost child = let leafChildComb = area $ combine aabbL $ aabb $ tNodes V.! child
-                              in if isLeaf $ tNodes V.! child
+                              in if trace ("insertLeaf, child " ++ show child) isLeaf $ tNodes V.! child
                                  then inheritanceCost + leafChildComb
                                  else (+) inheritanceCost $
                                       (-) leafChildComb $ area $ aabb $ tNodes V.! child
@@ -228,21 +223,21 @@ insertLeaf leafIndex daabbTree =
         if cost < cost1 && cost < cost2
           then return False
           else if cost1 < cost2
-               then do { writeSTRef indexM child1; return True }
-               else do { writeSTRef indexM child2; return True }
+               then do { writeSTRef indexM child1; return $ child1 /= nullNode }
+               else do { writeSTRef indexM child2; return $ child2 /= nullNode }
       readSTRef indexM
     -- Stage 2: Create a new parent
     siblingNode = tNodes V.! sibling
-    oldParent = parentNodeIndex $ tNodes V.! sibling
+    oldParent = trace ("insertLeaf, sibling " ++ show sibling) parentNodeIndex $ tNodes V.! sibling
     (newParent, daabbTree') = allocateNode daabbTree
     tNodes' = nodes daabbTree'
-    newParentNode = (tNodes' V.! newParent)
+    newParentNode = trace ("insertLeaf, newParent " ++ show newParent) (tNodes' V.! newParent)
                     { parentNodeIndex = oldParent
                     , aabb = combine aabbL (aabb siblingNode)
                     , height = height siblingNode + 1
                     }
     daabbTree'' = runST $ if oldParent /= nullNode
-      then if leftNodeIndex (tNodes' V.! oldParent) == sibling
+      then if trace ("insertLeaf, oldParent " ++ show oldParent) leftNodeIndex (tNodes' V.! oldParent) == sibling
            then let oldParentNode = (tNodes' V.! oldParent) { leftNodeIndex = newParent }
                     newParentNode' = newParentNode
                                      { leftNodeIndex = sibling
@@ -298,28 +293,74 @@ insertLeaf leafIndex daabbTree =
         idxNode <- MV.unsafeRead nodesM idx
         let child1 = leftNodeIndex idxNode
             child2 = rightNodeIndex idxNode
-        assert (child1 /= nullNode)
-          "'child1 == nullNode' in stage 3." $ 
-          assert (child2 /= nullNode)
-          "'child2 == nullNode' in stage 3." $ do
-          child1Node <- MV.unsafeRead nodesM child1
-          child2Node <- MV.unsafeRead nodesM child2
-          MV.unsafeModify nodesM
-            (\node -> node
-                      { height = 1 + max (height child1Node) (height child2Node)
-                      , aabb = combine (aabb child1Node) (aabb child2Node)
-                      }
-            )
-            idx
-          rotate idx nodesM
-          writeSTRef indexM $ parentNodeIndex idxNode
-          idx' <- readSTRef indexM
-          return $ idx' /= nullNode
+        child1Node <- MV.unsafeRead nodesM child1
+        child2Node <- MV.unsafeRead nodesM child2
+        MV.unsafeModify nodesM
+          (\node -> node
+                    { height = 1 + max (height child1Node) (height child2Node)
+                    , aabb = combine (aabb child1Node) (aabb child2Node)
+                    }
+          )
+          idx
+        rotate idx nodesM
+        writeSTRef indexM $ parentNodeIndex idxNode
+        idx' <- readSTRef indexM
+        return $ idx' /= nullNode
       nodes' <- V.unsafeFreeze nodesM
       return $ daabbTree'' { nodes = nodes' }
 
-removeLeaf :: Int -> DAABBTree v a -> DAABBTree v a
-removeLeaf leafIndex daabbTree = undefined
+removeLeaf :: BB v a => Int -> DAABBTree v a -> DAABBTree v a
+removeLeaf leafIndex daabbTree = if leafIndex == rootNodeIndex daabbTree
+  then daabbTree
+  else let parentIndex = parentNodeIndex $ nodes daabbTree V.! leafIndex
+           parentNode = nodes daabbTree V.! parentIndex
+           grandParentIndex = parentNodeIndex parentNode
+           grandParentNode = nodes daabbTree V.! grandParentIndex
+           siblingIndex = if leftNodeIndex parentNode == leafIndex
+                          then rightNodeIndex parentNode
+                          else leftNodeIndex parentNode
+           siblingNode = nodes daabbTree V.! siblingIndex
+       in if grandParentIndex /= nullNode
+             -- destroy parent and connect sibling to grandparent
+          then let grandParentNode' = if leftNodeIndex grandParentNode == parentIndex
+                                      then grandParentNode { leftNodeIndex = siblingIndex }
+                                      else grandParentNode { rightNodeIndex = siblingIndex }
+                   siblingNode' = siblingNode { parentNodeIndex = grandParentIndex }
+                   nodes' = runST $ do
+                     nodesM <- V.thaw $ nodes daabbTree
+                     MV.unsafeWrite nodesM grandParentIndex grandParentNode'
+                     MV.unsafeWrite nodesM siblingIndex siblingNode'
+                     V.unsafeFreeze nodesM
+                   daabbTree' = freeNode parentIndex $ daabbTree { nodes = nodes' }
+                     -- adjust ancestor bounds
+                   nodes'' = runST $ do
+                     idxM <- newSTRef grandParentIndex
+                     nodesM <- V.thaw $ nodes daabbTree'
+                     whileM $ do
+                       idx <- readSTRef idxM
+                       idxNode <- MV.unsafeRead nodesM idx
+                       let child1 = leftNodeIndex idxNode
+                           child2 = rightNodeIndex idxNode
+                       child1Node <- MV.unsafeRead nodesM child1   
+                       child2Node <- MV.unsafeRead nodesM child2   
+                       MV.unsafeWrite nodesM idx $ idxNode
+                         { aabb = combine (aabb child1Node) (aabb child2Node)
+                         , height = 1 + max (height child1Node) (height child2Node)
+                         }
+                       let nextIdx = parentNodeIndex idxNode
+                       writeSTRef idxM nextIdx
+                       return $ nextIdx /= nullNode
+                     V.unsafeFreeze nodesM
+               in daabbTree' { nodes = nodes'' }
+          else let siblingNode' = siblingNode { parentNodeIndex = nullNode }
+                   nodes' = V.modify
+                            (\v -> MV.unsafeWrite v siblingIndex siblingNode')
+                            (nodes daabbTree)
+               in freeNode parentIndex $ daabbTree { nodes = nodes' }
+  where 
+    whileM act = do
+      b <- act
+      when b $ whileM act
 
 rotate :: BB v a => Int -> MV.MVector s (Node v a) -> ST s ()
 rotate iA nodesM = do
@@ -535,9 +576,94 @@ rotate iA nodesM = do
             MV.unsafeWrite nodesM iC $ nodeC { parentNodeIndex = iB }
             MV.unsafeWrite nodesM iE $ nodeE { parentNodeIndex = iA }
             
-
 data TreeRotate = RotateNone
                 | RotateBF
                 | RotateBG
                 | RotateCD
                 | RotateCE
+
+validateStructure :: Int -> DAABBTree v a -> ()
+validateStructure idx = go [idx] 
+  where
+    go [] _ = ()
+    go (index:xs) daabbTree = 
+      if index == nullNode
+      then ()
+      else if index == rootNodeIndex daabbTree
+           then assert (parentNodeIndex (nodes daabbTree V.! index) == nullNode)
+                "'index' is the root node but has non-null parent." $
+                rest 
+           else rest
+      where
+        rest = let node = nodes daabbTree V.! index
+                   child1 = leftNodeIndex node
+                   child2 = rightNodeIndex node
+               in if isLeaf node
+                  then assert (child1 == nullNode)
+                       "'node' is a leaf but has a non-null 'leftNodeIndex'." $
+                       assert (child2 == nullNode)
+                       "'node' is a leaf but has a non-null 'rightNodeIndex'." $
+                       assert (height node == 0)
+                       "'node' is a leaf but has non-zero 'height'." ()
+                  else assert (0 <= child1 && child1 < nodeCapacity daabbTree)
+                       "'leftNodeIndex' is not valid." $
+                       assert (0 <= child2 && child2 < nodeCapacity daabbTree)
+                       "'rightNodeIndex' is not valid." $
+                       assert (parentNodeIndex (nodes daabbTree V.! child1) == index)
+                       "'leftNodeIndex' of 'index' does not have 'index' as its parent." $
+                       assert (parentNodeIndex (nodes daabbTree V.! child2) == index)
+                       "'rightNodeIndex' of 'index' does not have 'index' as its parent." $
+                       go (child1 : child2 : xs) daabbTree
+
+validateMetrics :: BB v a => Int -> DAABBTree v a -> ()
+validateMetrics idx = go [idx]
+  where
+    go [] _ = ()
+    go (index : xs) daabbTree =
+      if index == nullNode
+      then ()
+      else let node = nodes daabbTree V.! index
+               child1 = leftNodeIndex node
+               child2 = rightNodeIndex node
+           in if isLeaf node
+              then ()
+              else let height1 = height $ nodes daabbTree V.! child1
+                       height2 = height $ nodes daabbTree V.! child2
+                       heightNode = 1 + max height1 height2
+                   in assert (height node == heightNode)
+                      "Height of the node is not equal to one plus the max of its childrens' heights." $
+                      let aabbNode = combine
+                                     (aabb $ nodes daabbTree V.! child1)
+                                     (aabb $ nodes daabbTree V.! child2)
+                      in assert (aabb node == aabbNode)
+                         "Node's aabb is not equal to the combination of its childrens' aabbs." $
+                         go (child1 : child2 : xs) daabbTree
+
+validate :: BB v a => DAABBTree v a -> ()
+validate daabbTree = runIdentity $ do
+  _ <- return $ validateStructure (rootNodeIndex daabbTree) daabbTree
+  _ <- return $ validateMetrics (rootNodeIndex daabbTree) daabbTree
+  return $ runST $ do
+    if (nextFreeNodeIndex daabbTree) /= nullNode
+      then do
+      freeCountM <- newSTRef 0
+      freeIndexM <- newSTRef (nextFreeNodeIndex daabbTree)
+      whileM $ do
+        freeIndex <- readSTRef freeIndexM
+        assert (0 <= freeIndex && freeIndex < nodeCapacity daabbTree)
+          "'freeIndex' is not valid." $ do
+          let nextFreeIndex = nextNodeIndex $ nodes daabbTree V.! freeIndex
+          writeSTRef freeIndexM nextFreeIndex
+          modifySTRef freeCountM (+1)
+          return $ nextFreeIndex /= nullNode
+      freeCount <- readSTRef freeCountM
+      assert (nodeCount daabbTree + freeCount == nodeCapacity daabbTree)
+        "'nodeCount + freeCount /= nodeCapacity'." $
+        return ()
+      else assert (nodeCount daabbTree == nodeCapacity daabbTree)
+           "No free nodes but 'nodeCount /= nodeCapacity'." $
+           return ()
+      where
+        whileM act = do
+          b <- act
+          when b $ whileM act
