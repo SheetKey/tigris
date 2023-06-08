@@ -7,6 +7,9 @@ module Tigris.Collision.DynamicAABBTree.Pure
   , insertObject
   , removeObject
   , updateObject
+  , query
+  , clearMoved
+  , findPairs
   ) where
 
 -- tigris
@@ -505,6 +508,21 @@ query queryIndex queryId queryAABB DAABBTree {..} = go [rootNodeIndex] V.empty
          then if isLeaf node
               then if idx == queryIndex
                    then go rest acc
+                   else go rest $ acc `V.snoc` (queryId, object node)
+              else go (leftNodeIndex node : rightNodeIndex node : rest) acc
+         else go rest acc
+
+queryForPairs :: BB v a => Int -> Int -> AABB v a -> DAABBTree v a -> V.Vector (Int, Int)
+queryForPairs queryIndex queryId queryAABB DAABBTree {..} = go [rootNodeIndex] V.empty
+  where
+    go [] acc = acc
+    go ((-1) : rest) acc = go rest acc
+    go (idx : rest) acc =
+      let node = nodes V.! idx
+      in if queryAABB `overlaps` aabb node
+         then if isLeaf node
+              then if idx == queryIndex
+                   then go rest acc
                    else if moved node && idx > queryIndex -- both are moving, avoid duplicate pairs
                         then go rest acc
                         else go rest $ acc `V.snoc` (queryId, object node)
@@ -517,6 +535,6 @@ findPairs DAABBTree {..} = V.foldl
     "'objIndex' not in bounds." $
     let objNode = nodes V.! objIndex
         fatAABB = aabb objNode
-        newPairs = query objIndex (object objNode) fatAABB DAABBTree {..}
+        newPairs = queryForPairs objIndex (object objNode) fatAABB DAABBTree {..}
     in pairs V.++ newPairs
   ) V.empty movedBuffer
