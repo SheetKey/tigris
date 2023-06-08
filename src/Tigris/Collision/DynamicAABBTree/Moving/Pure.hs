@@ -1,17 +1,17 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Tigris.Collision.DynamicAABBTreePure
+module Tigris.Collision.DynamicAABBTree.Moving.Pure
   ( initDAABBTree
   , insertObject
   , removeObject
   , updateObject
   , validate
-  , DAABBTree
   ) where
 
 -- tigris
 import Tigris.Collision.AABB
+import Tigris.Collision.DynamicAABBTree.Moving.Type
 
 -- vector
 import qualified Data.Vector as V
@@ -27,45 +27,6 @@ import Control.Monad.ST
 import Data.STRef
 import Control.Monad (when)
 import Data.Functor.Identity
-
-data Node v a = Node 
-  { aabb            :: AABB v a 
-  , parentNodeIndex :: Int
-  , nextNodeIndex   :: Int
-  , leftNodeIndex   :: Int
-  , rightNodeIndex  :: Int
-  , height          :: Int
-  , object          :: Int
-  , isLeaf          :: Bool
-  }
-  deriving (Show)
-
-data DAABBTree v a = DAABBTree
-  { rootNodeIndex     :: Int
-  , nodes             :: V.Vector (Node v a)
-  , nodeCount         :: Int
-  , nodeCapacity      :: Int
-  , growthSize        :: Int
-  , nextFreeNodeIndex :: Int
-  , aabbFatExtension  :: a
-  , objectIndexMap    :: IM.IntMap Int
-  }
-  deriving (Show)
-
-nullNode :: Int
-nullNode = -1
-
-nullTreeNode :: BB v a => Node v a
-nullTreeNode = Node
-           { aabb            = nullAABB
-           , parentNodeIndex = nullNode
-           , nextNodeIndex   = nullNode
-           , leftNodeIndex   = nullNode
-           , rightNodeIndex  = nullNode
-           , height          = nullNode
-           , object          = nullNode
-           , isLeaf          = False
-           }
 
 nullNodes :: BB v a => Int -> Int -> V.Vector (Node v a)
 nullNodes offSet size = V.generate size $ \i -> if i /= size - 1
