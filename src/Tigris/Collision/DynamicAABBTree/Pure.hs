@@ -1,12 +1,12 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Tigris.Collision.DynamicAABBTree.Pure
   ( initDAABBTree
   , insertObject
   , removeObject
   , updateObject
-  , validate
   ) where
 
 -- tigris
@@ -43,10 +43,8 @@ initDAABBTree nodeCapacity growthSize aabbFatExtension = DAABBTree
   , nodes             = nullNodes 0 nodeCapacity
   , aabbFatExtension  = aabbFatExtension
   , objectIndexMap    = IM.empty
+  , movedBuffer       = V.empty
   }
-
-assert :: Bool -> String -> a -> a
-assert tf str a = if tf then a else error str
 
 growNodes :: BB v a => DAABBTree v a -> DAABBTree v a
 growNodes DAABBTree {..} =
@@ -75,6 +73,7 @@ allocateNode daabbTree = if nextFreeNodeIndex daabbTree == nullNode
                   , rightNodeIndex = nullNode
                   , height = 0
                   , isLeaf = False
+                  , moved = False
                   }
           nodes' = nodes daabbTree V.// [(nodeIndex, node')]
       in ( nodeIndex
@@ -109,11 +108,13 @@ insertObject objId objaabb daabbTree =
                  , height = 0
                  , object = objId
                  , isLeaf = True
+                 , moved = True
                  }
       nodes' = nodes daabbTree' V.// [(objIndex, objNode')]
   in insertLeaf objIndex $ daabbTree'
      { nodes = nodes'
      , objectIndexMap = IM.insert objId objIndex $ objectIndexMap daabbTree' 
+     , movedBuffer = movedBuffer daabbTree' `V.snoc` objIndex
      }
 
 removeObject :: BB v a => Int -> DAABBTree v a -> DAABBTree v a
@@ -141,9 +142,12 @@ updateObject objId objAABB daabbTree =
      in if (objNodeAABB `contains` objAABB && hugeAABB `contains` objNodeAABB)
         then daabbTree
         else let daabbTree' = removeLeaf objIndex daabbTree
-                 newObjNode = objNode { aabb = fatAABB }
+                 newObjNode = objNode { aabb = fatAABB, moved = True }
                  nodes' = nodes daabbTree' V.// [(objIndex, newObjNode)]
-             in insertLeaf objIndex (daabbTree' { nodes = nodes' })
+             in insertLeaf objIndex (daabbTree'
+                                     { nodes = nodes'
+                                     , movedBuffer = movedBuffer daabbTree' `V.snoc` objIndex
+                                     })
 
 data Candidate a = Candidate
   { candidateIndex :: Int
@@ -482,88 +486,37 @@ rotate iA DAABBTree {..} =
           then rotHeightC0 iA nA iB nB iC nC DAABBTree {..}
           else rotElse iA nA iB nB iC nC DAABBTree {..}
             
-validateStructure :: Int -> DAABBTree v a -> ()
-validateStructure idx DAABBTree {..} = go [idx] 
-  where
-    go [] = ()
-    go (index:xs) = 
-      if index == nullNode
-      then ()
-      else if index == rootNodeIndex 
-           then assert (parentNodeIndex (nodes V.! index) == nullNode)
-                "'index' is the root node but has non-null parent." $
-                rest 
-           else rest
-      where
-        rest = let node = nodes V.! index
-                   child1 = leftNodeIndex node
-                   child2 = rightNodeIndex node
-               in if isLeaf node
-                  then assert (child1 == nullNode)
-                       "'node' is a leaf but has a non-null 'leftNodeIndex'." $
-                       assert (child2 == nullNode)
-                       "'node' is a leaf but has a non-null 'rightNodeIndex'." $
-                       assert (height node == 0)
-                       "'node' is a leaf but has non-zero 'height'." ()
-                  else assert (0 <= child1 && child1 < nodeCapacity)
-                       "'leftNodeIndex' is not valid." $
-                       assert (0 <= child2 && child2 < nodeCapacity)
-                       "'rightNodeIndex' is not valid." $
-                       assert (parentNodeIndex (nodes V.! child1) == index)
-                       "'leftNodeIndex' of 'index' does not have 'index' as its parent." $
-                       assert (parentNodeIndex (nodes V.! child2) == index)
-                       "'rightNodeIndex' of 'index' does not have 'index' as its parent." $
-                       go (child1 : child2 : xs) 
+-- should be call after findPairs
+clearMoved :: forall v a. BB v a => DAABBTree v a -> DAABBTree v a
+clearMoved DAABBTree {..} =
+  let newNode objIndex = (nodes V.! objIndex) { moved = False }
+      replacementNodes = V.map newNode movedBuffer
+      nodes' = V.update_ nodes movedBuffer replacementNodes
+  in DAABBTree { nodes = nodes', movedBuffer = V.empty, .. }
 
-validateMetrics :: BB v a => Int -> DAABBTree v a -> ()
-validateMetrics idx DAABBTree {..} = go [idx]
+query :: BB v a => Int -> Int -> AABB v a -> DAABBTree v a -> V.Vector (Int, Int)
+query queryIndex queryId queryAABB DAABBTree {..} = go [rootNodeIndex] V.empty
   where
-    go [] = ()
-    go (index : xs) =
-      if index == nullNode
-      then ()
-      else let node = nodes V.! index
-               child1 = leftNodeIndex node
-               child2 = rightNodeIndex node
-           in if isLeaf node
-              then ()
-              else let height1 = height $ nodes V.! child1
-                       height2 = height $ nodes V.! child2
-                       heightNode = 1 + max height1 height2
-                   in assert (height node == heightNode)
-                      "Height of the node is not equal to one plus the max of its childrens' heights." $
-                      let aabbNode = combine
-                                     (aabb $ nodes V.! child1)
-                                     (aabb $ nodes V.! child2)
-                      in assert (aabb node == aabbNode)
-                         "Node's aabb is not equal to the combination of its childrens' aabbs." $
-                         go (child1 : child2 : xs) 
+    go [] acc = acc
+    go ((-1) : rest) acc = go rest acc
+    go (idx : rest) acc =
+      let node = nodes V.! idx
+      in if queryAABB `overlaps` aabb node
+         then if isLeaf node
+              then if idx == queryIndex
+                   then go rest acc
+                   else if moved node && idx > queryIndex -- both are moving, avoid duplicate pairs
+                        then go rest acc
+                        else go rest $ acc `V.snoc` (queryId, object node)
+              else go (leftNodeIndex node : rightNodeIndex node : rest) acc
+         else go rest acc
 
-validate :: BB v a => DAABBTree v a -> ()
-validate daabbTree = runIdentity $ do
-  _ <- return $ validateStructure (rootNodeIndex daabbTree) daabbTree
-  _ <- return $ validateMetrics (rootNodeIndex daabbTree) daabbTree
-  return $ runST $ do
-    if (nextFreeNodeIndex daabbTree) /= nullNode
-      then do
-      freeCountM <- newSTRef 0
-      freeIndexM <- newSTRef (nextFreeNodeIndex daabbTree)
-      whileM $ do
-        freeIndex <- readSTRef freeIndexM
-        assert (0 <= freeIndex && freeIndex < nodeCapacity daabbTree)
-          "'freeIndex' is not valid." $ do
-          let nextFreeIndex = nextNodeIndex $ nodes daabbTree V.! freeIndex
-          writeSTRef freeIndexM nextFreeIndex
-          modifySTRef freeCountM (+1)
-          return $ nextFreeIndex /= nullNode
-      freeCount <- readSTRef freeCountM
-      assert (nodeCount daabbTree + freeCount == nodeCapacity daabbTree)
-        "'nodeCount + freeCount /= nodeCapacity'." $
-        return ()
-      else assert (nodeCount daabbTree == nodeCapacity daabbTree)
-           "No free nodes but 'nodeCount /= nodeCapacity'." $
-           return ()
-      where
-        whileM act = do
-          b <- act
-          when b $ whileM act
+findPairs :: BB v a => DAABBTree v a -> V.Vector (Int, Int)
+findPairs DAABBTree {..} = V.foldl
+  (\pairs objIndex -> assert (0 <= objIndex && objIndex < nodeCapacity)
+    "'objIndex' not in bounds." $
+    let objNode = nodes V.! objIndex
+        fatAABB = aabb objNode
+        newPairs = query objIndex (object objNode) fatAABB DAABBTree {..}
+    in pairs V.++ newPairs
+  ) V.empty movedBuffer
