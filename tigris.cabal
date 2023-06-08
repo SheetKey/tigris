@@ -48,9 +48,8 @@ library
                             , Tigris.Collision
                             , Tigris.Collision.AABB
                             , Tigris.Collision.KDTreeMap
-                            , Tigris.Collision.DynamicAABBTree.All.Type
-                            , Tigris.Collision.DynamicAABBTree.Moving.Type
-                            , Tigris.Collision.DynamicAABBTree.Moving.Pure
+                            , Tigris.Collision.DynamicAABBTree.Type
+                            , Tigris.Collision.DynamicAABBTree.Pure
 
                             , Tigris.SDL
                             , Tigris.SDL.Window

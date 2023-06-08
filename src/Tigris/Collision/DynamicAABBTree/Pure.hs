@@ -1,7 +1,7 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Tigris.Collision.DynamicAABBTree.Moving.Pure
+module Tigris.Collision.DynamicAABBTree.Pure
   ( initDAABBTree
   , insertObject
   , removeObject
@@ -11,7 +11,7 @@ module Tigris.Collision.DynamicAABBTree.Moving.Pure
 
 -- tigris
 import Tigris.Collision.AABB
-import Tigris.Collision.DynamicAABBTree.Moving.Type
+import Tigris.Collision.DynamicAABBTree.Type
 
 -- vector
 import qualified Data.Vector as V

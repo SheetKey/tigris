@@ -1,4 +1,4 @@
-module Tigris.Collision.DynamicAABBTree.Moving.Type where
+module Tigris.Collision.DynamicAABBTree.Type where
 
 -- tigris
 import Tigris.Collision.AABB
