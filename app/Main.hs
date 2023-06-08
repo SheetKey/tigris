@@ -6,8 +6,8 @@ module Main where
 
 -- tigris
 import Tigris
-import Tigris.Collision.DynamicAABBTree.Moving.Type
-import Tigris.Collision.DynamicAABBTree.Moving.Pure
+import Tigris.Collision.DynamicAABBTree.Type
+import Tigris.Collision.DynamicAABBTree.Pure
 
 -- opengl
 import qualified Graphics.Rendering.OpenGL as GL
