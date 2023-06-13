@@ -234,7 +234,7 @@ player =
                 , ( ProjStats 5 1 (Speed 300)
                   , ShootOffset ((V3 0 0 0), 16)
                   , HitStatic Stop []
-                  , Rect 32 32
+                  , HitBox $ fattenAABB 16 nullAABB
                   )
                 )
 followPlayer :: Int -> SystemT' IO ()
@@ -261,7 +261,7 @@ tree pos@(Position (V4 _ (V3 x _ z) _ _)) = do
                 , SpriteSheet 1 4096 1190 4096 1190 238 272 1 1000000000 0
                 , pos
                 , StaticCollider
-                , Rect 16 16
+                , HitBox $ fattenAABB 8 nullAABB
                 )
   return ((x, z), ety)
 
@@ -293,7 +293,7 @@ wall pos@(Position (V4 _ (V3 x _ z) _ _)) = do
                 , SpriteSheet 1 (4096-68) 34 34 34 34 34 1 100 0
                 , pos
                 , StaticCollider
-                , Rect 32 32
+                , HitBox $ fattenAABB 16 nullAABB
                 )
   return ((x, z), ety)
 
