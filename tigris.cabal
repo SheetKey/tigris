@@ -82,9 +82,6 @@ library
                             , Tigris.ECS.Process.Rotation
                             , Tigris.ECS.Process.Events
                             , Tigris.ECS.Process.SpriteSheet
-                            , Tigris.ECS.Process.BorderCollision
-                            , Tigris.ECS.Process.ColliderCell
-                            , Tigris.ECS.Process.Collisions
                             , Tigris.ECS.Process.Follows
                             , Tigris.ECS.Process.MouseAngle
                             , Tigris.ECS.Process.MousePosition
