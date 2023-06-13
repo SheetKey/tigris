@@ -10,9 +10,10 @@ import FRP.Rhine hiding (next)
 import Apecs
 import Apecs.Core
 
--- mylib
+-- tigris
 import Tigris.ECS.Components
 import Tigris.ECS.System
+import Tigris.Collision
 
 -- linear
 import Linear
@@ -21,67 +22,46 @@ import Linear
 import qualified Graphics.Rendering.OpenGL as GL
 
 -- base
-import Control.Monad (forM_)
+import Data.Foldable (foldlM)
 
-hitBoxCollision :: V3 GL.GLfloat -> HitBox -> V3 GL.GLfloat -> HitBox -> Bool
-hitBoxCollision (V3 x1 _ z1) (Rect l1 w1) (V3 x2 _ z2) (Rect l2 w2) =
-  let minx1 = x1 - (w1 / 2)
-      maxx1 = x1 + (w1 / 2)
-      minz1 = z1 - (l1 / 2)
-      maxz1 = z1 + (l1 / 2)
-      minx2 = x2 - (w2 / 2)
-      maxx2 = x2 + (w2 / 2)
-      minz2 = z2 - (l2 / 2)
-      maxz2 = z2 + (l2 / 2)
-  in (minx1 <= maxx2) 
-     && (maxx1 >= minx2)
-     && (minz1 <= maxz2)
-     && (maxz1 >= minz2)
-hitBoxCollision (V3 x1 _ z1) (Rect l1 w1) (V3 x2 _ z2) (Circ r2)    =
-  let minx1 = x1 - (w1 / 2)
-      maxx1 = x1 + (w1 / 2)
-      minz1 = z1 - (l1 / 2)
-      maxz1 = z1 + (l1 / 2)
-      x = max minx1 (min x2 maxx1)
-      z = max minz1 (min z2 maxz1)
-      dist = (x - x2) * (x - x2) + (z - z2) * (z - z2)
-  in dist < r2 * r2
-hitBoxCollision (V3 x1 _ z1) (Circ r1) (V3 x2 _ z2) (Rect l2 w2) =
-  let minx2 = x2 - (w2 / 2)
-      maxx2 = x2 + (w2 / 2)
-      minz2 = z2 - (l2 / 2)
-      maxz2 = z2 + (l2 / 2)
-      x = max minx2 (min x1 maxx2)
-      z = max minz2 (min z1 maxz2)
-      dist = (x - x1) * (x - x1) + (z - z1) * (z - z1)
-  in dist < r1 * r1
-hitBoxCollision (V3 x1 _ z1) (Circ r1) (V3 x2 _ z2) (Circ r2) =
-  let dist = (x1 - x2) * (x1 - x2) + (z1 - z2) * (z1 - z2) 
-  in dist < (r1 + r2) * (r1 + r2)
+-- lens
+import Control.Lens.Getter ((^.))
 
 _hitStatic :: MonadIO m => SystemT' m ()
 _hitStatic = do
   s :: Storage (StaticCollider, Position, HitBox) <- getStore
   cmapM_ $ \( HitStatic onStaticCollision hits
             , Position (V4 lastPos next nextX nextZ)
-            , hb :: HitBox, entity :: Entity) -> do
-    forM_ hits $ \ety -> do
-      (_, Position (V4 _ pos _ _), shb :: HitBox) <- lift $ explGet s $ ety
-      let hitEty = hitBoxCollision pos shb
-      if hitEty next hb
-        then case (onStaticCollision, hitEty nextX hb, hitEty nextZ hb) of
-               (Stop, False, _) ->
-                 set entity (HitStatic Stop [], Position $ V4 lastPos nextX nextX nextZ)
-               (Stop, _, False) ->
-                 set entity (HitStatic Stop [], Position $ V4 lastPos nextZ nextX nextZ)
-               _                -> case onStaticCollision of
-                                    Stop ->
-                                      set entity (HitStatic Stop [], Position $ V4 lastPos lastPos nextX nextZ)
-                                    Delete ->
-                                      destroy entity (Proxy @All)
-        else case onStaticCollision of
-               Stop   -> set entity (HitStatic Stop [])
-               Delete -> set entity (HitStatic Delete [])
+            , HitBox hb, entity :: Entity) ->
+    case onStaticCollision of
+      Stop -> do
+        pos <- foldlM (\newNext ety -> do
+                          (_, Position (V4 _ pos _ _), HitBox shb) <- lift $ explGet s $ ety
+                          let hitEty = overlaps (translate shb (pos ^. _xz))
+                          case ( hitEty $ translate hb $ next ^. _xz
+                               , hitEty $ translate hb $ nextX ^. _xz
+                               , hitEty $ translate hb $ nextZ ^. _xz) of
+                            (False, _, _) -> return newNext
+                            (True, False, _) -> if newNext == next || newNext == nextX
+                                                then return nextX
+                                                else return lastPos
+                            (True, _, False) -> if newNext == next || newNext == nextZ
+                                                then return nextZ
+                                                else return lastPos
+                            (True, True, True) -> return lastPos
+                      ) next hits
+        set entity (HitStatic Stop [], Position $ V4 lastPos pos nextX nextZ)
+      Delete -> do
+        shouldDelete <- foldlM (\tf ety -> do
+                                   (_, Position (V4 _ pos _ _), HitBox shb) <- lift $ explGet s $ ety
+                                   let hitEty = overlaps (translate shb (pos ^. _xz))
+                                   if hitEty $ translate hb (next ^. _xz)
+                                     then return True
+                                     else return tf
+                               ) False hits
+        if shouldDelete
+          then destroy entity (Proxy @All)
+          else set entity (HitStatic Delete [])
 
 hitStatic :: MonadIO m => ClSFS m cl () ()
 hitStatic = constMCl _hitStatic

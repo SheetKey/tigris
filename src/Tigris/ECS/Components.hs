@@ -6,7 +6,7 @@ The component types and instances used in the ECS.
 
 module Tigris.ECS.Components where
 
--- mylib
+-- tigris
 import Tigris.ECS.Stores
 import Tigris.Collision
 
@@ -244,8 +244,7 @@ instance Component HitStatic where
   type Storage HitStatic = Map HitStatic
 
 -- | The hitbox of an entity. Centered at the (0,0,0) and transformed by the entity position.
-data HitBox = Rect GL.GLfloat GL.GLfloat -- ^ A rectangle given by length (z axis) and width (x axis).
-            | Circ GL.GLfloat            -- ^ A circle with a given radius.
+newtype HitBox = HitBox (AABB V2 GL.GLfloat)
 instance Component HitBox where
   type Storage HitBox = Map HitBox
 
@@ -259,14 +258,14 @@ instance Component MouseLeftClick where
   type Storage MouseLeftClick = TQGlobal MouseLeftClick
 
 -- | Entities may want access to the global leftclick values.
---   This type should hold two functions, one of type
---   'V3 GL.GLfloat -> SystemT' m Bool' and one of type
---   '(SDL.InputMotion, V3 GL.GLfloat) -> SystemT' m ()',
---   but this is not possible due to circular dependencies.
---   Thus two arrays should be created before starting the main loop
---   to hold these functions.
---   The functions are not unique, so index them by integers stored
---   in the 'WantLeftClick' type.
+-- This type should hold two functions, one of type
+-- 'V3 GL.GLfloat -> SystemT' m Bool' and one of type
+-- '(SDL.InputMotion, V3 GL.GLfloat) -> SystemT' m ()',
+-- but this is not possible due to circular dependencies.
+-- Thus two arrays should be created before starting the main loop
+-- to hold these functions.
+-- The functions are not unique, so index them by integers stored
+-- in the 'WantLeftClick' type.
 newtype WantLeftClick = WantLeftClick Int
 instance Component WantLeftClick where
   type Storage WantLeftClick = Map WantLeftClick

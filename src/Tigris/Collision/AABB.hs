@@ -24,6 +24,7 @@ class (Ord a, Num a, Eq (v a)) => BB v a where
   area :: AABB v a -> a
   combine :: AABB v a -> AABB v a -> AABB v a
   overlaps :: AABB v a -> AABB v a -> Bool
+  translate :: AABB v a -> v a -> AABB v a
 
 instance (Ord a, Num a) => BB V3 a where
   nullAABB = AABB (V3 0 0 0) (V3 0 0 0)
@@ -53,6 +54,7 @@ instance (Ord a, Num a) => BB V3 a where
     && uy1 >= ly2
     && lz1 <= uz2
     && uz1 >= lz2
+  translate (AABB lb ub) v = AABB (lb + v) (ub + v)
 
 instance (Ord a, Num a) => BB V2 a where
   nullAABB = AABB (V2 0 0) (V2 0 0)
@@ -78,3 +80,4 @@ instance (Ord a, Num a) => BB V2 a where
     && ux1 >= lx2
     && ly1 <= uy2
     && uy1 >= ly2
+  translate (AABB lb ub) v = AABB (lb + v) (ub + v)

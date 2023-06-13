@@ -3,9 +3,10 @@
 
 module Tigris.ECS.Process.Shoot where
 
--- mylib
+-- tigris
 import Tigris.ECS.System
 import Tigris.ECS.Components
+import Tigris.Collision
 
 -- rhine
 import FRP.Rhine hiding (normalize)
@@ -27,7 +28,7 @@ bullet p v (ProjStats {..}) = newEntity_
   , speed
   , v
   , HitStatic Delete []
-  , Circ 8
+  , HitBox $ fattenAABB 8 nullAABB
   )
 
 velFromTo :: (V3 GL.GLfloat, V3 GL.GLfloat) -> Velocity
