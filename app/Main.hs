@@ -47,8 +47,8 @@ import System.Random (randomRIO)
 import Text.Pretty.Simple (pPrint)
 
 main :: IO ()
-main = daabbTreeTest
---main = initAndRun "Game Demo" gameLoop'''
+--main = daabbTreeTest
+main = initAndRun "Game Demo" gameLoop'''
 --main = do 
 --  g <- wfc (VV.fromList [tile1, tile2, tile3, tile4]) (2, 2) Nothing
 --  print g
@@ -234,7 +234,7 @@ player =
                 , ( ProjStats 5 1 (Speed 300)
                   , ShootOffset ((V3 0 0 0), 16)
                   , HitStatic Stop []
-                  , Circ 16
+                  , Rect 32 32
                   )
                 )
 followPlayer :: Int -> SystemT' IO ()
@@ -261,19 +261,51 @@ tree pos@(Position (V4 _ (V3 x _ z) _ _)) = do
                 , SpriteSheet 1 4096 1190 4096 1190 238 272 1 1000000000 0
                 , pos
                 , StaticCollider
-                , Circ 16
+                , Rect 16 16
                 )
   return ((x, z), ety)
 
-trees :: SystemT' IO ()
+trees :: SystemT' IO [((GL.GLfloat, GL.GLfloat), Int)]
 trees = do
-  randListX <- forM [1 .. 10] $ \_ -> randomRIO (0, 1024)
-  randListZ <- forM [1 .. 10] $ \_ -> randomRIO (-1024, 0)
+  tList <- liftIO $ nrandPositions 10
+  forM tList tree 
+
+setStaticCollisionTree :: [((GL.GLfloat, GL.GLfloat), Int)] -> SystemT' IO ()
+setStaticCollisionTree collisionList = set global $ StaticCollisionTree $ fromList2 collisionList
+
+nrandPositions :: Int -> IO [Position]
+nrandPositions n = do
+  randListX <- forM [1 .. n] $ \_ -> randomRIO (0, 1024)
+  randListZ <- forM [1 .. n] $ \_ -> randomRIO (-1024, 0)
   let randList = zip randListX randListZ
       tList = (flip fmap) randList $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
-  collisionList <- forM tList tree 
-  set global $ StaticCollisionTree $ fromList2 collisionList
-                   
+  return tList
+
+wall :: Position -> SystemT' IO ((GL.GLfloat, GL.GLfloat), Int)
+wall pos@(Position (V4 _ (V3 x _ z) _ _)) = do
+  _ <- newEntity
+                ( Size (V4 (V3 (-16) 32 16) (V3 16 32 16) (V3 16 0 16) (V3 (-16) 0 16))
+                , SpriteSheet 1 (4096-68) 0 0 0 34 34 1 100 0
+                , pos
+                )
+  Entity ety <- newEntity
+                ( Size (V4 (V3 (-16) 32 16) (V3 16 32 16) (V3 16 32 (-16)) (V3 (-16) 32 (-16)))
+                , SpriteSheet 1 (4096-68) 34 34 34 34 34 1 100 0
+                , pos
+                , StaticCollider
+                , Rect 32 32
+                )
+  return ((x, z), ety)
+
+walls :: SystemT' IO [((GL.GLfloat, GL.GLfloat), Int)]
+walls = do
+  let xList = [64, 96 .. 256]
+      zList = repeat (-64)
+      list = zip xList zList
+      wList = (flip fmap) list $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
+  forM wList wall
+
+    
 adjustWeights :: Int -> (Int, Int) -> Tile -> Tile
 adjustWeights t _ s = case t `elem` [1, 12] of
   True -> s
@@ -300,7 +332,9 @@ mkGameLoop loop world = do
 
   Entity _id <- player
   followPlayer _id
-  trees
+  tList <- trees
+  wList <- walls
+  _ <- setStaticCollisionTree $ tList ++ wList
   staticPositionEntity
 
   _projection $ V2 800 600
