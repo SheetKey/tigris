@@ -11,8 +11,7 @@ uniform mat4 proj;
 uniform mat4 rmat;
 
 
-void main()
-{
+void main() {
   gl_Position = proj * view * model * rmat * aPos;
   TexCoord = aTexCoord;
 }
