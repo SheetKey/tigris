@@ -10,6 +10,9 @@ module Tigris.ECS.Components where
 import Tigris.ECS.Stores
 import Tigris.Collision
 
+-- vox-hs
+import GLVoxInfo
+
 -- base
 import Data.Int
 
@@ -202,6 +205,11 @@ newtype GLBuffers = GLBuffers (GL.VertexArrayObject, GL.BufferObject, GL.BufferO
 instance Component GLBuffers where
   type Storage GLBuffers = ReadOnly (TMVGlobal GLBuffers)
 
+-- | OpenGL buffers and shader program for voxel rendering
+newtype GLVoxelBuffers = GLVoxelBuffers (GL.VertexArrayObject, GL.BufferObject, GL.Program)
+instance Component GLVoxelBuffers where
+  type Storage GLVoxelBuffers = ReadOnly (TMVGlobal GLVoxelBuffers)
+
 -- | Used for the `WindowResizedClock`. 
 newtype WindowResized = WindowResized (V2 Int32)
 instance Component WindowResized where
@@ -296,3 +304,13 @@ data ProjStats = ProjStats
   }
 instance Component ProjStats where
   type Storage ProjStats = Map ProjStats
+
+-- | Voxel info
+newtype Voxel = Voxel GLVoxInfo
+instance Component Voxel where
+  type Storage Voxel = Map Voxel
+
+-- | The local position of voxel object
+newtype VoxPos = VoxPos (V3 GL.GLfloat)
+instance Component VoxPos where
+  type Storage VoxPos = Map VoxPos

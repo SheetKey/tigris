@@ -3,8 +3,8 @@
 layout (points) in;
 
 in VERT_OUT {
-  ivec3 blockOffset;
-  uint rgba[16384];
+  vec3 blockOffset;
+  float rgba[16384];
 } gs_in[];
 
 layout (triangles, max_vertices = 57344) out;
@@ -22,7 +22,7 @@ void main() {
     if(fColor.a < 0.1){
       continue;
     }
-    ivec3 pos = vecIdxToVox(i);
+    vec3 pos = vecIdxToVox(i);
     vec4 fpos = vec4(pos, 1);
     vec4 basePos = offset + fblockOffset + fpos;
 
@@ -58,7 +58,7 @@ void main() {
   }
 }
 
-ivec3 vecIdxToVox(const int i) {
+vec3 vecIdxToVox(const int i) {
   r = i / 64;
   d = mod(i, 64);  
   p = d * 64 + r;
@@ -66,5 +66,5 @@ ivec3 vecIdxToVox(const int i) {
   xy = mod(p, 256);
   y = xy / 16;
   x = mod(xy, 16);
-  return ivec3(x, y, z);
+  return vec3(ivec3(x, y, z));
 }

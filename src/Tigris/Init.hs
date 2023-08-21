@@ -25,10 +25,12 @@ initAndRun winName gameLoop = do
   win <- SDL.createWindow winName windowConfig
   _ <- SDL.glCreateContext win
   glBuffers <- initOpenGL win
+  glVoxelBuffers <- initOpenGLVoxel
   world <- initWorld
   runWith world $ do
     setReadOnly global $ Window win
     setReadOnly global $ GLBuffers glBuffers
+    setReadOnly global $ GLVoxelBuffers glVoxelBuffers
     gameLoop world
 
 --initPosition :: CInt -> CInt -> CInt -> CInt -> Position
