@@ -60,9 +60,9 @@ bufferInit = do
     )
   GL.vertexAttribArray (GL.AttribLocation 1) GL.$= GL.Enabled
 
+  GL.bindBuffer GL.ArrayBuffer GL.$= Nothing
   GL.bindVertexArrayObject GL.$= Nothing
   GL.bindBuffer GL.ElementArrayBuffer GL.$= Nothing
-  GL.bindBuffer GL.ArrayBuffer GL.$= Nothing
 
   return (vao, vbo, ebo)
 
@@ -80,7 +80,7 @@ voxelBufferInit = do
     , GL.VertexArrayDescriptor
       4
       GL.Float
-      (fromIntegral $ 16391 * sizeOf (undefined :: GL.GLfloat))
+      (fromIntegral $ 7 * sizeOf (undefined :: GL.GLfloat))
       (intPtrToPtr 0)
     )
   GL.vertexAttribArray (GL.AttribLocation 0) GL.$= GL.Enabled
@@ -90,20 +90,10 @@ voxelBufferInit = do
     , GL.VertexArrayDescriptor
       3
       GL.Float
-      (fromIntegral $ 16391 * sizeOf (undefined :: GL.GLfloat))
+      (fromIntegral $ 7 * sizeOf (undefined :: GL.GLfloat))
       (intPtrToPtr (fromIntegral $ 4 * sizeOf (undefined :: GL.GLfloat)))
     )
   GL.vertexAttribArray (GL.AttribLocation 1) GL.$= GL.Enabled
-  -- location for color data
-  GL.vertexAttribPointer (GL.AttribLocation 2) GL.$=
-    ( GL.ToFloat
-    , GL.VertexArrayDescriptor
-      16384
-      GL.Float
-      (fromIntegral $ 16391 * sizeOf (undefined :: GL.GLfloat))
-      (intPtrToPtr (fromIntegral $ 7 * sizeOf (undefined :: GL.GLfloat)))
-    )
-  GL.vertexAttribArray (GL.AttribLocation 2) GL.$= GL.Enabled
 
   GL.bindVertexArrayObject GL.$= Nothing
   GL.bindBuffer GL.ArrayBuffer GL.$= Nothing

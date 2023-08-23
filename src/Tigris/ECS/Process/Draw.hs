@@ -29,61 +29,14 @@ import Data.Foldable (toList)
 -- sdl
 import qualified SDL
 
-_loadVBOEBO :: MonadIO m => SystemT' m Int
-_loadVBOEBO = do
-  GLBuffers (vao, _, _, _) <- get global
-  GL.bindVertexArrayObject GL.$= Just vao
-
-  (vertices :: V.Vector GL.GLfloat, indices :: V.Vector GL.GLuint) <- (flip cfold) (V.empty, V.empty) $ \(v,i) (Size size, Model m, UV uv) ->
-    let (V4 tl  tr  br  bl ) = (V.fromList . toList . (m !*) . point) <$> size
-        (V4 tl' tr' br' bl') = (V.fromList . toList) <$> uv
-        idx = (`div` 6) . fromIntegral $ V.length v
-    --in ( V.concat [v, tl, tl', tr, tr', br, br', bl, bl']
-    --   , i V.++ V.fromList [idx, (idx+1), (idx+2), idx, (idx+2), (idx+3)]
-    --   )
-    in ( v V.++ V.concat [tl, tl', tr, tr', br, br', bl, bl']
-       , i V.++ V.fromList [idx, (idx+1), (idx+2), idx, (idx+2), (idx+3)]
-       )
-
-
-  liftIO $ do
-    bufferDataWithVector vertices GL.ArrayBuffer GL.DynamicDraw
-    bufferDataWithVector indices GL.ElementArrayBuffer GL.DynamicDraw
-  
-    GL.bindVertexArrayObject GL.$= Nothing
-
-  return $ V.length indices 
-
-
-_draw :: MonadIO m => Int -> SystemT' m ()
-_draw l = do
-  GLBuffers (vao, _, _, program) <- get global
+_draw :: MonadIO m => SystemT' m ()
+_draw = do
   Window window <- get global
 
+  GLBuffers (vao, vbo, _, program) <- get global
   GL.bindVertexArrayObject GL.$= Just vao
+  GL.bindBuffer GL.ArrayBuffer GL.$= Just vbo
   GL.currentProgram GL.$= Just program
-
-  liftIO $ GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-
-  liftIO $ GL.drawElements GL.Triangles (fromIntegral l) GL.UnsignedInt nullPtr
-
-  SDL.glSwapWindow window
-
-  GL.bindVertexArrayObject GL.$= Nothing
-  GL.currentProgram GL.$= Nothing
-
-
-draw :: MonadIO m => ClSFS m cl () ()
-draw = constMCl _loadVBOEBO >>> arrMCl _draw
-
-_altDraw :: MonadIO m => SystemT' m ()
-_altDraw = do
-  Window window <- get global
-
-  GLBuffers (vao, _, _, program) <- get global
-  GL.bindVertexArrayObject GL.$= Just vao
-  GL.currentProgram GL.$= Just program
-
 
   liftIO $ GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
@@ -109,9 +62,10 @@ _altDraw = do
 
   SDL.glSwapWindow window
 
+  GL.bindBuffer GL.ArrayBuffer GL.$= Nothing
   GL.bindVertexArrayObject GL.$= Nothing
   GL.currentProgram GL.$= Nothing
     
 
-altDraw :: MonadIO m => ClSFS m cl () ()
-altDraw = constMCl _altDraw
+draw :: MonadIO m => ClSFS m cl () ()
+draw = constMCl _draw
