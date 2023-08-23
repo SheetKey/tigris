@@ -4,6 +4,9 @@
 
 module Main where
 
+-- app
+import Entities
+
 -- tigris
 import Tigris
 import Tigris.Collision.DynamicAABBTree.Type
@@ -48,7 +51,7 @@ import Text.Pretty.Simple (pPrint)
 
 main :: IO ()
 --main = daabbTreeTest
-main = initAndRun "Game Demo" gameLoop'''
+main = initAndRun "Game Demo" gameLoop
 --main = do 
 --  g <- wfc (VV.fromList [tile1, tile2, tile3, tile4]) (2, 2) Nothing
 --  print g
@@ -142,170 +145,14 @@ clsfLoop =
   >>> uv
   -- >>> mousePosition' >>> mouseCoord >>> arr (\_ -> ())
 
-rhineLoop'
-  :: World
-  -> RhineS IO (ParClockS IO (ParClockS IO (HoistClock IO (SystemT World IO) (Millisecond 16))
-                                            WindowResizeClock
-                              )
-               (HoistClock IO (SystemT World IO) (Millisecond 16))
-               )
-  () ()
-rhineLoop' world =
-  (clsfLoop @@ (HoistClock waitClock liftIO) ||@ (concurrentlySystem world) @||
-     (projection @@ WindowResizeClock)
-  )
-  ||@ (concurrentlySystem world) @||
-  (altDraw) @@ (HoistClock waitClock liftIO)
-
-rhineLoop
-  :: World
-  -> RhineS IO (ParClockS IO 
-                (ParClockS IO (SeqClockS IO
-                                (HoistClock IO (SystemT World IO) Busy)
-                                (HoistClock IO (SystemT World IO) Busy)
-                              )
-                              (ParClockS IO (HoistClock IO (SystemT World IO) (Millisecond 16))
-                                            WindowResizeClock
-                              )
-                )
-                (HoistClock IO (SystemT World IO) (Millisecond 16))
-               )
-  () ()
-rhineLoop world =
-  (althandleEvent world ||@ (concurrentlySystem world) @||
-    (clsfLoop @@ (HoistClock waitClock liftIO) ||@ (concurrentlySystem world) @||
-     (projection @@ WindowResizeClock)
-    )
-  )
-  ||@ (concurrentlySystem world) @||
-  (altDraw) @@ (HoistClock waitClock liftIO)
-
-
-
-gameLoop' :: World -> SystemT' IO ()
-gameLoop' = mkGameLoop
-  (flow $ (clsfLoop >>> altDraw)
-   @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16)))
-
-gameLoop''' :: World -> SystemT' IO ()
-gameLoop''' world = mkGameLoop
-  (flow $ ((clsfLoop >>> altDraw)
+gameLoop :: World -> SystemT' IO ()
+gameLoop world = mkGameLoop
+  (flow $ ((clsfLoop >>> draw)
             @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16)))
    ||@ (concurrentlySystem world) @||
    (orthoProjection @@ WindowResizeClock))
   world
                     
-
---  do
---  GLBuffers (vao,_,_, program) <- get global
---
---  liftIO $ do 
---    GL.currentProgram GL.$= Just program
---    Right texture0001 <- createTextureFromPNG "./sprites/Sheet-1.png"
---    GL.activeTexture GL.$= GL.TextureUnit 0
---    GL.textureBinding GL.Texture2D GL.$= Just texture0001
---    locTexture <- GL.get . GL.uniformLocation program $ "Texture"
---    GL.uniform locTexture GL.$= GL.TextureUnit 0
---    GL.currentProgram GL.$= Nothing
---
---  loadNewGrid "data/sheet-1.db"
---
---  Entity _id <- player
---  followPlayer _id
---
---  _projection $ V2 800 600
---
---  --flow $ rhineLoop' world
---  flow $
---    (clsfLoop >>> altDraw)
---    @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16))
-
-
-player :: SystemT' IO Entity
-player = 
-  let p = V3 0 0 0
-  in newEntity ( Player
-                , Size (V4 (V3 (-16) 32 0) (V3 16 32 0) (V3 16 0 0) (V3 (-16) 0 0))
-                , Position (V4 p p p p)
-                , Speed 250
-                , SpriteSheet 1 (4096-34) 0 0 (34 * 4) 34 34 1 2 0
-                , PVelocity (Z, Z)
-                , WantLeftClick 2
-                , ( ProjStats 5 1 (Speed 300)
-                  , ShootOffset ((V3 0 0 0), 16)
-                  , HitStatic Stop []
-                  , HitBox $ fattenAABB 16 nullAABB
-                  )
-                )
-followPlayer :: Int -> SystemT' IO ()
-followPlayer _id =
-  newEntity_ ( Size (V4 (V3 (-16) 32 0) (V3 16 32 0) (V3 16 0 0) (V3 (-16) 0 0))
-             , SpriteSheet 1 (4096) 0 0 (34 * 4) 34 34 1 2 0
-             , Follows _id (V3 32 0 0)
-             , Rotation 0 0 0 (2, 2) 
-             , RToMouse
-             )
-
-staticPositionEntity :: SystemT' IO ()
-staticPositionEntity =
-  let p = V3 1000 0 (-1000)
-  in newEntity_ ( Size (V4 (V3 (-8) 16 0) (V3 8 16 0) (V3 8 0 0) (V3 (-8) 0 0))
-             , SpriteSheet 1 (4096) 0 0 (34 * 4) 34 34 1 2 0
-             , Position (V4 p p p p)
-             )
-
-tree :: Position -> SystemT' IO ((GL.GLfloat, GL.GLfloat), Int)
-tree pos@(Position (V4 _ (V3 x _ z) _ _)) = do
-  Entity ety <- newEntity
-                (Size (V4 (V3 (-115.5) 264 0) (V3 115.5 264 0) (V3 115.5 0 0) (V3 (-115.5) 0 0))
-                , SpriteSheet 1 4096 1190 4096 1190 238 272 1 1000000000 0
-                , pos
-                , StaticCollider
-                , HitBox $ fattenAABB 8 nullAABB
-                )
-  return ((x, z), ety)
-
-trees :: SystemT' IO [((GL.GLfloat, GL.GLfloat), Int)]
-trees = do
-  tList <- liftIO $ nrandPositions 10
-  forM tList tree 
-
-setStaticCollisionTree :: [((GL.GLfloat, GL.GLfloat), Int)] -> SystemT' IO ()
-setStaticCollisionTree collisionList = set global $ StaticCollisionTree $ fromList2 collisionList
-
-nrandPositions :: Int -> IO [Position]
-nrandPositions n = do
-  randListX <- forM [1 .. n] $ \_ -> randomRIO (0, 1024)
-  randListZ <- forM [1 .. n] $ \_ -> randomRIO (-1024, 0)
-  let randList = zip randListX randListZ
-      tList = (flip fmap) randList $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
-  return tList
-
-wall :: Position -> SystemT' IO ((GL.GLfloat, GL.GLfloat), Int)
-wall pos@(Position (V4 _ (V3 x _ z) _ _)) = do
-  _ <- newEntity
-                ( Size (V4 (V3 (-16) 32 16) (V3 16 32 16) (V3 16 0 16) (V3 (-16) 0 16))
-                , SpriteSheet 1 (4096-68) 0 0 0 34 34 1 100 0
-                , pos
-                )
-  Entity ety <- newEntity
-                ( Size (V4 (V3 (-16) 32 16) (V3 16 32 16) (V3 16 32 (-16)) (V3 (-16) 32 (-16)))
-                , SpriteSheet 1 (4096-68) 34 34 34 34 34 1 100 0
-                , pos
-                , StaticCollider
-                , HitBox $ fattenAABB 16 nullAABB
-                )
-  return ((x, z), ety)
-
-walls :: SystemT' IO [((GL.GLfloat, GL.GLfloat), Int)]
-walls = do
-  let xList = [64, 96 .. 256]
-      zList = repeat (-64)
-      list = zip xList zList
-      wList = (flip fmap) list $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
-  forM wList wall
-
-    
 adjustWeights :: Int -> (Int, Int) -> Tile -> Tile
 adjustWeights t _ s = case t `elem` [1, 12] of
   True -> s
@@ -382,8 +229,8 @@ indices = V.fromList
   --, 0, 1, 2, 3
   ]
 
-gameLoop :: World -> SystemT' IO ()
-gameLoop world = do
+gameLoop''' :: World -> SystemT' IO ()
+gameLoop''' world = do
   liftIO $ do
     ---------------------------------------------------------------------
     -- opengl settings
@@ -469,44 +316,44 @@ gameLoop world = do
   
   liftIO $ threadDelay 5000000
 
-gameLoop'' :: World -> SystemT' IO ()
-gameLoop'' world = do
-  GLBuffers (vao, vbo, ebo, program) <- get global
+-- gameLoop'' :: World -> SystemT' IO ()
+-- gameLoop'' world = do
+--   GLBuffers (vao, vbo, ebo, program) <- get global
 
-  liftIO $ do
-    GL.currentProgram GL.$= Just program
-    Right texture0001 <- createTextureFromPNG "./sprites/Sprite-0001.png"
-    GL.activeTexture GL.$= GL.TextureUnit 0
-    GL.textureBinding GL.Texture2D GL.$= Just texture0001
-    locTexture <- GL.get . GL.uniformLocation program $ "Texture"
-    GL.uniform locTexture GL.$= GL.TextureUnit 0
-    GL.currentProgram GL.$= Nothing
+--   liftIO $ do
+--     GL.currentProgram GL.$= Just program
+--     Right texture0001 <- createTextureFromPNG "./sprites/Sprite-0001.png"
+--     GL.activeTexture GL.$= GL.TextureUnit 0
+--     GL.textureBinding GL.Texture2D GL.$= Just texture0001
+--     locTexture <- GL.get . GL.uniformLocation program $ "Texture"
+--     GL.uniform locTexture GL.$= GL.TextureUnit 0
+--     GL.currentProgram GL.$= Nothing
 
-  let p = V3 0 0 0
-      p' = V3 2 0 2
-  player
-  newEntity_ ( Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
-             , Position (V4 p' p' p' p')
-             , Speed 250
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 1 5 0
-             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
-             )
-  newEntity_ ( Size (V4 (V3 (-10) 0 (-10)) (V3 10 0 (-10)) (V3 10 0 10) (V3 (-10) 0 10))
-             , Position (V4 p p p p)
-             , Speed 250
-             , SpriteSheet 0 0 32 0 (32 * 5) 32 32 1 5 0
-             , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
-             )
+--   let p = V3 0 0 0
+--       p' = V3 2 0 2
+--   player
+--   newEntity_ ( Size (V4 (V3 (-0.25) 0.5 0) (V3 0.25 0.5 0) (V3 0.25 0 0) (V3 (-0.25) 0 0))
+--              , Position (V4 p' p' p' p')
+--              , Speed 250
+--              , SpriteSheet 0 0 32 0 (32 * 5) 32 32 1 5 0
+--              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
+--              )
+--   newEntity_ ( Size (V4 (V3 (-10) 0 (-10)) (V3 10 0 (-10)) (V3 10 0 10) (V3 (-10) 0 10))
+--              , Position (V4 p p p p)
+--              , Speed 250
+--              , SpriteSheet 0 0 32 0 (32 * 5) 32 32 1 5 0
+--              , UV (V4 (V2 0 1) (V2 (1/5) 1) (V2 (1/5) 0) (V2 0 0))
+--              )
 
 
-  _model
-  _view
-  _projection $ V2 800 600
+--   _model
+--   _view
+--   _projection $ V2 800 600
 
-  l <- _loadVBOEBO
+--   l <- _loadVBOEBO
 
-  _draw l
-  liftIO $ threadDelay 20000
+--   _draw l
+--   liftIO $ threadDelay 20000
 
-  _draw l
-  liftIO $ threadDelay 5000000
+--   _draw l
+--   liftIO $ threadDelay 5000000

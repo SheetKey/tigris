@@ -77,7 +77,7 @@ initOpenGLVoxel = do
   -- create the shader program
   program <- loadShaders [ (GL.VertexShader, "./shaders/voxel.vert")
                          , (GL.GeometryShader, "./shaders/voxel.gs")
-                         , (GL.FragmentShader, "./shaders/voxel.vert")
+                         , (GL.FragmentShader, "./shaders/voxel.frag")
                          ]
   -- set the currrent program to this program
   GL.currentProgram GL.$= Just program

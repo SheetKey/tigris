@@ -51,3 +51,6 @@ _voxelDraw = do
         bufferDataWithVector v GL.ArrayBuffer GL.DynamicDraw
         -- TODO: set mvp matrices
         GL.drawArrays GL.Points 0 1
+
+  GL.bindVertexArrayObject GL.$= Nothing
+  GL.currentProgram GL.$= Nothing

@@ -11,7 +11,7 @@ import Tigris.ECS.Stores
 import Tigris.Collision
 
 -- vox-hs
-import GLVoxInfo
+import Vox.GLVoxInfo
 
 -- base
 import Data.Int

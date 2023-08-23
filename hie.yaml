@@ -2,3 +2,12 @@ cradle:
   cabal:
     - path: "src"
       component: "lib:tigris"
+
+    - path: "app/Main.hs"
+      component: "tigris:exe:demo"
+
+    - path: "app/Entities.hs"
+      component: "tigris:exe:demo"
+
+    - path: "db/Main.hs"
+      component: "tigris:exe:db"
