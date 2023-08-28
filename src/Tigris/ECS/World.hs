@@ -34,7 +34,6 @@ makeWorld "World" [ ''Player
                   , ''ColliderCell
                   , ''Collisions
                   , ''GLBuffers
-                  , ''GLVoxelBuffers
                   , ''SpriteSheet
                   , ''UV
                   , ''Size

@@ -69,19 +69,8 @@ initOpenGL window = do
 
   return (vao, vbo, ebo, program)
 
-initOpenGLVoxel :: IO (GL.VertexArrayObject, GL.BufferObject, GL.Program)
-initOpenGLVoxel = do
-  -- create the buffers
-  (vao, vbo) <- voxelBufferInit
 
-  -- create the shader program
-  program <- loadShaders [ (GL.VertexShader, "./shaders/voxel.vert")
-                         , (GL.GeometryShader, "./shaders/voxel.gs")
-                         , (GL.FragmentShader, "./shaders/voxel.frag")
                          ]
-  -- set the currrent program to this program
   GL.currentProgram GL.$= Just program
 
-  _ <- traverse_ (putStrLn . show) <$> (GL.get GL.errors)
 
-  return (vao, vbo, program)

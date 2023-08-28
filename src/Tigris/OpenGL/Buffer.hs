@@ -66,36 +66,17 @@ bufferInit = do
 
   return (vao, vbo, ebo)
 
-voxelBufferInit :: IO (GL.VertexArrayObject, GL.BufferObject)
-voxelBufferInit = do
-  vao <- (GL.genObjectName :: IO GL.VertexArrayObject)
   GL.bindVertexArrayObject GL.$= Just vao
 
   vbo <- (GL.genObjectName :: IO GL.BufferObject)
   GL.bindBuffer GL.ArrayBuffer GL.$= Just vbo
 
-  -- lovation for coordinate
   GL.vertexAttribPointer (GL.AttribLocation 0) GL.$=
     ( GL.ToFloat
     , GL.VertexArrayDescriptor
-      4
       GL.Float
-      (fromIntegral $ 7 * sizeOf (undefined :: GL.GLfloat))
       (intPtrToPtr 0)
     )
   GL.vertexAttribArray (GL.AttribLocation 0) GL.$= GL.Enabled
-  -- location for 16x16x16 block offset
-  GL.vertexAttribPointer (GL.AttribLocation 1) GL.$=
-    ( GL.ToFloat
-    , GL.VertexArrayDescriptor
-      3
-      GL.Float
-      (fromIntegral $ 7 * sizeOf (undefined :: GL.GLfloat))
-      (intPtrToPtr (fromIntegral $ 4 * sizeOf (undefined :: GL.GLfloat)))
-    )
-  GL.vertexAttribArray (GL.AttribLocation 1) GL.$= GL.Enabled
 
-  GL.bindVertexArrayObject GL.$= Nothing
   GL.bindBuffer GL.ArrayBuffer GL.$= Nothing
-  
-  return (vao, vbo)
