@@ -66,17 +66,30 @@ bufferInit = do
 
   return (vao, vbo, ebo)
 
+treeBufferInit :: IO (GL.VertexArrayObject, GL.BufferObject, GL.BufferObject)
+treeBufferInit = do
+    vao <- (GL.genObjectName :: IO GL.VertexArrayObject)
   GL.bindVertexArrayObject GL.$= Just vao
 
   vbo <- (GL.genObjectName :: IO GL.BufferObject)
   GL.bindBuffer GL.ArrayBuffer GL.$= Just vbo
 
+  ebo <- (GL.genObjectName :: IO GL.BufferObject)
+  GL.bindBuffer GL.ElementArrayBuffer GL.$= Just ebo
+
+  -- location for coordinate
   GL.vertexAttribPointer (GL.AttribLocation 0) GL.$=
     ( GL.ToFloat
     , GL.VertexArrayDescriptor
+      3
       GL.Float
+      (fromIntegral $ 3 * sizeOf (undefined :: GL.GLfloat))
       (intPtrToPtr 0)
     )
   GL.vertexAttribArray (GL.AttribLocation 0) GL.$= GL.Enabled
 
   GL.bindBuffer GL.ArrayBuffer GL.$= Nothing
+  GL.bindVertexArrayObject GL.$= Nothing
+  GL.bindBuffer GL.ElementArrayBuffer GL.$= Nothing
+
+  return (vao, vbo, ebo)

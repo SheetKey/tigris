@@ -67,10 +67,25 @@ initOpenGL window = do
   
   _ <- traverse_ (putStrLn . show) <$> (GL.get GL.errors)
 
+  GL.currentProgram GL.$= Nothing
+  GL.bindVertexArrayObject GL.$= Nothing
+
   return (vao, vbo, ebo, program)
 
+initOpenGLTree :: IO (GL.VertexArrayObject, GL.BufferObject, GL.BufferObject, GL.Program)
+initOpenGLTree = do
+  (vao, vbo, ebo) <- treeBufferInit
+  GL.bindVertexArrayObject GL.$= Just vao
 
+  program <- loadShaders [ (GL.VertexShader "./shaders/tree.vert")
+                         , (GL.FragmentShade "./shaders/tree.frag")
                          ]
+  
   GL.currentProgram GL.$= Just program
 
+  _ <- travers_ (putStrLn . show) <$> (GL.get GL.errors)
 
+  GL.currentProgram GL.$= Nothing
+  GL.bindVertexArrayObject GL.$= Nothing
+
+  return (vao, vbo, ebo, program)
