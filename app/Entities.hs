@@ -3,6 +3,10 @@ module Entities where
 -- tigris
 import Tigris
 
+-- vox-hs
+import Vox.Tree
+import Vox.Shape
+
 -- base
 import Control.Monad (forM)
 
@@ -19,8 +23,8 @@ import qualified SDL
 import Apecs
 
 -- vector
-import qualified Data.Vector.Storable as V
-import qualified Data.Vector as VV
+import qualified Data.Vector.Storable as VS
+import qualified Data.Vector as V
 
 -- containers
 import qualified Data.IntMap.Strict as M
@@ -111,3 +115,10 @@ walls = do
       list = zip xList zList
       wList = (flip fmap) list $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
   forM wList wall
+
+mkTree :: Parameters -> V3 GL.GLfloat-> SystemT' IO ()
+mkTree par pos = do
+  let tree = constructTree par 12345 False
+      rTree = fromTree 5 tree
+  _ <- newEntity (TreeModel rTree, Position (V4 pos pos pos pos))
+  return ()

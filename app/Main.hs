@@ -12,6 +12,10 @@ import Tigris
 import Tigris.Collision.DynamicAABBTree.Type
 import Tigris.Collision.DynamicAABBTree.Pure
 
+-- vox-hs
+import Vox.Tree.Type
+import Vox.Tree.Parameters
+
 -- opengl
 import qualified Graphics.Rendering.OpenGL as GL
 
@@ -147,7 +151,7 @@ clsfLoop =
 
 gameLoop :: World -> SystemT' IO ()
 gameLoop world = mkGameLoop
-  (flow $ ((clsfLoop >>> draw)
+  (flow $ ((clsfLoop >>> initFrame >>> draw >>> drawTree >>> drawFrame)
             @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16)))
    ||@ (concurrentlySystem world) @||
    (orthoProjection @@ WindowResizeClock))
@@ -183,6 +187,8 @@ mkGameLoop loop world = do
   wList <- walls
   _ <- setStaticCollisionTree $ tList ++ wList
   staticPositionEntity
+  mkTree (acerP {pGScale = 600}) (V3 500 0 (-500))
+  mkTree (blackOakP {pGScale = 600}) (V3 10 0 (-10))
 
   _projection $ V2 800 600
 
