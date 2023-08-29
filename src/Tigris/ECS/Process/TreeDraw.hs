@@ -40,11 +40,22 @@ _drawTree = do
   GL.bindBuffer GL.ArrayBuffer GL.$= Just vbo
   GL.currentProgram GL.$= Just program
 
-  cmapM_ $ \(TreeModel rTree) -> do
+  View vm <- get global
+  Projection pm <- get global
+  liftIO $ do
+    vLoc <- GL.get . GL.uniformLocation program $ "view"
+    (toMatrix vm :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform vLoc GL.$=)
+    pLoc <- GL.get . GL.uniformLocation program $ "proj"
+    (toMatrix pm :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform pLoc GL.$=)
+
+  cmapM_ $ \(TreeModel rTree, Model m) -> do
     V.forM_ (curves rTree) $ \ RCurve {..} -> liftIO $ do
       bufferDataWithVector indices GL.ElementArrayBuffer GL.DynamicDraw
       bufferDataWithVector vertices GL.ArrayBuffer GL.DynamicDraw
 
+      modelLoc <- GL.get . GL.uniformLocation program $ "model"
+      (toMatrix m :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform modelLoc GL.$=)
+     
       GL.drawElements GL.Triangles (fromIntegral $ VS.length indices) GL.UnsignedInt nullPtr
       
   GL.bindBuffer GL.ArrayBuffer GL.$= Nothing
