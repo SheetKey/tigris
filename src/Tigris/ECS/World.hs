@@ -49,4 +49,6 @@ makeWorld "World" [ ''Player
                   , ''StaticCollider
                   , ''HitStatic
                   , ''HitBox
+                  , ''TreeModel
+                  , ''GLTreeBuffers
                   ]

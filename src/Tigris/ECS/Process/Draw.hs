@@ -31,14 +31,10 @@ import qualified SDL
 
 _draw :: MonadIO m => SystemT' m ()
 _draw = do
-  Window window <- get global
-
   GLBuffers (vao, vbo, _, program) <- get global
   GL.bindVertexArrayObject GL.$= Just vao
   GL.bindBuffer GL.ArrayBuffer GL.$= Just vbo
   GL.currentProgram GL.$= Just program
-
-  liftIO $ GL.clear [GL.ColorBuffer, GL.DepthBuffer]
 
   let indices :: V.Vector GL.GLuint = V.fromList [0, 1, 2, 0, 2, 3]
   liftIO $ bufferDataWithVector indices GL.ElementArrayBuffer GL.DynamicDraw
@@ -59,8 +55,6 @@ _draw = do
         Just (RotationMat rmat') -> (toMatrix rmat' :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform rmatLoc GL.$=)
         Nothing                  -> (toMatrix identity :: IO (GL.GLmatrix GL.GLfloat)) >>= (GL.uniform rmatLoc GL.$=)
       GL.drawElements GL.Triangles 6 GL.UnsignedInt nullPtr
-
-  SDL.glSwapWindow window
 
   GL.bindBuffer GL.ArrayBuffer GL.$= Nothing
   GL.bindVertexArrayObject GL.$= Nothing

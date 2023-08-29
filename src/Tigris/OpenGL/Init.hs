@@ -77,13 +77,13 @@ initOpenGLTree = do
   (vao, vbo, ebo) <- treeBufferInit
   GL.bindVertexArrayObject GL.$= Just vao
 
-  program <- loadShaders [ (GL.VertexShader "./shaders/tree.vert")
-                         , (GL.FragmentShade "./shaders/tree.frag")
+  program <- loadShaders [ (GL.VertexShader, "./shaders/tree.vert")
+                         , (GL.FragmentShader, "./shaders/tree.frag")
                          ]
   
   GL.currentProgram GL.$= Just program
 
-  _ <- travers_ (putStrLn . show) <$> (GL.get GL.errors)
+  _ <- traverse_ (putStrLn . show) <$> (GL.get GL.errors)
 
   GL.currentProgram GL.$= Nothing
   GL.bindVertexArrayObject GL.$= Nothing

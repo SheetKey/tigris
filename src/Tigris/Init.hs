@@ -30,6 +30,7 @@ initAndRun winName gameLoop = do
   runWith world $ do
     setReadOnly global $ Window win
     setReadOnly global $ GLBuffers glBuffers
+    setReadOnly global $ GLTreeBuffers treeBuffers
     gameLoop world
 
 --initPosition :: CInt -> CInt -> CInt -> CInt -> Position

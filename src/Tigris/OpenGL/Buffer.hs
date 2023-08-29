@@ -68,7 +68,7 @@ bufferInit = do
 
 treeBufferInit :: IO (GL.VertexArrayObject, GL.BufferObject, GL.BufferObject)
 treeBufferInit = do
-    vao <- (GL.genObjectName :: IO GL.VertexArrayObject)
+  vao <- (GL.genObjectName :: IO GL.VertexArrayObject)
   GL.bindVertexArrayObject GL.$= Just vao
 
   vbo <- (GL.genObjectName :: IO GL.BufferObject)
