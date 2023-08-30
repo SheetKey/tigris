@@ -9,6 +9,7 @@ import Vox.Shape
 
 -- base
 import Control.Monad (forM)
+import Control.Arrow ((>>>))
 
 -- random
 import System.Random (randomRIO)
@@ -116,7 +117,7 @@ walls = do
       wList = (flip fmap) list $ \(x, z) -> let p = V3 x 0 z in Position (V4 p p p p)
   forM wList wall
 
-mkTree :: Parameters -> V3 GL.GLfloat-> SystemT' IO ()
+mkTree :: Parameters -> V3 GL.GLfloat -> SystemT' IO ()
 mkTree par pos = do
   let tree = constructTree par 12345 False
       rTree = fromTree 5 tree

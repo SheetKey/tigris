@@ -114,11 +114,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1693345818,
-        "narHash": "sha256-0uAzvMOKpPzYjJH/TLnT/8pMWsMB6Fd54bwhMolREn4=",
+        "lastModified": 1693425393,
+        "narHash": "sha256-kWM3bJnHQLnccVb4fxZitsvdr9tTxGBsAqksiz5xHHM=",
         "owner": "SheetKey",
         "repo": "vox-hs",
-        "rev": "a13eaa47c602cc40c4b1e017f4fd0b8caaee6baf",
+        "rev": "3a78925ec20cb1ef5b30f6f834a27137676920f4",
         "type": "github"
       },
       "original": {

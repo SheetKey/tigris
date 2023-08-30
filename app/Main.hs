@@ -154,7 +154,7 @@ gameLoop world = mkGameLoop
   (flow $ ((clsfLoop >>> initFrame >>> draw >>> drawTree >>> drawFrame)
             @@ ((HoistClock waitClock liftIO) :: HoistClock IO (SystemT World IO) (Millisecond 16)))
    ||@ (concurrentlySystem world) @||
-   (orthoProjection @@ WindowResizeClock))
+   (projection @@ WindowResizeClock))
   world
                     
 adjustWeights :: Int -> (Int, Int) -> Tile -> Tile
@@ -183,12 +183,14 @@ mkGameLoop loop world = do
 
   Entity _id <- player
   followPlayer _id
-  tList <- trees
+  -- tList <- trees
   wList <- walls
-  _ <- setStaticCollisionTree $ tList ++ wList
+  _ <- setStaticCollisionTree $ wList
   staticPositionEntity
-  mkTree (acerP {pGScale = 600}) (V3 500 0 (-500))
-  mkTree (blackOakP {pGScale = 600}) (V3 10 0 (-10))
+  mkTree (acerP {pGScale = 400}) (V3 500 0 (-500))
+  mkTree (blackOakP {pGScale = 300}) (V3 10 0 (-10))
+  mkTree (hillCherryP {pGScale = 300}) (V3 500 0 0)
+  mkTree (weepingWillowP {pGScale = 300}) (V3 0 0 (-500))
 
   _projection $ V2 800 600
 
