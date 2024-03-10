@@ -83,10 +83,21 @@ treeBufferInit = do
     , GL.VertexArrayDescriptor
       3
       GL.Float
-      (fromIntegral $ 3 * sizeOf (undefined :: GL.GLfloat))
+      (fromIntegral $ 6 * sizeOf (undefined :: GL.GLfloat))
       (intPtrToPtr 0)
     )
   GL.vertexAttribArray (GL.AttribLocation 0) GL.$= GL.Enabled
+
+  -- location for point normal
+  GL.vertexAttribPointer (GL.AttribLocation 1) GL.$=
+    ( GL.ToFloat
+    , GL.VertexArrayDescriptor
+      3
+      GL.Float
+      (fromIntegral $ 6 * sizeOf (undefined :: GL.GLfloat))
+      (intPtrToPtr (fromIntegral $ 3 * sizeOf (undefined :: GL.GLfloat)))
+    )
+  GL.vertexAttribArray (GL.AttribLocation 1) GL.$= GL.Enabled
 
   GL.bindBuffer GL.ArrayBuffer GL.$= Nothing
   GL.bindVertexArrayObject GL.$= Nothing

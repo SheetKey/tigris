@@ -187,10 +187,15 @@ mkGameLoop loop world = do
   wList <- walls
   _ <- setStaticCollisionTree $ wList
   staticPositionEntity
-  mkTree (acerP {pGScale = 400}) (V3 500 0 (-500))
-  mkTree (blackOakP {pGScale = 300}) (V3 10 0 (-10))
-  mkTree (hillCherryP {pGScale = 300}) (V3 500 0 0)
-  mkTree (weepingWillowP {pGScale = 300}) (V3 0 0 (-500))
+  mkTree (acerP {pGScale = 300}) (V3 0 0 0)
+  mkTree (blackOakP {pGScale = 300}) (V3 300 0 0)
+  mkTree (hillCherryP {pGScale = 300}) (V3 600 0 0)
+  mkTree (blackTupeloP {pGScale = 400}) (V3 900 0 0)
+  mkTree (lombardyPoplarP {pGScale = 200}) (V3 1200 0 0)
+  mkTree (cambridgeOakP {pGScale = 300}) (V3 300 0 (-400))
+  mkTree (sassafrasP {pGScale = 300}) (V3 600 0 (-400))
+  mkTree (silverBirchP {pGScale = 300}) (V3 900 0 (-400))
+  mkTree (weepingWillowP {pGScale = 300}) (V3 1200 0 (-400))
 
   _projection $ V2 800 600
 
